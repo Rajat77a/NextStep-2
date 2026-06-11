@@ -39,3 +39,4 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Shared: FlagBadge (green / yellow / red)
 - Authentication: login, signup, protected routes by role
 - Vercel deployment with `vercel.json` SPA rewrite rule
+
