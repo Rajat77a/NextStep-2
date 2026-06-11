@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import PortalNav from '@/components/shared/PortalNav';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { PageTransitionProvider } from '@/contexts/PageTransitionContext';
 
 // Landing
@@ -60,6 +61,7 @@ export default function App() {
 
   return (
     <PageTransitionProvider>
+      <ErrorBoundary>
       <AnimatePresence mode="wait">
         <Routes>
           {/* Public */}
@@ -96,6 +98,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
+      </ErrorBoundary>
     </PageTransitionProvider>
   );
 }
