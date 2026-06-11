@@ -29,3 +29,4 @@ Structure:
   tailwind.config.js   Configures Tailwind's theme, plugins, etc.
   vite.config.ts       Main build and dev server settings for Vite
   postcss.config.js    Config file for CSS post-processing tools
+
