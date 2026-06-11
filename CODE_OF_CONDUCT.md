@@ -26,3 +26,4 @@ Instances of abusive or unacceptable behaviour may be reported by opening a priv
 ## Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.1.
+
