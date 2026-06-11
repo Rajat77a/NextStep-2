@@ -33,3 +33,4 @@ We aim to acknowledge reports within **48 hours** and provide a fix or mitigatio
 - Issues in third-party dependencies (report upstream)
 - Theoretical vulnerabilities without a PoC
 - Social engineering attacks
+
