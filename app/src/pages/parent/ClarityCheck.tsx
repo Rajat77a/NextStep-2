@@ -6,7 +6,7 @@ import { ArrowLeft, AlertCircle, ChevronDown, ChevronUp, ArrowRight, MessageCirc
 import { useAuth } from '@/hooks/useAuth';
 import { getReportCards, getClarityCheck, getSubjectGrades } from '@/api/data';
 import FlagBadge from '@/components/shared/FlagBadge';
-import type { ReportCard, ClarityCheck as IClarityCheck, SubjectGrade } from '@/types';
+import type { ReportCard, ClarityCheck as IClarityCheck, SubjectGrade, ClarityCheckRouteState } from '@/types';
 
 export default function ClarityCheck() {
   const { user } = useAuth();
@@ -23,7 +23,7 @@ export default function ClarityCheck() {
       if (!user) return;
       const cards = await getReportCards();
       setReportCards(cards);
-      const stateCardId = (location.state as any)?.reportCardId;
+      const stateCardId = (location.state as ClarityCheckRouteState).reportCardId;
       const card = stateCardId ? cards.find(c => c.id === stateCardId) : cards[0];
       if (card) {
         setSelectedCard(card);

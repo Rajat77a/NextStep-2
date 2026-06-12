@@ -110,6 +110,9 @@ export interface PlanWeek {
   actions?: PlanAction[];
 }
 
+export interface ClarityCheckRouteState { reportCardId?: string; }
+export interface ClassPatternsRouteState { classId?: string; }
+
 export interface ClarityCheck {
   id: string;
   reportCardId: string;
@@ -193,3 +196,4 @@ export interface StudentWithDetails extends Student {
   overallFlag?: FlagStatus;
   latestReportCard?: ReportCard;
 }
+
