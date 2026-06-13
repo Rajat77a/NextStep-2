@@ -34,3 +34,4 @@ We aim to acknowledge reports within **48 hours** and provide a fix or mitigatio
 - Theoretical vulnerabilities without a PoC
 - Social engineering attacks
 
+
