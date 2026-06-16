@@ -480,6 +480,7 @@ th {
   margin: 18px 0;
   padding: 20px;
   text-align: center;
+  cursor: pointer;
 }
 
 .drop-zone span {
@@ -499,6 +500,42 @@ th {
   border-radius: 8px;
   background: var(--red-bg);
   color: var(--red);
+  padding: 12px;
+  font-weight: 850;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgba(23, 33, 43, 0.42);
+  padding: 20px;
+}
+
+.login-dialog {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 420px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(23, 33, 43, 0.22);
+  padding: 24px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.upload-success {
+  border: 1px solid #b8d7c4;
+  border-radius: 8px;
+  background: var(--green-bg);
+  color: var(--green);
   padding: 12px;
   font-weight: 850;
 }
@@ -539,7 +576,8 @@ th {
   }
 
   .upload-actions,
-  .result-header {
+  .result-header,
+  .dialog-actions {
     align-items: stretch;
     flex-direction: column;
   }
