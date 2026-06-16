@@ -50,6 +50,24 @@ Teacher comment: Aarav is curious and polite. He may benefit from slowing down, 
 
 function App() {
   const [activePortal, setActivePortal] = useState("parent");
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+
+  function handlePortalChange(portal) {
+    if (portal === "admin" && !adminUnlocked) {
+      setShowAdminLogin(true);
+      return;
+    }
+
+    setActivePortal(portal);
+  }
+
+  function handleAdminLogin(event) {
+    event.preventDefault();
+    setAdminUnlocked(true);
+    setShowAdminLogin(false);
+    setActivePortal("admin");
+  }
 
   return (
     <div className="app-shell">
@@ -64,19 +82,19 @@ function App() {
             icon={<Home size={18} />}
             active={activePortal === "parent"}
             label="Parent Portal"
-            onClick={() => setActivePortal("parent")}
+            onClick={() => handlePortalChange("parent")}
           />
           <PortalButton
             icon={<Users size={18} />}
             active={activePortal === "teacher"}
             label="Teacher Portal"
-            onClick={() => setActivePortal("teacher")}
+            onClick={() => handlePortalChange("teacher")}
           />
           <PortalButton
             icon={<Building2 size={18} />}
             active={activePortal === "admin"}
             label="School Admin"
-            onClick={() => setActivePortal("admin")}
+            onClick={() => handlePortalChange("admin")}
           />
         </nav>
 
@@ -92,6 +110,45 @@ function App() {
         {activePortal === "teacher" && <TeacherPortal />}
         {activePortal === "admin" && <AdminPortal />}
       </main>
+
+      {showAdminLogin && (
+        <AdminLoginDialog
+          onClose={() => setShowAdminLogin(false)}
+          onSubmit={handleAdminLogin}
+        />
+      )}
+    </div>
+  );
+}
+
+function AdminLoginDialog({ onClose, onSubmit }) {
+  return (
+    <div className="dialog-backdrop">
+      <form className="login-dialog" onSubmit={onSubmit}>
+        <div className="compact-heading">
+          <Lock size={20} />
+          <h2>School Admin Login</h2>
+        </div>
+
+        <label>
+          Username
+          <input type="text" placeholder="Enter username" />
+        </label>
+
+        <label>
+          Password
+          <input type="password" placeholder="Enter password" />
+        </label>
+
+        <div className="dialog-actions">
+          <button className="secondary-action" type="button" onClick={onClose}>
+            Cancel
+          </button>
+          <button className="primary-action" type="submit">
+            Login
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -153,7 +210,7 @@ function ParentPortal() {
 
       const data = await response.json();
       setAnalysis(data);
-    } catch (nextError) {
+    } catch {
       setAnalysis(getStaticAnalysis({ studentName, board, reportText }));
       setError("Live API is not connected on this static demo, so showing safe demo analysis.");
     } finally {
@@ -413,9 +470,8 @@ function AdminPortal() {
                   </label>
 
                   {uploadedFiles.length > 0 && (
-                    <div className="error-box">
-                      {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""} selected for{" "}
-                      {selectedClass}.
+                    <div className="upload-success">
+                      {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""} selected for {selectedClass}.
                     </div>
                   )}
                 </>
@@ -586,6 +642,7 @@ function getStaticPortalData(path) {
           className: "6A",
           subject: "Science",
           status: "yellow",
+          statusLabel: "Watch",
           note: "Class participation is strong; written lab details are thinner.",
         },
       ],
