@@ -43,6 +43,7 @@ function App() {
           <span className="brand-mark">N</span>
           <span>NextStep.AI</span>
         </a>
+
         <nav className="portal-nav">
           <PortalButton
             icon={<Home size={18} />}
@@ -63,6 +64,7 @@ function App() {
             onClick={() => setActivePortal("admin")}
           />
         </nav>
+
         <div className="privacy-note">
           <Lock size={16} />
           <span>Role checks are enforced by the API. Guidance content stays parent-only.</span>
@@ -185,6 +187,7 @@ function ParentPortal() {
             </button>
             <p>PDF/image OCR can plug into this same endpoint after Tesseract.js is added.</p>
           </div>
+
           {error && <div className="error-box">{error}</div>}
         </form>
       </div>
@@ -272,8 +275,10 @@ function TeacherPortal() {
         title="Class-wide patterns without parent-only guidance."
         text="Teachers see flag-level data, class patterns, and students to watch. Conversation scripts and home plans are intentionally excluded."
       />
+
       {loading && <LoadingPanel />}
       {error && <div className="error-box">{error}</div>}
+
       {data && (
         <>
           <div className="metric-grid">
@@ -285,11 +290,13 @@ function TeacherPortal() {
               </article>
             ))}
           </div>
+
           <div className="panel table-panel">
             <div className="compact-heading">
               <Users size={20} />
               <h2>Students to watch</h2>
             </div>
+
             <table>
               <thead>
                 <tr>
@@ -323,16 +330,19 @@ function TeacherPortal() {
 
 function AdminPortal() {
   const { data, loading, error } = useApi("/api/admin/dashboard", "admin");
+  const [selectedClass, setSelectedClass] = useState("");
 
   return (
     <section className="portal-page">
       <PageHeader
         kicker="School Admin Portal"
         title="Bulk onboarding and aggregate school visibility."
-        text="Admins can upload batches, manage roster data, and see school-wide trends. Individual parent scripts and home plans stay private."
+        text="Admins can select a class, upload report cards for that class, manage roster data, and see school-wide trends. Individual parent scripts and home plans stay private."
       />
+
       {loading && <LoadingPanel />}
       {error && <div className="error-box">{error}</div>}
+
       {data && (
         <>
           <div className="admin-grid">
@@ -341,20 +351,47 @@ function AdminPortal() {
                 <Upload size={20} />
                 <h2>Bulk upload</h2>
               </div>
-              <div className="drop-zone">
-                <FileText size={34} />
-                <strong>Upload CSV, PDFs, or report-card images</strong>
-                <span>Demo mode stores parsed rows against the school roster.</span>
-              </div>
-              <button className="secondary-action" type="button">Import sample batch</button>
+
+              <label>
+                Select class / grade
+                <select
+                  value={selectedClass}
+                  onChange={(event) => setSelectedClass(event.target.value)}
+                >
+                  <option value="">Choose a class</option>
+                  {data.roster.map((row) => (
+                    <option key={row.className} value={row.className}>
+                      {row.className} - {row.teacher}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {selectedClass && (
+                <>
+                  <div className="drop-zone">
+                    <FileText size={34} />
+                    <strong>Upload report cards for {selectedClass}</strong>
+                    <span>Upload CSV, PDFs, or report-card images for this class.</span>
+                  </div>
+
+                  <button className="secondary-action" type="button">
+                    Import sample batch
+                  </button>
+                </>
+              )}
             </div>
+
             <div className="panel billing-panel">
               <span className="section-kicker">School plan</span>
               <h2>{data.billing.plan}</h2>
-              <p>{data.billing.seatsUsed} of {data.billing.seatsTotal} parent seats active</p>
+              <p>
+                {data.billing.seatsUsed} of {data.billing.seatsTotal} parent seats active
+              </p>
               <div className="renewal-box">Renewal: {data.billing.renewalDate}</div>
             </div>
           </div>
+
           <div className="metric-grid">
             {data.schoolTrends.map((trend) => (
               <article className="metric-card" key={trend.label}>
@@ -364,11 +401,13 @@ function AdminPortal() {
               </article>
             ))}
           </div>
+
           <div className="panel table-panel">
             <div className="compact-heading">
               <Building2 size={20} />
               <h2>Roster snapshot</h2>
             </div>
+
             <table>
               <thead>
                 <tr>
@@ -424,26 +463,38 @@ function useApi(path, role) {
 
     async function fetchData() {
       setState({ data: null, loading: true, error: "" });
+
       try {
         const response = await fetch(`${API_BASE}${path}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         if (!response.ok) {
           throw new Error("Unable to load this portal with the current role.");
         }
+
         const data = await response.json();
         if (!ignore) setState({ data, loading: false, error: "" });
       } catch (nextError) {
         const fallback = getStaticPortalData(path);
+
         if (!ignore && fallback) {
-          setState({ data: fallback, loading: false, error: "Live API is not connected on this static demo, so showing demo data." });
+          setState({
+            data: fallback,
+            loading: false,
+            error: "Live API is not connected on this static demo, so showing demo data.",
+          });
           return;
         }
-        if (!ignore) setState({ data: null, loading: false, error: nextError.message });
+
+        if (!ignore) {
+          setState({ data: null, loading: false, error: nextError.message });
+        }
       }
     }
 
     fetchData();
+
     return () => {
       ignore = true;
     };
