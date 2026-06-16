@@ -25,6 +25,21 @@ const roleTokens = {
   admin: "demo-admin-token",
 };
 
+const schoolClasses = [
+  "Std I",
+  "Std II",
+  "Std III",
+  "Std IV",
+  "Std V",
+  "Std VI",
+  "Std VII",
+  "Std VIII",
+  "Std IX",
+  "Std X",
+  "Std XI",
+  "Std XII",
+];
+
 const sampleReport = `Student: Aarav Mehta
 Grade: 6
 Board: CBSE
@@ -359,9 +374,9 @@ function AdminPortal() {
                   onChange={(event) => setSelectedClass(event.target.value)}
                 >
                   <option value="">Choose a class</option>
-                  {data.roster.map((row) => (
-                    <option key={row.className} value={row.className}>
-                      {row.className} - {row.teacher}
+                  {schoolClasses.map((className) => (
+                    <option key={className} value={className}>
+                      {className}
                     </option>
                   ))}
                 </select>
@@ -565,7 +580,7 @@ function getStaticPortalData(path) {
         {
           label: "Students onboarded",
           value: "214",
-          description: "Across grades 4-8 in the current academic year.",
+          description: "Across Std I to Std XII in the current academic year.",
         },
         {
           label: "Red flags",
@@ -579,9 +594,18 @@ function getStaticPortalData(path) {
         },
       ],
       roster: [
-        { className: "Grade 6A", students: 32, teacher: "Neha Kapoor", latestUpload: "Term 1 batch" },
-        { className: "Grade 6B", students: 34, teacher: "Arjun Rao", latestUpload: "Term 1 batch" },
-        { className: "Grade 7A", students: 29, teacher: "Meera Nair", latestUpload: "Pending" },
+        { className: "Std I", students: 28, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std II", students: 30, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std III", students: 31, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std IV", students: 29, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std V", students: 32, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std VI", students: 34, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std VII", students: 33, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std VIII", students: 35, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std IX", students: 36, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std X", students: 38, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std XI", students: 41, teacher: "Assigned teacher", latestUpload: "Pending" },
+        { className: "Std XII", students: 39, teacher: "Assigned teacher", latestUpload: "Pending" },
       ],
     };
   }
