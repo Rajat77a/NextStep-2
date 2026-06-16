@@ -346,6 +346,12 @@ function TeacherPortal() {
 function AdminPortal() {
   const { data, loading, error } = useApi("/api/admin/dashboard", "admin");
   const [selectedClass, setSelectedClass] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+
+  function handleAdminUpload(event) {
+    const files = Array.from(event.target.files);
+    setUploadedFiles(files);
+  }
 
   return (
     <section className="portal-page">
@@ -371,7 +377,10 @@ function AdminPortal() {
                 Select class / grade
                 <select
                   value={selectedClass}
-                  onChange={(event) => setSelectedClass(event.target.value)}
+                  onChange={(event) => {
+                    setSelectedClass(event.target.value);
+                    setUploadedFiles([]);
+                  }}
                 >
                   <option value="">Choose a class</option>
                   {schoolClasses.map((className) => (
@@ -384,15 +393,31 @@ function AdminPortal() {
 
               {selectedClass && (
                 <>
-                  <div className="drop-zone">
+                  <label className="drop-zone" htmlFor="admin-report-upload">
                     <FileText size={34} />
                     <strong>Upload report cards for {selectedClass}</strong>
                     <span>Upload CSV, PDFs, or report-card images for this class.</span>
-                  </div>
+                  </label>
 
-                  <button className="secondary-action" type="button">
-                    Import sample batch
-                  </button>
+                  <input
+                    id="admin-report-upload"
+                    type="file"
+                    multiple
+                    accept=".csv,.pdf,image/*"
+                    onChange={handleAdminUpload}
+                    style={{ display: "none" }}
+                  />
+
+                  <label className="secondary-action" htmlFor="admin-report-upload">
+                    Choose files
+                  </label>
+
+                  {uploadedFiles.length > 0 && (
+                    <div className="error-box">
+                      {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""} selected for{" "}
+                      {selectedClass}.
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -561,7 +586,6 @@ function getStaticPortalData(path) {
           className: "6A",
           subject: "Science",
           status: "yellow",
-          statusLabel: "Watch",
           note: "Class participation is strong; written lab details are thinner.",
         },
       ],
