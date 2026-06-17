@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 20% 94%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 11 78% 57%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 15% 90%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 30 15% 90%;
+    --muted-foreground: 25 5% 58%;
+    --accent: 11 78% 57%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 11 78% 57%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 11 78% 57%;
+    --radius: 0.625rem;
+
+    --cream: #F5F0EB;
+    --charcoal: #1A1A1A;
+    --coral: #E85D3E;
+    --coral-dark: #D14E32;
+    --sage: #7A9B8A;
+    --amber: #D4A03A;
+    --white: #FFFFFF;
+    --light-gray: #E8E3DE;
+    --medium-gray: #9A9590;
+    --dark-surface: #1E1E1E;
+    --card-surface: #FFFFFF;
+    --card-surface-alt: #FAF7F4;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-[var(--cream)] text-[var(--charcoal)] antialiased;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Playfair Display', serif;
+  }
+
+  .font-body {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .label-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .nav-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 1.0;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .btn-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.0;
+    letter-spacing: 0.04em;
+  }
+
+  .card-shadow {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .card-shadow-hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  }
+
+  .modal-shadow {
+    box-shadow: 0 24px 64px rgba(0,0,0,0.20);
+  }
+
+  .gradient-coral {
+    background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
