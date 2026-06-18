@@ -14,6 +14,7 @@ export default function TeacherManagement() {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [inviteError, setInviteError] = useState('');
 
   useEffect(() => {
     if (!user?.schoolId) return;
@@ -70,8 +71,9 @@ export default function TeacherManagement() {
 
     if (!user?.schoolId) return;
 
+    setInviteError('');
+
     const users = storage.getUsers();
-    const { hashPassword } = await import('@/lib/crypto');
 
     const existingTeacherIndex = users.findIndex((existingUser) => {
       return (
@@ -80,39 +82,30 @@ export default function TeacherManagement() {
       );
     });
 
-    if (existingTeacherIndex !== -1) {
-      users[existingTeacherIndex] = {
-        ...users[existingTeacherIndex],
-        fullName: name,
-        schoolId: user.schoolId,
-        invitationStatus: 'pending',
-        updatedAt: new Date().toISOString(),
-      };
-    } else {
-      const newTeacher: User = {
-        id: crypto.randomUUID(),
-        email,
-        passwordHash: await hashPassword('welcome123'),
-        fullName: name,
-        role: 'teacher',
-        schoolId: user.schoolId,
-        invitationStatus: 'pending',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastLoginAt: null,
-        isActive: true,
-      };
-
-      users.push(newTeacher);
+    if (existingTeacherIndex === -1) {
+      setInviteError(
+        'This teacher has not signed up to the portal yet. Ask the teacher to sign up first using this email.'
+      );
+      return;
     }
+
+    users[existingTeacherIndex] = {
+      ...users[existingTeacherIndex],
+      fullName: name || users[existingTeacherIndex].fullName,
+      schoolId: user.schoolId,
+      invitationStatus: 'pending',
+      updatedAt: new Date().toISOString(),
+    };
 
     storage.setUsers(users);
 
     loadTeachers();
     loadClasses();
+
     setShowModal(false);
     setName('');
     setEmail('');
+    setInviteError('');
   };
 
   const getTeacherClasses = (teacher: User) => {
@@ -150,6 +143,20 @@ export default function TeacherManagement() {
     );
   };
 
+  const openModal = () => {
+    setInviteError('');
+    setName('');
+    setEmail('');
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setInviteError('');
+    setName('');
+    setEmail('');
+    setShowModal(false);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -166,7 +173,7 @@ export default function TeacherManagement() {
           </h2>
 
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openModal}
             className="btn-text px-5 py-2.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus size={16} /> Invite Teacher
@@ -252,7 +259,7 @@ export default function TeacherManagement() {
         {teachers.length === 0 && (
           <div className="text-center py-10">
             <p className="font-body text-medium-gray">
-              No teachers yet. Invite your first teacher.
+              No teachers yet. Invite your first teacher after they sign up.
             </p>
           </div>
         )}
@@ -268,7 +275,7 @@ export default function TeacherManagement() {
           >
             <div
               className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm"
-              onClick={() => setShowModal(false)}
+              onClick={closeModal}
             />
 
             <motion.div
@@ -278,7 +285,7 @@ export default function TeacherManagement() {
               className="relative bg-white rounded-2xl shadow-modal p-8 w-full max-w-md"
             >
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full bg-cream flex items-center justify-center hover:bg-light-gray"
               >
                 <X size={14} />
@@ -308,8 +315,14 @@ export default function TeacherManagement() {
                 />
 
                 <p className="font-body text-xs text-medium-gray">
-                  A request will appear in the teacher portal. The teacher must accept it before class assignment.
+                  Enter the email used by the teacher during signup. If the teacher has not signed up yet, the request cannot be sent.
                 </p>
+
+                {inviteError && (
+                  <div className="rounded-[10px] border border-coral/25 bg-coral/10 px-4 py-3 font-body text-sm text-coral">
+                    {inviteError}
+                  </div>
+                )}
 
                 <button
                   type="submit"
