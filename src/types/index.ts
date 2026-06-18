@@ -12,6 +12,7 @@ export interface User {
   fullName: string;
   role: UserRole;
   schoolId: string | null;
+  invitationStatus?: 'pending' | 'accepted';
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string | null;
