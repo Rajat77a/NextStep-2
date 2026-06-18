@@ -42,14 +42,14 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
           <Link to="/" className="flex items-baseline gap-0.5">
             <span className="font-display text-xl md:text-2xl font-semibold text-charcoal tracking-tight">NextStep</span>
-            <span className="text-coral text-[10px] font-body font-bold">●</span>
+            <span className="text-coral text-[10px] font-body font-bold">•</span>
             <span className="font-body text-[11px] font-semibold text-charcoal tracking-wider">AI</span>
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
             <a href="#parents" className="nav-text text-medium-gray hover:text-charcoal transition-colors">For Parents</a>
-            <a href="#teachers" className="nav-text text-medium-gray hover:text-charcoal transition-colors">For Teachers</a>
-            <a href="#schools" className="nav-text text-medium-gray hover:text-charcoal transition-colors">For Schools</a>
+            <a href="#parents" className="nav-text text-medium-gray hover:text-charcoal transition-colors">For Teachers</a>
+            <a href="#parents" className="nav-text text-medium-gray hover:text-charcoal transition-colors">For Schools</a>
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
@@ -68,8 +68,8 @@ export default function LandingPage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-40 bg-charcoal pt-20 px-6 lg:hidden">
           <div className="flex flex-col gap-4">
             <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Parents</a>
-            <a href="#teachers" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Teachers</a>
-            <a href="#schools" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Schools</a>
+            <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Teachers</a>
+            <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Schools</a>
             <div className="border-t border-white/10 pt-4 mt-4 flex flex-col gap-3">
               <Link to="/login" onClick={() => setMobileMenu(false)} className="text-white text-lg font-body">Log In</Link>
               <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3 rounded-[10px] bg-coral text-white text-center">Get Started</Link>
