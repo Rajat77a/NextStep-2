@@ -8,6 +8,7 @@ import type { User, Class } from '@/types';
 
 export default function TeacherManagement() {
   const { user } = useAuth();
+
   const [teachers, setTeachers] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -17,55 +18,97 @@ export default function TeacherManagement() {
   useEffect(() => {
     if (!user?.schoolId) return;
 
-    const users = storage.getUsers();
-    const cls = storage.getClasses().filter((c) => c.schoolId === user.schoolId);
-
-    setClasses(cls);
-    setTeachers(users.filter((u) => u.role === 'teacher' && u.schoolId === user.schoolId));
+    loadTeachers();
+    loadClasses();
   }, [user]);
+
+  const loadClasses = () => {
+    if (!user?.schoolId) return;
+
+    const classList = storage.getClasses().filter((classItem) => {
+      return classItem.schoolId === user.schoolId;
+    });
+
+    setClasses(classList);
+  };
+
+  const loadTeachers = () => {
+    if (!user?.schoolId) return;
+
+    const teacherList = storage.getUsers().filter((teacher) => {
+      return teacher.role === 'teacher' && teacher.schoolId === user.schoolId;
+    });
+
+    setTeachers(teacherList);
+  };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!user?.schoolId) return;
+
     const users = storage.getUsers();
     const { hashPassword } = await import('@/lib/crypto');
 
-    const newTeacher: User = {
-      id: crypto.randomUUID(),
-      email,
-      passwordHash: await hashPassword('welcome123'),
-      fullName: name,
-      role: 'teacher',
-      schoolId: user?.schoolId || null,
-      invitationStatus: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastLoginAt: null,
-      isActive: true,
-    };
+    const existingTeacherIndex = users.findIndex((existingUser) => {
+      return (
+        existingUser.email.toLowerCase() === email.toLowerCase() &&
+        existingUser.role === 'teacher'
+      );
+    });
 
-    users.push(newTeacher);
+    if (existingTeacherIndex !== -1) {
+      users[existingTeacherIndex] = {
+        ...users[existingTeacherIndex],
+        fullName: name,
+        schoolId: user.schoolId,
+        invitationStatus: 'pending',
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      const newTeacher: User = {
+        id: crypto.randomUUID(),
+        email,
+        passwordHash: await hashPassword('welcome123'),
+        fullName: name,
+        role: 'teacher',
+        schoolId: user.schoolId,
+        invitationStatus: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: null,
+        isActive: true,
+      };
+
+      users.push(newTeacher);
+    }
+
     storage.setUsers(users);
 
-    setTeachers(users.filter((u) => u.role === 'teacher' && u.schoolId === user?.schoolId));
+    loadTeachers();
     setShowModal(false);
     setName('');
     setEmail('');
   };
 
   const getTeacherClasses = (teacherId: string) => {
-    return classes.filter((c) => c.teacherId === teacherId);
+    return classes.filter((classItem) => classItem.teacherId === teacherId);
   };
 
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <Link to="/admin" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
+        <Link
+          to="/admin"
+          className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"
+        >
           <ArrowLeft size={14} /> Back to Dashboard
         </Link>
 
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-display text-2xl md:text-4xl text-charcoal">Teachers</h2>
+          <h2 className="font-display text-2xl md:text-4xl text-charcoal">
+            Teachers
+          </h2>
 
           <button
             onClick={() => setShowModal(true)}
@@ -86,10 +129,18 @@ export default function TeacherManagement() {
           <table className="w-full">
             <thead>
               <tr className="bg-cream border-b border-light-gray">
-                <th className="text-left py-3 px-4 label-text text-charcoal/60">Name</th>
-                <th className="text-left py-3 px-4 label-text text-charcoal/60">Email</th>
-                <th className="text-left py-3 px-4 label-text text-charcoal/60">Classes</th>
-                <th className="text-left py-3 px-4 label-text text-charcoal/60">Status</th>
+                <th className="text-left py-3 px-4 label-text text-charcoal/60">
+                  Name
+                </th>
+                <th className="text-left py-3 px-4 label-text text-charcoal/60">
+                  Email
+                </th>
+                <th className="text-left py-3 px-4 label-text text-charcoal/60">
+                  Classes
+                </th>
+                <th className="text-left py-3 px-4 label-text text-charcoal/60">
+                  Status
+                </th>
               </tr>
             </thead>
 
@@ -113,7 +164,9 @@ export default function TeacherManagement() {
 
                     <td className="py-3 px-4 font-body text-sm text-medium-gray">
                       {teacherClasses.length > 0
-                        ? teacherClasses.map((c) => `Grade ${c.grade}-${c.section}`).join(', ')
+                        ? teacherClasses
+                            .map((classItem) => `Grade ${classItem.grade}-${classItem.section}`)
+                            .join(', ')
                         : 'Not assigned'}
                     </td>
 
@@ -143,7 +196,9 @@ export default function TeacherManagement() {
 
         {teachers.length === 0 && (
           <div className="text-center py-10">
-            <p className="font-body text-medium-gray">No teachers yet. Invite your first teacher.</p>
+            <p className="font-body text-medium-gray">
+              No teachers yet. Invite your first teacher.
+            </p>
           </div>
         )}
       </motion.div>
