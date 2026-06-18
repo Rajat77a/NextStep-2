@@ -632,11 +632,19 @@ export async function getAdminDashboard(): Promise<DashboardSummary> {
   const classes = storage.getClasses().filter((classItem) => classItem.schoolId === user.schoolId);
   const users = storage.getUsers();
 
+  const assignedTeacherIds = new Set(
+    classes
+      .map((classItem) => classItem.teacherId)
+      .filter(Boolean)
+  );
+
   const activeTeachers = users.filter((storedUser) => {
     return (
       storedUser.role === 'teacher' &&
-      storedUser.schoolId === user.schoolId &&
-      (storedUser.invitationStatus === 'accepted' || !!storedUser.lastLoginAt)
+      (
+        storedUser.invitationStatus === 'accepted' ||
+        assignedTeacherIds.has(storedUser.id)
+      )
     );
   });
 
