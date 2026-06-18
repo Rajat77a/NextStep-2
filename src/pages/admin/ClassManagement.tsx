@@ -32,15 +32,31 @@ export default function ClassManagement() {
   };
 
   const loadTeachers = () => {
-    const acceptedTeachers = storage.getUsers().filter((teacher) => {
+    const users = storage.getUsers();
+
+    const currentAdmin = users.find((storedUser) => storedUser.id === user?.id);
+    const currentSchoolId = currentAdmin?.schoolId || user?.schoolId;
+
+    const acceptedTeachersForSchool = users.filter((teacher) => {
       return (
         teacher.role === 'teacher' &&
-        teacher.schoolId === user?.schoolId &&
+        teacher.invitationStatus === 'accepted' &&
+        teacher.schoolId === currentSchoolId
+      );
+    });
+
+    const allAcceptedTeachers = users.filter((teacher) => {
+      return (
+        teacher.role === 'teacher' &&
         teacher.invitationStatus === 'accepted'
       );
     });
 
-    setTeachers(acceptedTeachers);
+    setTeachers(
+      acceptedTeachersForSchool.length > 0
+        ? acceptedTeachersForSchool
+        : allAcceptedTeachers
+    );
   };
 
   const resetForm = () => {
