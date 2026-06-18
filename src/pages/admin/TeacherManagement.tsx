@@ -147,7 +147,8 @@ export default function TeacherManagement() {
             <tbody>
               {teachers.map((teacher) => {
                 const teacherClasses = getTeacherClasses(teacher.id);
-                const accepted = teacher.invitationStatus === 'accepted';
+                const active =
+                  teacher.invitationStatus === 'accepted' || teacherClasses.length > 0;
 
                 return (
                   <tr
@@ -173,12 +174,12 @@ export default function TeacherManagement() {
                     <td className="py-3 px-4">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-body text-[10px] font-semibold ${
-                          accepted ? 'bg-sage/10 text-sage' : 'bg-amber/10 text-amber'
+                          active ? 'bg-sage/10 text-sage' : 'bg-amber/10 text-amber'
                         }`}
                       >
-                        {accepted ? (
+                        {active ? (
                           <>
-                            <Check size={10} /> Accepted
+                            <Check size={10} /> Active
                           </>
                         ) : (
                           <>
