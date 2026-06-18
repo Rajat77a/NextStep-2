@@ -35,11 +35,34 @@ export default function TeacherManagement() {
   const loadTeachers = () => {
     if (!user?.schoolId) return;
 
-    const teacherList = storage.getUsers().filter((teacher) => {
+    const allTeachers = storage.getUsers().filter((teacher) => {
       return teacher.role === 'teacher' && teacher.schoolId === user.schoolId;
     });
 
-    setTeachers(teacherList);
+    const uniqueTeachers = allTeachers.reduce<User[]>((result, teacher) => {
+      const existingIndex = result.findIndex((savedTeacher) => {
+        return savedTeacher.email.toLowerCase() === teacher.email.toLowerCase();
+      });
+
+      if (existingIndex === -1) {
+        result.push(teacher);
+        return result;
+      }
+
+      const existingTeacher = result[existingIndex];
+
+      const teacherIsAccepted = teacher.invitationStatus === 'accepted' || !!teacher.lastLoginAt;
+      const existingIsAccepted =
+        existingTeacher.invitationStatus === 'accepted' || !!existingTeacher.lastLoginAt;
+
+      if (teacherIsAccepted && !existingIsAccepted) {
+        result[existingIndex] = teacher;
+      }
+
+      return result;
+    }, []);
+
+    setTeachers(uniqueTeachers);
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -86,13 +109,45 @@ export default function TeacherManagement() {
     storage.setUsers(users);
 
     loadTeachers();
+    loadClasses();
     setShowModal(false);
     setName('');
     setEmail('');
   };
 
-  const getTeacherClasses = (teacherId: string) => {
-    return classes.filter((classItem) => classItem.teacherId === teacherId);
+  const getTeacherClasses = (teacher: User) => {
+    const allUsers = storage.getUsers();
+
+    const matchingTeacherIds = allUsers
+      .filter((storedUser) => {
+        return (
+          storedUser.role === 'teacher' &&
+          storedUser.email.toLowerCase() === teacher.email.toLowerCase()
+        );
+      })
+      .map((storedUser) => storedUser.id);
+
+    return classes.filter((classItem) => {
+      return matchingTeacherIds.includes(classItem.teacherId);
+    });
+  };
+
+  const isTeacherActive = (teacher: User, teacherClasses: Class[]) => {
+    const allUsers = storage.getUsers();
+
+    const matchingTeacherAccounts = allUsers.filter((storedUser) => {
+      return (
+        storedUser.role === 'teacher' &&
+        storedUser.email.toLowerCase() === teacher.email.toLowerCase()
+      );
+    });
+
+    return (
+      teacherClasses.length > 0 ||
+      matchingTeacherAccounts.some((storedUser) => {
+        return storedUser.invitationStatus === 'accepted' || !!storedUser.lastLoginAt;
+      })
+    );
   };
 
   return (
@@ -146,13 +201,12 @@ export default function TeacherManagement() {
 
             <tbody>
               {teachers.map((teacher) => {
-                const teacherClasses = getTeacherClasses(teacher.id);
-                const active =
-                  teacher.invitationStatus === 'accepted' || teacherClasses.length > 0;
+                const teacherClasses = getTeacherClasses(teacher);
+                const active = isTeacherActive(teacher, teacherClasses);
 
                 return (
                   <tr
-                    key={teacher.id}
+                    key={`${teacher.id}-${teacher.email}`}
                     className="border-b border-light-gray/50 hover:bg-cream/30 transition-colors"
                   >
                     <td className="py-3 px-4 font-body text-sm text-charcoal">
@@ -238,7 +292,7 @@ export default function TeacherManagement() {
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(event) => setName(event.target.value)}
                   placeholder="Teacher Name"
                   className="w-full px-4 py-3 rounded-[10px] border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none"
                   required
@@ -247,7 +301,7 @@ export default function TeacherManagement() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="Email Address"
                   className="w-full px-4 py-3 rounded-[10px] border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none"
                   required
