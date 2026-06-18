@@ -26,15 +26,12 @@ export default function TeacherDashboard() {
   const [showPanel, setShowPanel] = useState(false);
 
   const [inviteAccepted, setInviteAccepted] = useState(
-    user?.invitationStatus === 'accepted' || !user?.invitationStatus
+    user?.invitationStatus === 'accepted'
   );
 
   useEffect(() => {
     if (!user) return;
-
-    setInviteAccepted(
-      user.invitationStatus === 'accepted' || !user.invitationStatus
-    );
+    setInviteAccepted(user.invitationStatus === 'accepted');
   }, [user]);
 
   useEffect(() => {
@@ -55,7 +52,7 @@ export default function TeacherDashboard() {
     if (!user) return;
 
     const users = storage.getUsers();
-    const index = users.findIndex((u) => u.id === user.id);
+    const index = users.findIndex((storedUser) => storedUser.id === user.id);
 
     if (index === -1) return;
 
@@ -219,7 +216,7 @@ export default function TeacherDashboard() {
                   <input
                     type="text"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search students..."
                     className="w-full pl-9 pr-4 py-2 rounded-lg border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none"
                   />
@@ -397,10 +394,10 @@ export default function TeacherDashboard() {
                       <input
                         type="text"
                         value={noteText}
-                        onChange={(e) => setNoteText(e.target.value)}
+                        onChange={(event) => setNoteText(event.target.value)}
                         placeholder="Add a note..."
                         className="flex-1 px-3 py-2 rounded-lg border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none"
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
+                        onKeyDown={(event) => event.key === 'Enter' && handleAddNote()}
                       />
 
                       <button
