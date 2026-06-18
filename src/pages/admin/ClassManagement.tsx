@@ -37,18 +37,28 @@ export default function ClassManagement() {
     const currentAdmin = users.find((storedUser) => storedUser.id === user?.id);
     const currentSchoolId = currentAdmin?.schoolId || user?.schoolId;
 
+    const allClasses = storage.getClasses();
+
+    const alreadyAssignedTeacherIds = new Set(
+      allClasses
+        .map((classItem) => classItem.teacherId)
+        .filter(Boolean)
+    );
+
     const acceptedTeachersForSchool = users.filter((teacher) => {
       return (
         teacher.role === 'teacher' &&
         teacher.invitationStatus === 'accepted' &&
-        teacher.schoolId === currentSchoolId
+        teacher.schoolId === currentSchoolId &&
+        !alreadyAssignedTeacherIds.has(teacher.id)
       );
     });
 
     const allAcceptedTeachers = users.filter((teacher) => {
       return (
         teacher.role === 'teacher' &&
-        teacher.invitationStatus === 'accepted'
+        teacher.invitationStatus === 'accepted' &&
+        !alreadyAssignedTeacherIds.has(teacher.id)
       );
     });
 
@@ -104,6 +114,7 @@ export default function ClassManagement() {
 
       closeModal();
       await loadClasses();
+      loadTeachers();
     } catch (err: any) {
       setError(err?.message || 'Unable to create class. Please try again.');
     } finally {
@@ -280,7 +291,7 @@ export default function ClassManagement() {
 
                   {teachers.length === 0 && (
                     <p className="font-body text-xs text-medium-gray mt-2">
-                      No accepted teachers yet. Send an invite from Teachers, then the teacher must accept it in their portal.
+                      No available accepted teachers. Invite a teacher, let them accept, or unassign a teacher from another class.
                     </p>
                   )}
                 </div>
