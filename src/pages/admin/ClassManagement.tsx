@@ -9,12 +9,15 @@ import type { Class, User } from '@/types';
 
 export default function ClassManagement() {
   const { user } = useAuth();
+
   const [classes, setClasses] = useState<Class[]>([]);
   const [teachers, setTeachers] = useState<User[]>([]);
   const [showModal, setShowModal] = useState(false);
+
   const [grade, setGrade] = useState(1);
   const [section, setSection] = useState('A');
   const [teacherId, setTeacherId] = useState('');
+
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -24,23 +27,23 @@ export default function ClassManagement() {
   }, [user]);
 
   const loadClasses = async () => {
-    const c = await getClasses();
-    setClasses(c);
+    const allClasses = await getClasses();
+    setClasses(allClasses);
   };
 
   const loadTeachers = () => {
-    const allUsers = storage.getUsers();
-
-    const invitedTeachers = allUsers.filter((u) => {
-      if (u.role !== 'teacher') return false;
-      if (!user?.schoolId) return true;
-      return u.schoolId === user.schoolId;
+    const acceptedTeachers = storage.getUsers().filter((teacher) => {
+      return (
+        teacher.role === 'teacher' &&
+        teacher.schoolId === user?.schoolId &&
+        teacher.invitationStatus === 'accepted'
+      );
     });
 
-    setTeachers(invitedTeachers);
+    setTeachers(acceptedTeachers);
   };
 
-  const resetModal = () => {
+  const resetForm = () => {
     setGrade(1);
     setSection('A');
     setTeacherId('');
@@ -49,18 +52,19 @@ export default function ClassManagement() {
   };
 
   const openModal = () => {
-    resetModal();
+    resetForm();
     loadTeachers();
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
-    resetModal();
+    resetForm();
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setError('');
     setCreating(true);
 
@@ -92,20 +96,29 @@ export default function ClassManagement() {
   };
 
   const getClassStats = (classId: string) => {
-    const students = storage.getStudents().filter((s) => s.classId === classId);
-    const reports = storage.getReportCards().filter((r) => r.classId === classId);
-    return { studentCount: students.length, reportCount: reports.length };
+    const students = storage.getStudents().filter((student) => student.classId === classId);
+    const reports = storage.getReportCards().filter((report) => report.classId === classId);
+
+    return {
+      studentCount: students.length,
+      reportCount: reports.length,
+    };
   };
 
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <Link to="/admin" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
+        <Link
+          to="/admin"
+          className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"
+        >
           <ArrowLeft size={14} /> Back to Dashboard
         </Link>
 
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-display text-2xl md:text-4xl text-charcoal">Classes & Sections</h2>
+          <h2 className="font-display text-2xl md:text-4xl text-charcoal">
+            Classes & Sections
+          </h2>
 
           <button
             onClick={openModal}
@@ -117,20 +130,26 @@ export default function ClassManagement() {
       </motion.div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {classes.map((cls, i) => {
-          const stats = getClassStats(cls.id);
-          const teacher = getUserById(cls.teacherId);
+        {classes.map((classItem, index) => {
+          const stats = getClassStats(classItem.id);
+          const teacher = getUserById(classItem.teacherId);
 
           return (
             <motion.div
-              key={cls.id}
+              key={classItem.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.08 }}
+              transition={{ delay: 0.1 + index * 0.08 }}
               className="bg-white rounded-2xl shadow-card p-6"
             >
-              <h3 className="font-display text-xl text-charcoal mb-1">Grade {cls.grade}</h3>
-              <p className="label-text text-medium-gray mb-4">Section {cls.section}</p>
+              <h3 className="font-display text-xl text-charcoal mb-1">
+                Grade {classItem.grade}
+              </h3>
+
+              <p className="label-text text-medium-gray mb-4">
+                Section {classItem.section}
+              </p>
+
               <p className="font-body text-sm text-medium-gray mb-4">
                 Teacher: {teacher?.fullName || 'Not assigned'}
               </p>
@@ -138,14 +157,22 @@ export default function ClassManagement() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-cream rounded-xl p-3 text-center">
                   <Users size={14} className="mx-auto text-coral mb-1" />
-                  <p className="font-display text-lg text-charcoal">{stats.studentCount}</p>
-                  <p className="font-body text-[10px] text-medium-gray">Students</p>
+                  <p className="font-display text-lg text-charcoal">
+                    {stats.studentCount}
+                  </p>
+                  <p className="font-body text-[10px] text-medium-gray">
+                    Students
+                  </p>
                 </div>
 
                 <div className="bg-cream rounded-xl p-3 text-center">
                   <FileText size={14} className="mx-auto text-coral mb-1" />
-                  <p className="font-display text-lg text-charcoal">{stats.reportCount}</p>
-                  <p className="font-body text-[10px] text-medium-gray">Reports</p>
+                  <p className="font-display text-lg text-charcoal">
+                    {stats.reportCount}
+                  </p>
+                  <p className="font-body text-[10px] text-medium-gray">
+                    Reports
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -161,7 +188,10 @@ export default function ClassManagement() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm" onClick={closeModal} />
+            <div
+              className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm"
+              onClick={closeModal}
+            />
 
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -176,21 +206,24 @@ export default function ClassManagement() {
                 <X size={14} />
               </button>
 
-              <h3 className="font-display text-2xl text-charcoal mb-6">Add New Class</h3>
+              <h3 className="font-display text-2xl text-charcoal mb-6">
+                Add New Class
+              </h3>
 
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
                   <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
                     Grade
                   </label>
+
                   <select
                     value={grade}
                     onChange={(e) => setGrade(Number(e.target.value))}
                     className="w-full px-4 py-3 rounded-[10px] border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none"
                   >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
-                      <option key={g} value={g}>
-                        Grade {g}
+                    {Array.from({ length: 12 }, (_, index) => index + 1).map((gradeNumber) => (
+                      <option key={gradeNumber} value={gradeNumber}>
+                        Grade {gradeNumber}
                       </option>
                     ))}
                   </select>
@@ -200,6 +233,7 @@ export default function ClassManagement() {
                   <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
                     Section
                   </label>
+
                   <input
                     type="text"
                     value={section}
@@ -213,12 +247,14 @@ export default function ClassManagement() {
                   <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
                     Assign class teacher
                   </label>
+
                   <select
                     value={teacherId}
                     onChange={(e) => setTeacherId(e.target.value)}
                     className="w-full px-4 py-3 rounded-[10px] border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none"
                   >
                     <option value="">No teacher assigned</option>
+
                     {teachers.map((teacher) => (
                       <option key={teacher.id} value={teacher.id}>
                         {teacher.fullName} - {teacher.email}
@@ -228,7 +264,7 @@ export default function ClassManagement() {
 
                   {teachers.length === 0 && (
                     <p className="font-body text-xs text-medium-gray mt-2">
-                      No invited teachers found yet. Invite teachers first, then assign them here.
+                      No accepted teachers yet. Send an invite from Teachers, then the teacher must accept it in their portal.
                     </p>
                   )}
                 </div>
