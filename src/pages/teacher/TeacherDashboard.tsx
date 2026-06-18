@@ -8,6 +8,8 @@ import { storage } from '@/api/storage';
 import FlagBadge from '@/components/shared/FlagBadge';
 import type { Student, SubjectGrade, TeacherNote } from '@/types';
 
+type InviteStatus = 'none' | 'pending' | 'accepted';
+
 export default function TeacherDashboard() {
   const { user } = useAuth();
 
@@ -25,18 +27,18 @@ export default function TeacherDashboard() {
   const [noteText, setNoteText] = useState('');
   const [showPanel, setShowPanel] = useState(false);
 
-  const [inviteAccepted, setInviteAccepted] = useState(
-    user?.invitationStatus === 'accepted'
+  const [inviteStatus, setInviteStatus] = useState<InviteStatus>(
+    (user?.invitationStatus as InviteStatus) || 'none'
   );
 
   useEffect(() => {
     if (!user) return;
-    setInviteAccepted(user.invitationStatus === 'accepted');
+    setInviteStatus((user.invitationStatus as InviteStatus) || 'none');
   }, [user]);
 
   useEffect(() => {
     async function load() {
-      if (!user || !inviteAccepted) return;
+      if (!user || inviteStatus !== 'accepted') return;
 
       const dashboardStats = await getTeacherDashboard();
       setStats(dashboardStats);
@@ -46,7 +48,7 @@ export default function TeacherDashboard() {
     }
 
     load();
-  }, [user, inviteAccepted]);
+  }, [user, inviteStatus]);
 
   const acceptInvite = () => {
     if (!user) return;
@@ -64,7 +66,7 @@ export default function TeacherDashboard() {
     };
 
     storage.setUsers(users);
-    setInviteAccepted(true);
+    setInviteStatus('accepted');
   };
 
   const filteredStudents = students.filter((student) =>
@@ -135,7 +137,7 @@ export default function TeacherDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
-      {!inviteAccepted && user && (
+      {inviteStatus === 'pending' && user && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -160,15 +162,15 @@ export default function TeacherDashboard() {
         </motion.div>
       )}
 
-      {!inviteAccepted && (
+      {inviteStatus === 'none' && (
         <div className="bg-cream border border-light-gray rounded-2xl p-6">
           <p className="font-body text-medium-gray">
-            Your teacher dashboard will appear after you accept the school request.
+            No school invitation yet. Ask your school admin to send an invitation to your signup email.
           </p>
         </div>
       )}
 
-      {inviteAccepted && (
+      {inviteStatus === 'accepted' && (
         <>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             <h2 className="font-display text-2xl md:text-4xl text-charcoal mb-1">
