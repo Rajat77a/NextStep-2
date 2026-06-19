@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { AnimatePresence, motion, useInView, useMotionValue, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight, Upload, Brain, FileText, Heart,
   Users, Building, ChevronLeft, ChevronRight, Menu, X, Check, Calendar
@@ -31,6 +31,26 @@ const subjectRows = [
   { subject: 'Hindi', status: 'Watch', color: 'bg-amber' },
 ];
 
+const scriptRows = [
+  { label: 'Instead of:', text: 'How did you get a C in Science?' },
+  { label: 'Try:', text: 'Which subject felt hardest this term, and why?' },
+  { label: 'Instead of:', text: 'You need to study more.' },
+  { label: 'Try:', text: 'What would make it easier to focus at home?' },
+];
+
+const planRows = [
+  { week: 'Week 1', text: 'Ask your child one question about their day at dinner. 5 minutes.' },
+  { week: 'Week 2', text: 'Read one page together before bed, 3x a week.' },
+  { week: 'Week 3', text: 'Let your child teach you something they learned this week.' },
+  { week: 'Week 4', text: 'Check in with the teacher - share one thing that improved.' },
+];
+
+const teacherWatchRows = [
+  { name: 'Aarav M.', subject: 'English', color: 'bg-coral' },
+  { name: 'Maya S.', subject: 'Science', color: 'bg-amber' },
+  { name: 'Rohan I.', subject: 'Math', color: 'bg-amber' },
+];
+
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement | null>(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
@@ -59,31 +79,36 @@ function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
 }
 
 function TiltCard({ children, className = '' }: { children: ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement | null>(null);
   const shouldReduceMotion = useReducedMotion();
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], [6, -6]);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-6, 6]);
 
   function handleMove(event: MouseEvent<HTMLDivElement>) {
-    if (shouldReduceMotion || !ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
+    if (shouldReduceMotion) return;
+    const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width - 0.5;
     const y = (event.clientY - rect.top) / rect.height - 0.5;
-    ref.current.style.transform = `perspective(900px) rotateX(${y * -8}deg) rotateY(${x * 8}deg) translateY(-4px)`;
+    mouseX.set(x);
+    mouseY.set(y);
   }
 
   function handleLeave() {
-    if (!ref.current) return;
-    ref.current.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0)';
+    mouseX.set(0);
+    mouseY.set(0);
   }
 
   return (
-    <div
-      ref={ref}
+    <motion.div
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className={`will-change-transform transition-transform duration-300 ease-out ${className}`}
+      style={shouldReduceMotion ? undefined : { rotateX, rotateY, transformPerspective: 1000 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className={`will-change-transform ${className}`}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -143,12 +168,102 @@ function ClarityCheckMock() {
   );
 }
 
+function FloatingMockCard({ children }: { children: ReactNode }) {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <TiltCard>
+      <motion.div
+        initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
+        whileInView={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.55, ease: 'easeOut' }}
+      >
+        <motion.div
+          animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
+          transition={shouldReduceMotion ? undefined : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          className="rounded-2xl shadow-card bg-white p-6 md:p-7"
+        >
+          {children}
+        </motion.div>
+      </motion.div>
+    </TiltCard>
+  );
+}
+
+function TonightScriptMock() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <FloatingMockCard>
+      <p className="label-text text-coral mb-1">Tonight's Script</p>
+      <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
+      <motion.div
+        className="space-y-3"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={{ visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.15 } } }}
+      >
+        {scriptRows.map((row, index) => (
+          <motion.div
+            key={`${row.label}-${row.text}`}
+            variants={shouldReduceMotion ? undefined : {
+              hidden: { opacity: 0, y: 18 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4'}`}
+          >
+            <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
+            <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+    </FloatingMockCard>
+  );
+}
+
+function DayPlanMock() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <FloatingMockCard>
+      <p className="label-text text-coral mb-1">Your 30-Day Plan</p>
+      <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
+      <motion.div
+        className="space-y-3"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={{ visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } } }}
+      >
+        {planRows.map((row) => (
+          <motion.div
+            key={row.week}
+            variants={shouldReduceMotion ? undefined : {
+              hidden: { opacity: 0, x: 18 },
+              visible: { opacity: 1, x: 0 },
+            }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
+          >
+            <span className="font-body text-xs font-bold text-coral">{row.week}</span>
+            <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+    </FloatingMockCard>
+  );
+}
+
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
-  const [pausedUntil, setPausedUntil] = useState(0);
+  const [testimonialPaused, setTestimonialPaused] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const testimonialResumeTimer = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const heroRef = useRef<HTMLElement | null>(null);
   const { scrollYProgress } = useScroll({
@@ -172,15 +287,29 @@ export default function LandingPage() {
   useEffect(() => {
     if (shouldReduceMotion) return;
     const timer = window.setInterval(() => {
-      if (Date.now() < pausedUntil) return;
+      if (testimonialPaused) return;
       setTestimonialIdx((current) => (current + 1) % testimonials.length);
     }, 5000);
     return () => window.clearInterval(timer);
-  }, [pausedUntil, shouldReduceMotion]);
+  }, [testimonialPaused, shouldReduceMotion]);
 
-  const pauseTestimonials = () => setPausedUntil(Date.now() + 8000);
+  useEffect(() => {
+    return () => {
+      if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
+    };
+  }, []);
+
+  const pauseTestimonials = () => {
+    if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
+    setTestimonialPaused(true);
+  };
+  const resumeTestimonialsSoon = () => {
+    if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
+    testimonialResumeTimer.current = window.setTimeout(() => setTestimonialPaused(false), 3000);
+  };
   const changeTestimonial = (idx: number) => {
     pauseTestimonials();
+    resumeTestimonialsSoon();
     setTestimonialIdx((idx + testimonials.length) % testimonials.length);
   };
 
@@ -196,9 +325,9 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
-            <a href="#parents" className="nav-text text-medium-gray hover:text-charcoal transition-colors">For Parents</a>
-            <a href="#parents" className="nav-text text-medium-gray hover:text-charcoal transition-colors">For Teachers</a>
-            <a href="#parents" className="nav-text text-medium-gray hover:text-charcoal transition-colors">For Schools</a>
+            <a href="#parents" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">For Parents</a>
+            <a href="#teachers" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">For Teachers</a>
+            <a href="#schools" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">For Schools</a>
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
@@ -217,8 +346,8 @@ export default function LandingPage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-40 bg-charcoal pt-20 px-6 lg:hidden">
           <div className="flex flex-col gap-4">
             <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Parents</a>
-            <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Teachers</a>
-            <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Schools</a>
+            <a href="#teachers" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Teachers</a>
+            <a href="#schools" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Schools</a>
             <div className="border-t border-white/10 pt-4 mt-4 flex flex-col gap-3">
               <Link to="/login" onClick={() => setMobileMenu(false)} className="text-white text-lg font-body">Log In</Link>
               <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3 rounded-[10px] bg-coral text-white text-center">Get Started</Link>
@@ -266,12 +395,16 @@ export default function LandingPage() {
                 className="font-display text-[40px] md:text-[72px] font-medium text-charcoal leading-[1.0] tracking-tight mb-6"
               >
                 Turn your child's report card into your{' '}
-                <span className="relative inline-block text-coral font-semibold">
-                  next move
+                <span className="relative inline-block overflow-hidden align-baseline">
+                  <span className="invisible">next move</span>
                   <motion.span
-                    initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.8, delay: 0.6 }}
-                    className="absolute bottom-1 left-0 right-0 h-[3px] bg-coral origin-left"
-                  />
+                    initial={shouldReduceMotion ? false : { clipPath: 'inset(0 0 0 100%)', x: 14 }}
+                    animate={{ clipPath: 'inset(0 0 0 0%)', x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute inset-0 text-coral font-semibold"
+                  >
+                    next move
+                  </motion.span>
                 </span>
               </motion.h1>
               <motion.p
@@ -382,7 +515,7 @@ export default function LandingPage() {
                     whileInView={shouldReduceMotion ? undefined : 'visible'}
                     viewport={{ once: true, margin: '-80px' }}
                     variants={{
-                      visible: { transition: { staggerChildren: 0.15 } },
+                      visible: { transition: { staggerChildren: 0.12 } },
                     }}
                   >
                     {feature.bullets.map(b => (
@@ -403,6 +536,10 @@ export default function LandingPage() {
                 </div>
                 {feature.label === 'CLARITY CHECK' ? (
                   <ClarityCheckMock />
+                ) : feature.label === "TONIGHT'S CONVERSATION" ? (
+                  <TonightScriptMock />
+                ) : feature.label === '30-DAY PLAN' ? (
+                  <DayPlanMock />
                 ) : (
                   <TiltCard>
                     <div className={`rounded-2xl overflow-hidden shadow-card aspect-[16/10] flex items-center justify-center ${feature.bg === 'cream' ? 'bg-white' : 'bg-card-surface-alt'}`}>
@@ -430,16 +567,100 @@ export default function LandingPage() {
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: <Heart size={32} className="text-coral" />, title: 'For Parents', desc: 'Upload report cards, get AI-powered clarity checks, conversation guides, and personalized 30-day plans.', link: '/signup', cta: 'Enter Parent Portal' },
-              { icon: <Users size={32} className="text-coral" />, title: 'For Teachers', desc: 'See class-wide patterns, identify students who need attention, and track academic trends across terms.', link: '/signup', cta: 'Enter Teacher Portal' },
-              { icon: <Building size={32} className="text-coral" />, title: 'For Schools', desc: 'Manage classes, student rosters, teacher assignments, and monitor school-wide academic health.', link: '/signup', cta: 'Enter Admin Portal' },
+              { id: 'community-parents', icon: <Heart size={32} className="text-coral" />, title: 'For Parents', desc: 'Upload report cards, get AI-powered clarity checks, conversation guides, and personalized 30-day plans.', link: '/signup', cta: 'Enter Parent Portal' },
+              { id: 'teachers', icon: <Users size={32} className="text-coral" />, title: 'For Teachers', desc: 'See class-wide patterns, identify students who need attention, and track academic trends across terms.', link: '/signup', cta: 'Enter Teacher Portal' },
+              { id: 'schools', icon: <Building size={32} className="text-coral" />, title: 'For Schools', desc: 'Manage classes, student rosters, teacher assignments, and monitor school-wide academic health.', link: '/signup', cta: 'Enter Admin Portal' },
             ].map((role, i) => (
               <ScrollReveal key={role.title} delay={i * 0.12}>
                 <TiltCard>
-                  <Link to={role.link} className="block bg-dark-surface border border-white/[0.08] rounded-2xl p-8 hover:border-white/[0.15] transition-all duration-300 group">
+                  <Link id={role.id} to={role.link} className="block bg-dark-surface border border-white/[0.08] rounded-2xl p-8 hover:border-white/[0.15] transition-all duration-300 group scroll-mt-28">
                     {role.icon}
                     <h3 className="font-display text-2xl font-medium text-white mt-4 mb-2">{role.title}</h3>
                     <p className="font-body text-white/60 mb-6 leading-relaxed">{role.desc}</p>
+                    {role.title === 'For Teachers' && (
+                      <div className="space-y-4 mb-6">
+                        <ul className="space-y-2">
+                          {[
+                            'See which subjects are flagged across your whole class',
+                            'Auto-surfaced list of students who need attention',
+                            'Add context notes that parents see alongside the AI guidance',
+                          ].map((item) => (
+                            <li key={item} className="flex items-start gap-2 font-body text-sm text-white/70">
+                              <Check size={14} className="text-sage mt-0.5 flex-shrink-0" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                          <p className="label-text text-coral mb-3">Students to Watch</p>
+                          <motion.div
+                            className="space-y-2"
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, margin: '-80px' }}
+                            variants={{ visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } } }}
+                          >
+                            {teacherWatchRows.map((student) => (
+                              <motion.div
+                                key={student.name}
+                                variants={shouldReduceMotion ? undefined : {
+                                  hidden: { opacity: 0, x: 14 },
+                                  visible: { opacity: 1, x: 0 },
+                                }}
+                                className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2"
+                              >
+                                <span className="font-body text-sm text-white/80">{student.name}</span>
+                                <span className="flex items-center gap-2 font-body text-xs text-white/50">
+                                  <span className={`w-2 h-2 rounded-full ${student.color}`} />
+                                  {student.subject}
+                                </span>
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        </div>
+                      </div>
+                    )}
+                    {role.title === 'For Schools' && (
+                      <div className="space-y-4 mb-6">
+                        <ul className="space-y-2">
+                          {[
+                            'Bulk upload report cards for the whole school',
+                            'School-wide flag distribution dashboard',
+                            'Embed parent guidance directly into your existing parent portal',
+                          ].map((item) => (
+                            <li key={item} className="flex items-start gap-2 font-body text-sm text-white/70">
+                              <Check size={14} className="text-sage mt-0.5 flex-shrink-0" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <motion.div
+                          className="grid grid-cols-3 gap-2"
+                          initial="hidden"
+                          whileInView="visible"
+                          viewport={{ once: true, margin: '-80px' }}
+                          variants={{ visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } } }}
+                        >
+                          {[
+                            ['45', 'Students'],
+                            ['3', 'Classes'],
+                            ['12', 'Flagged'],
+                          ].map(([value, label]) => (
+                            <motion.div
+                              key={label}
+                              variants={shouldReduceMotion ? undefined : {
+                                hidden: { opacity: 0, y: 14 },
+                                visible: { opacity: 1, y: 0 },
+                              }}
+                              className="rounded-xl bg-white/5 border border-white/10 p-3 text-center"
+                            >
+                              <p className="font-display text-2xl text-white mb-1">{value}</p>
+                              <p className="font-body text-[11px] text-white/50">{label}</p>
+                            </motion.div>
+                          ))}
+                        </motion.div>
+                      </div>
+                    )}
                     <span className="font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-3 transition-all">
                       {role.cta} <ArrowRight size={14} />
                     </span>
@@ -451,42 +672,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Teacher and School Anchors */}
-      <section id="teachers" className="py-20 md:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <ScrollReveal>
-            <div className="rounded-2xl bg-card-surface-alt shadow-card p-8 md:p-12">
-              <p className="label-text text-coral mb-3">For Teachers</p>
-              <h2 className="font-display text-[32px] md:text-[52px] font-medium text-charcoal mb-4">Give your class-wide insights a home.</h2>
-              <p className="font-body text-lg text-charcoal/70 max-w-2xl">
-                Teachers on NextStep.AI see patterns across students, not just individual report cards.
-              </p>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      <section id="schools" className="py-20 md:py-24 bg-cream">
-        <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <ScrollReveal>
-            <div className="rounded-2xl bg-white shadow-card p-8 md:p-12">
-              <p className="label-text text-coral mb-3">For Schools</p>
-              <h2 className="font-display text-[32px] md:text-[52px] font-medium text-charcoal mb-4">Offer parents clarity at scale.</h2>
-              <p className="font-body text-lg text-charcoal/70 max-w-2xl">
-                Schools use NextStep.AI to turn report card season into a parent engagement opportunity.
-              </p>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
       {/* Testimonials */}
       <section className="py-20 md:py-28 bg-cream">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
           <ScrollReveal>
             <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">What parents are saying</h2>
           </ScrollReveal>
-          <div className="relative" onMouseEnter={pauseTestimonials} onMouseMove={pauseTestimonials}>
+          <div className="relative" onMouseEnter={pauseTestimonials} onMouseLeave={resumeTestimonialsSoon}>
             <div className="relative min-h-[330px] md:min-h-[280px]">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -523,7 +715,7 @@ export default function LandingPage() {
                 <motion.button
                   key={i}
                   onClick={() => changeTestimonial(i)}
-                  animate={{ scale: i === testimonialIdx ? 1.45 : 1 }}
+                  animate={{ scale: i === testimonialIdx ? 1.3 : 1, opacity: i === testimonialIdx ? 1 : 0.55 }}
                   transition={{ duration: 0.35, ease: 'easeOut' }}
                   className={`w-2 h-2 rounded-full transition-colors ${i === testimonialIdx ? 'bg-coral' : 'bg-light-gray'}`}
                 />
