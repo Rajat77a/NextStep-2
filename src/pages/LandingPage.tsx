@@ -116,51 +116,42 @@ function ClarityCheckMock() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div>
-      <motion.div
-        initial={shouldReduceMotion ? false : { opacity: 0, y: 26 }}
-        whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-80px' }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div className="rounded-2xl shadow-card bg-white p-6 md:p-7">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="label-text text-coral mb-1">Clarity Check</p>
-              <h4 className="font-display text-2xl font-medium text-charcoal">Term 2</h4>
-            </div>
-            <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
-          </div>
-          <motion.div
-            className="space-y-3"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-80px' }}
-            variants={{
-              visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } },
-            }}
-          >
-            {subjectRows.map((row) => (
-              <motion.div
-                key={row.subject}
-                variants={shouldReduceMotion ? undefined : {
-                  hidden: { opacity: 0, x: 18 },
-                  visible: { opacity: 1, x: 0 },
-                }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="flex items-center justify-between rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`w-2.5 h-2.5 rounded-full ${row.color}`} />
-                  <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
-                </div>
-                <span className="font-body text-xs font-semibold text-charcoal/60">{row.status}</span>
-              </motion.div>
-            ))}
-          </motion.div>
+    <FloatingMockCard>
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <p className="label-text text-coral mb-1">Clarity Check</p>
+          <h4 className="font-display text-2xl font-medium text-charcoal">Term 2</h4>
         </div>
+        <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
+      </div>
+      <motion.div
+        className="space-y-3"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={{
+          visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } },
+        }}
+      >
+        {subjectRows.map((row) => (
+          <motion.div
+            key={row.subject}
+            variants={shouldReduceMotion ? undefined : {
+              hidden: { opacity: 0, x: 18 },
+              visible: { opacity: 1, x: 0 },
+            }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="flex items-center justify-between rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
+          >
+            <div className="flex items-center gap-3">
+              <span className={`w-2.5 h-2.5 rounded-full ${row.color}`} />
+              <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
+            </div>
+            <span className="font-body text-xs font-semibold text-charcoal/60">{row.status}</span>
+          </motion.div>
+        ))}
       </motion.div>
-    </div>
+    </FloatingMockCard>
   );
 }
 
@@ -175,13 +166,12 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.55, ease: 'easeOut' }}
       >
-        <motion.div
-          animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
-          transition={shouldReduceMotion ? undefined : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          className="rounded-2xl shadow-card bg-white p-6 md:p-7"
+        <div
+          dir="ltr"
+          className="smooth-float rounded-2xl shadow-card bg-white p-6 md:p-7 text-left"
         >
           {children}
-        </motion.div>
+        </div>
       </motion.div>
     </TiltCard>
   );

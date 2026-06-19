@@ -139,11 +139,28 @@
   .gradient-coral {
     background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
   }
+
+  .smooth-float {
+    animation: smooth-float 7s ease-in-out infinite;
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@keyframes smooth-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -6px, 0);
   }
 }
 
