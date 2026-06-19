@@ -54,12 +54,13 @@ export const storage = {
   getPlanProgress: (): PlanProgress[] => getItem<PlanProgress[]>(KEYS.planProgress, []),
   setPlanProgress: (progress: PlanProgress[]) => setItem(KEYS.planProgress, progress),
 
-  getToken: (): string | null => localStorage.getItem(KEYS.token),
-  setToken: (token: string) => localStorage.setItem(KEYS.token, token),
-  clearToken: () => localStorage.removeItem(KEYS.token),
+  getToken: (): string | null => sessionStorage.getItem(KEYS.token),
+  setToken: (token: string) => sessionStorage.setItem(KEYS.token, token),
+  clearToken: () => sessionStorage.removeItem(KEYS.token),
 
   clearAll: () => {
-    Object.values(KEYS).forEach(key => localStorage.removeItem(key));
+    Object.values(KEYS).forEach((key) => localStorage.removeItem(key));
+    sessionStorage.removeItem(KEYS.token);
   },
 };
 
