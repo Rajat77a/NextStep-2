@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight, Upload, Brain, FileText, Heart,
   Users, Building, ChevronLeft, ChevronRight, Menu, X, Check, Calendar
@@ -23,17 +23,166 @@ const faqs = [
   { q: 'What if my child\'s school isn\'t using NextStep.AI?', a: 'Parents can use NextStep.AI independently. Simply upload your child\'s report card and select their school board. All features work the same way.' },
 ];
 
+const subjectRows = [
+  { subject: 'Mathematics', status: 'On Track', color: 'bg-sage' },
+  { subject: 'Science', status: 'Watch', color: 'bg-amber' },
+  { subject: 'English', status: 'Address', color: 'bg-coral' },
+  { subject: 'Social Studies', status: 'On Track', color: 'bg-sage' },
+  { subject: 'Hindi', status: 'Watch', color: 'bg-amber' },
+];
+
+function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  const shouldReduceMotion = useReducedMotion();
+  const [count, setCount] = useState(shouldReduceMotion ? value : 0);
+
+  useEffect(() => {
+    if (!isInView || shouldReduceMotion) {
+      if (shouldReduceMotion) setCount(value);
+      return;
+    }
+
+    let frame = 0;
+    const frames = 48;
+    const timer = window.setInterval(() => {
+      frame += 1;
+      const progress = 1 - Math.pow(1 - frame / frames, 3);
+      setCount(Math.round(value * progress));
+      if (frame >= frames) window.clearInterval(timer);
+    }, 24);
+
+    return () => window.clearInterval(timer);
+  }, [isInView, shouldReduceMotion, value]);
+
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
+
+function TiltCard({ children, className = '' }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const shouldReduceMotion = useReducedMotion();
+
+  function handleMove(event: MouseEvent<HTMLDivElement>) {
+    if (shouldReduceMotion || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    ref.current.style.transform = `perspective(900px) rotateX(${y * -8}deg) rotateY(${x * 8}deg) translateY(-4px)`;
+  }
+
+  function handleLeave() {
+    if (!ref.current) return;
+    ref.current.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0)';
+  }
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      className={`will-change-transform transition-transform duration-300 ease-out ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ClarityCheckMock() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <TiltCard>
+      <motion.div
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 26 }}
+        whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <motion.div
+          animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
+          transition={shouldReduceMotion ? undefined : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          className="rounded-2xl shadow-card bg-white p-6 md:p-7"
+        >
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="label-text text-coral mb-1">Clarity Check</p>
+              <h4 className="font-display text-2xl font-medium text-charcoal">Term 2</h4>
+            </div>
+            <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
+          </div>
+          <motion.div
+            className="space-y-3"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-80px' }}
+            variants={{
+              visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } },
+            }}
+          >
+            {subjectRows.map((row) => (
+              <motion.div
+                key={row.subject}
+                variants={shouldReduceMotion ? undefined : {
+                  hidden: { opacity: 0, x: 18 },
+                  visible: { opacity: 1, x: 0 },
+                }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="flex items-center justify-between rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`w-2.5 h-2.5 rounded-full ${row.color}`} />
+                  <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
+                </div>
+                <span className="font-body text-xs font-semibold text-charcoal/60">{row.status}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </TiltCard>
+  );
+}
+
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
+  const [pausedUntil, setPausedUntil] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const shouldReduceMotion = useReducedMotion();
+  const heroRef = useRef<HTMLElement | null>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+  const heroBgY = useTransform(scrollYProgress, [0, 1], ['0px', '110px']);
+  const heroGlowX = useTransform(scrollYProgress, [0, 1], ['12%', '28%']);
+  const heroGlowY = useTransform(scrollYProgress, [0, 1], ['18%', '38%']);
+  const heroGlowBackground = useTransform(
+    [heroGlowX, heroGlowY],
+    ([x, y]) => `radial-gradient(circle at ${x} ${y}, rgba(232, 93, 62, 0.08), transparent 36%)`
+  );
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handler);
     return () => window.removeEventListener('scroll', handler);
   }, []);
+
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const timer = window.setInterval(() => {
+      if (Date.now() < pausedUntil) return;
+      setTestimonialIdx((current) => (current + 1) % testimonials.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [pausedUntil, shouldReduceMotion]);
+
+  const pauseTestimonials = () => setPausedUntil(Date.now() + 8000);
+  const changeTestimonial = (idx: number) => {
+    pauseTestimonials();
+    setTestimonialIdx((idx + testimonials.length) % testimonials.length);
+  };
 
   return (
     <div className="min-h-screen bg-cream">
@@ -79,7 +228,30 @@ export default function LandingPage() {
       )}
 
       {/* Hero Section */}
-      <section className="min-h-screen pt-24 md:pt-[72px] flex items-center">
+      <motion.section
+        ref={heroRef}
+        className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden"
+      >
+        {!shouldReduceMotion && (
+          <>
+            <motion.div
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                y: heroBgY,
+                background: 'radial-gradient(circle at 78% 24%, rgba(232, 93, 62, 0.08), transparent 34%)',
+                willChange: 'transform',
+              }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: heroGlowBackground,
+              }}
+            />
+          </>
+        )}
         <div className="max-w-7xl mx-auto px-5 md:px-12 w-full">
           <div className="grid lg:grid-cols-[55%_45%] gap-12 lg:gap-8 items-center">
             <div>
@@ -94,7 +266,7 @@ export default function LandingPage() {
                 className="font-display text-[40px] md:text-[72px] font-medium text-charcoal leading-[1.0] tracking-tight mb-6"
               >
                 Turn your child's report card into your{' '}
-                <span className="relative inline-block">
+                <span className="relative inline-block text-coral font-semibold">
                   next move
                   <motion.span
                     initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.8, delay: 0.6 }}
@@ -130,7 +302,7 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <p className="font-body text-sm text-medium-gray">Join 2,500+ parents getting clarity this term</p>
+                <p className="font-body text-sm text-medium-gray">Join <CountUp value={2500} suffix="+" /> parents getting clarity this term</p>
               </motion.div>
             </div>
 
@@ -161,7 +333,7 @@ export default function LandingPage() {
             </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* How It Works */}
       <section id="how-it-works" className="py-20 md:py-28 bg-white">
@@ -175,7 +347,7 @@ export default function LandingPage() {
               { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} className="text-coral" /> },
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} className="text-coral" /> },
             ].map((step, i) => (
-              <ScrollReveal key={step.num} delay={i * 0.15}>
+              <ScrollReveal key={step.num} delay={i * 0.2}>
                 <div className="text-center md:text-left">
                   <span className="font-display text-[72px] font-normal text-coral/15 leading-none">{step.num}</span>
                   <div className="flex items-center gap-3 mt-2 mb-3">
@@ -191,7 +363,7 @@ export default function LandingPage() {
       </section>
 
       {/* Feature Highlights */}
-      <section className="py-20 md:py-28 bg-cream">
+      <section id="parents" className="py-20 md:py-28 bg-cream">
         <div className="max-w-7xl mx-auto px-5 md:px-12 space-y-24 md:space-y-32">
           {[
             { label: 'CLARITY CHECK', title: "Know what's worth worrying about", desc: "Our AI flags each subject as green, yellow, or red — with gentle, advisory language. No predictions about your child's future. Just clear, actionable insights.", bullets: ['Board-specific grade interpretation', 'Soft, non-judgmental language', 'Teacher comment analysis'], bg: 'cream' },
@@ -204,23 +376,45 @@ export default function LandingPage() {
                   <p className="label-text text-coral mb-3">{feature.label}</p>
                   <h3 className="font-display text-[28px] md:text-[42px] font-normal text-charcoal leading-tight mb-4">{feature.title}</h3>
                   <p className="font-body text-lg text-charcoal/70 leading-relaxed mb-6">{feature.desc}</p>
-                  <ul className="space-y-3">
+                  <motion.ul
+                    className="space-y-3"
+                    initial={shouldReduceMotion ? false : 'hidden'}
+                    whileInView={shouldReduceMotion ? undefined : 'visible'}
+                    viewport={{ once: true, margin: '-80px' }}
+                    variants={{
+                      visible: { transition: { staggerChildren: 0.15 } },
+                    }}
+                  >
                     {feature.bullets.map(b => (
-                      <li key={b} className="flex items-center gap-3">
+                      <motion.li
+                        key={b}
+                        variants={shouldReduceMotion ? undefined : {
+                          hidden: { opacity: 0, y: 18 },
+                          visible: { opacity: 1, y: 0 },
+                        }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
+                        className="flex items-center gap-3"
+                      >
                         <Check size={16} className="text-sage flex-shrink-0" />
                         <span className="font-body text-charcoal/80">{b}</span>
-                      </li>
+                      </motion.li>
                     ))}
-                  </ul>
+                  </motion.ul>
                 </div>
-                <div className={`rounded-2xl overflow-hidden shadow-card aspect-[16/10] flex items-center justify-center ${feature.bg === 'cream' ? 'bg-white' : 'bg-card-surface-alt'}`}>
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 rounded-full bg-coral/10 flex items-center justify-center mx-auto mb-3">
-                      {feature.label === 'CLARITY CHECK' ? <FileText size={24} className="text-coral" /> : feature.label === "TONIGHT'S CONVERSATION" ? <Heart size={24} className="text-coral" /> : <Calendar size={24} className="text-coral" />}
+                {feature.label === 'CLARITY CHECK' ? (
+                  <ClarityCheckMock />
+                ) : (
+                  <TiltCard>
+                    <div className={`rounded-2xl overflow-hidden shadow-card aspect-[16/10] flex items-center justify-center ${feature.bg === 'cream' ? 'bg-white' : 'bg-card-surface-alt'}`}>
+                      <div className="text-center p-8">
+                        <div className="w-16 h-16 rounded-full bg-coral/10 flex items-center justify-center mx-auto mb-3">
+                          {feature.label === "TONIGHT'S CONVERSATION" ? <Heart size={24} className="text-coral" /> : <Calendar size={24} className="text-coral" />}
+                        </div>
+                        <p className="font-display text-lg text-charcoal/80">{feature.title.split(' ').slice(0, 3).join(' ')}...</p>
+                      </div>
                     </div>
-                    <p className="font-display text-lg text-charcoal/80">{feature.title.split(' ').slice(0, 3).join(' ')}...</p>
-                  </div>
-                </div>
+                  </TiltCard>
+                )}
               </div>
             </ScrollReveal>
           ))}
@@ -228,7 +422,7 @@ export default function LandingPage() {
       </section>
 
       {/* Role Entry */}
-      <section id="parents" className="py-20 md:py-28 bg-charcoal">
+      <section className="py-20 md:py-28 bg-charcoal">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
           <ScrollReveal>
             <h2 className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4">Built for everyone in your school community</h2>
@@ -241,17 +435,48 @@ export default function LandingPage() {
               { icon: <Building size={32} className="text-coral" />, title: 'For Schools', desc: 'Manage classes, student rosters, teacher assignments, and monitor school-wide academic health.', link: '/signup', cta: 'Enter Admin Portal' },
             ].map((role, i) => (
               <ScrollReveal key={role.title} delay={i * 0.12}>
-                <Link to={role.link} className="block bg-dark-surface border border-white/[0.08] rounded-2xl p-8 hover:border-white/[0.15] hover:-translate-y-1 transition-all duration-300 group">
-                  {role.icon}
-                  <h3 className="font-display text-2xl font-medium text-white mt-4 mb-2">{role.title}</h3>
-                  <p className="font-body text-white/60 mb-6 leading-relaxed">{role.desc}</p>
-                  <span className="font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-3 transition-all">
-                    {role.cta} <ArrowRight size={14} />
-                  </span>
-                </Link>
+                <TiltCard>
+                  <Link to={role.link} className="block bg-dark-surface border border-white/[0.08] rounded-2xl p-8 hover:border-white/[0.15] transition-all duration-300 group">
+                    {role.icon}
+                    <h3 className="font-display text-2xl font-medium text-white mt-4 mb-2">{role.title}</h3>
+                    <p className="font-body text-white/60 mb-6 leading-relaxed">{role.desc}</p>
+                    <span className="font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-3 transition-all">
+                      {role.cta} <ArrowRight size={14} />
+                    </span>
+                  </Link>
+                </TiltCard>
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Teacher and School Anchors */}
+      <section id="teachers" className="py-20 md:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-5 md:px-12">
+          <ScrollReveal>
+            <div className="rounded-2xl bg-card-surface-alt shadow-card p-8 md:p-12">
+              <p className="label-text text-coral mb-3">For Teachers</p>
+              <h2 className="font-display text-[32px] md:text-[52px] font-medium text-charcoal mb-4">Give your class-wide insights a home.</h2>
+              <p className="font-body text-lg text-charcoal/70 max-w-2xl">
+                Teachers on NextStep.AI see patterns across students, not just individual report cards.
+              </p>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <section id="schools" className="py-20 md:py-24 bg-cream">
+        <div className="max-w-7xl mx-auto px-5 md:px-12">
+          <ScrollReveal>
+            <div className="rounded-2xl bg-white shadow-card p-8 md:p-12">
+              <p className="label-text text-coral mb-3">For Schools</p>
+              <h2 className="font-display text-[32px] md:text-[52px] font-medium text-charcoal mb-4">Offer parents clarity at scale.</h2>
+              <p className="font-body text-lg text-charcoal/70 max-w-2xl">
+                Schools use NextStep.AI to turn report card season into a parent engagement opportunity.
+              </p>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
@@ -261,34 +486,52 @@ export default function LandingPage() {
           <ScrollReveal>
             <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">What parents are saying</h2>
           </ScrollReveal>
-          <div className="relative">
-            <div className="overflow-hidden">
-              <motion.div
-                className="flex gap-6 transition-transform duration-500"
-                animate={{ x: -testimonialIdx * (100 / 3) + '%' }}
-                style={{ width: `${(testimonials.length / 3) * 100}%` }}
-              >
-                {testimonials.map((t, i) => (
-                  <div key={i} className="w-1/3 flex-shrink-0 px-2">
-                    <div className="bg-white rounded-2xl shadow-card p-8 h-full">
-                      <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6">"{t.text}"</p>
-                      <div>
-                        <p className="font-body font-medium text-charcoal">{t.name}</p>
-                        <p className="font-body text-sm text-medium-gray">{t.role}</p>
+          <div className="relative" onMouseEnter={pauseTestimonials} onMouseMove={pauseTestimonials}>
+            <div className="relative min-h-[330px] md:min-h-[280px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={testimonialIdx}
+                  initial={shouldReduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0 }}
+                  transition={{ duration: 0.9, ease: 'easeOut' }}
+                  className="grid md:grid-cols-2 gap-6 absolute inset-0"
+                >
+                  {[0, 1].map((offset) => {
+                    const t = testimonials[(testimonialIdx + offset) % testimonials.length];
+                    return (
+                      <div key={`${testimonialIdx}-${t.name}`} className="bg-white rounded-2xl shadow-card p-8 h-full">
+                        <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6">"{t.text}"</p>
+                        <div>
+                          <p className="font-body font-medium text-charcoal">{t.name}</p>
+                          <p className="font-body text-sm text-medium-gray">{t.role}</p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
+                    );
+                  })}
+                </motion.div>
+              </AnimatePresence>
             </div>
             <div className="flex items-center justify-center gap-3 mt-8">
-              <button onClick={() => setTestimonialIdx(Math.max(0, testimonialIdx - 1))} disabled={testimonialIdx === 0} className="w-10 h-10 rounded-full bg-white border border-light-gray flex items-center justify-center disabled:opacity-30 hover:bg-cream transition-colors">
+              <button
+                onClick={() => changeTestimonial(testimonialIdx - 1)}
+                className="w-10 h-10 rounded-full bg-white border border-light-gray flex items-center justify-center hover:bg-cream transition-colors"
+              >
                 <ChevronLeft size={16} />
               </button>
               {testimonials.map((_, i) => (
-                <button key={i} onClick={() => setTestimonialIdx(i)} className={`w-2 h-2 rounded-full transition-colors ${i === testimonialIdx ? 'bg-coral' : 'bg-light-gray'}`} />
+                <motion.button
+                  key={i}
+                  onClick={() => changeTestimonial(i)}
+                  animate={{ scale: i === testimonialIdx ? 1.45 : 1 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                  className={`w-2 h-2 rounded-full transition-colors ${i === testimonialIdx ? 'bg-coral' : 'bg-light-gray'}`}
+                />
               ))}
-              <button onClick={() => setTestimonialIdx(Math.min(testimonials.length - 1, testimonialIdx + 1))} disabled={testimonialIdx === testimonials.length - 1} className="w-10 h-10 rounded-full bg-white border border-light-gray flex items-center justify-center disabled:opacity-30 hover:bg-cream transition-colors">
+              <button
+                onClick={() => changeTestimonial(testimonialIdx + 1)}
+                className="w-10 h-10 rounded-full bg-white border border-light-gray flex items-center justify-center hover:bg-cream transition-colors"
+              >
                 <ChevronRight size={16} />
               </button>
             </div>
