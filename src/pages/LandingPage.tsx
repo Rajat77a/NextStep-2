@@ -45,10 +45,34 @@ const planRows = [
   { week: 'Week 4', text: 'Check in with the teacher - share one thing that improved.' },
 ];
 
-const teacherWatchRows = [
-  { name: 'Aarav M.', subject: 'English', color: 'bg-coral' },
-  { name: 'Maya S.', subject: 'Science', color: 'bg-amber' },
-  { name: 'Rohan I.', subject: 'Math', color: 'bg-amber' },
+const portalCards = [
+  {
+    id: 'community-parents',
+    icon: <Heart size={32} className="text-coral" />,
+    title: 'For Parents',
+    desc: 'Upload report cards, get AI-powered clarity checks, conversation guides, and personalized 30-day plans.',
+    link: '/signup',
+    cta: 'Enter Parent Portal',
+    points: ['Private child summary', 'Teacher questions ready', '30-day home plan'],
+  },
+  {
+    id: 'teachers',
+    icon: <Users size={32} className="text-coral" />,
+    title: 'For Teachers',
+    desc: 'See class-wide patterns, identify students who need attention, and track academic trends across terms.',
+    link: '/signup',
+    cta: 'Enter Teacher Portal',
+    points: ['Class-wide flags', 'Students to watch', 'Context notes'],
+  },
+  {
+    id: 'schools',
+    icon: <Building size={32} className="text-coral" />,
+    title: 'For Schools',
+    desc: 'Manage classes, student rosters, teacher assignments, and monitor school-wide academic health.',
+    link: '/signup',
+    cta: 'Enter Admin Portal',
+    points: ['Bulk uploads', 'School-wide dashboard', 'Parent engagement'],
+  },
 ];
 
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
@@ -311,9 +335,9 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
-            <a href="#parents" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">For Parents</a>
-            <a href="#teachers" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">For Teachers</a>
-            <a href="#schools" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">For Schools</a>
+            <a href="#how-it-works" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">How It Works</a>
+            <a href="#parents" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">Clarity Check</a>
+            <a href="#stories" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">Parent Stories</a>
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
@@ -331,9 +355,9 @@ export default function LandingPage() {
       {mobileMenu && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-40 bg-charcoal pt-20 px-6 lg:hidden">
           <div className="flex flex-col gap-4">
-            <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Parents</a>
-            <a href="#teachers" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Teachers</a>
-            <a href="#schools" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">For Schools</a>
+            <a href="#how-it-works" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">How It Works</a>
+            <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">Clarity Check</a>
+            <a href="#stories" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">Parent Stories</a>
             <div className="border-t border-white/10 pt-4 mt-4 flex flex-col gap-3">
               <Link to="/login" onClick={() => setMobileMenu(false)} className="text-white text-lg font-body">Log In</Link>
               <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3 rounded-[10px] bg-coral text-white text-center">Get Started</Link>
@@ -552,103 +576,26 @@ export default function LandingPage() {
             <h2 className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4">Built for everyone in your school community</h2>
             <p className="font-body text-lg text-white/60 text-center mb-12">Choose your portal to get started</p>
           </ScrollReveal>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { id: 'community-parents', icon: <Heart size={32} className="text-coral" />, title: 'For Parents', desc: 'Upload report cards, get AI-powered clarity checks, conversation guides, and personalized 30-day plans.', link: '/signup', cta: 'Enter Parent Portal' },
-              { id: 'teachers', icon: <Users size={32} className="text-coral" />, title: 'For Teachers', desc: 'See class-wide patterns, identify students who need attention, and track academic trends across terms.', link: '/signup', cta: 'Enter Teacher Portal' },
-              { id: 'schools', icon: <Building size={32} className="text-coral" />, title: 'For Schools', desc: 'Manage classes, student rosters, teacher assignments, and monitor school-wide academic health.', link: '/signup', cta: 'Enter Admin Portal' },
-            ].map((role, i) => (
+          <div className="grid md:grid-cols-3 gap-6 items-stretch">
+            {portalCards.map((role, i) => (
               <ScrollReveal key={role.title} delay={i * 0.12}>
-                <TiltCard>
-                  <Link id={role.id} to={role.link} className="block bg-dark-surface border border-white/[0.08] rounded-2xl p-8 hover:border-white/[0.15] transition-all duration-300 group scroll-mt-28">
-                    {role.icon}
-                    <h3 className="font-display text-2xl font-medium text-white mt-4 mb-2">{role.title}</h3>
-                    <p className="font-body text-white/60 mb-6 leading-relaxed">{role.desc}</p>
-                    {role.title === 'For Teachers' && (
-                      <div className="space-y-4 mb-6">
-                        <ul className="space-y-2">
-                          {[
-                            'See which subjects are flagged across your whole class',
-                            'Auto-surfaced list of students who need attention',
-                            'Add context notes that parents see alongside the AI guidance',
-                          ].map((item) => (
-                            <li key={item} className="flex items-start gap-2 font-body text-sm text-white/70">
-                              <Check size={14} className="text-sage mt-0.5 flex-shrink-0" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                          <p className="label-text text-coral mb-3">Students to Watch</p>
-                          <motion.div
-                            className="space-y-2"
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, margin: '-80px' }}
-                            variants={{ visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } } }}
-                          >
-                            {teacherWatchRows.map((student) => (
-                              <motion.div
-                                key={student.name}
-                                variants={shouldReduceMotion ? undefined : {
-                                  hidden: { opacity: 0, x: 14 },
-                                  visible: { opacity: 1, x: 0 },
-                                }}
-                                className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2"
-                              >
-                                <span className="font-body text-sm text-white/80">{student.name}</span>
-                                <span className="flex items-center gap-2 font-body text-xs text-white/50">
-                                  <span className={`w-2 h-2 rounded-full ${student.color}`} />
-                                  {student.subject}
-                                </span>
-                              </motion.div>
-                            ))}
-                          </motion.div>
+                <TiltCard className="h-full">
+                  <Link id={role.id} to={role.link} className="flex h-full min-h-[360px] flex-col bg-dark-surface border border-white/[0.08] rounded-2xl p-8 hover:border-white/[0.15] transition-all duration-300 group scroll-mt-28">
+                    <div className="mb-5 flex items-center justify-between">
+                      {role.icon}
+                      <span className="font-body text-xs font-semibold tracking-[0.22em] text-white/20">0{i + 1}</span>
+                    </div>
+                    <h3 className="font-display text-2xl font-medium text-white mb-3">{role.title}</h3>
+                    <p className="font-body text-white/60 leading-relaxed min-h-[84px]">{role.desc}</p>
+                    <div className="my-6 grid gap-2">
+                      {role.points.map((point) => (
+                        <div key={point} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                          <Check size={14} className="text-sage flex-shrink-0" />
+                          <span className="font-body text-sm text-white/70">{point}</span>
                         </div>
-                      </div>
-                    )}
-                    {role.title === 'For Schools' && (
-                      <div className="space-y-4 mb-6">
-                        <ul className="space-y-2">
-                          {[
-                            'Bulk upload report cards for the whole school',
-                            'School-wide flag distribution dashboard',
-                            'Embed parent guidance directly into your existing parent portal',
-                          ].map((item) => (
-                            <li key={item} className="flex items-start gap-2 font-body text-sm text-white/70">
-                              <Check size={14} className="text-sage mt-0.5 flex-shrink-0" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        <motion.div
-                          className="grid grid-cols-3 gap-2"
-                          initial="hidden"
-                          whileInView="visible"
-                          viewport={{ once: true, margin: '-80px' }}
-                          variants={{ visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } } }}
-                        >
-                          {[
-                            ['45', 'Students'],
-                            ['3', 'Classes'],
-                            ['12', 'Flagged'],
-                          ].map(([value, label]) => (
-                            <motion.div
-                              key={label}
-                              variants={shouldReduceMotion ? undefined : {
-                                hidden: { opacity: 0, y: 14 },
-                                visible: { opacity: 1, y: 0 },
-                              }}
-                              className="rounded-xl bg-white/5 border border-white/10 p-3 text-center"
-                            >
-                              <p className="font-display text-2xl text-white mb-1">{value}</p>
-                              <p className="font-body text-[11px] text-white/50">{label}</p>
-                            </motion.div>
-                          ))}
-                        </motion.div>
-                      </div>
-                    )}
-                    <span className="font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-3 transition-all">
+                      ))}
+                    </div>
+                    <span className="mt-auto font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-3 transition-all">
                       {role.cta} <ArrowRight size={14} />
                     </span>
                   </Link>
@@ -660,7 +607,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 md:py-28 bg-cream">
+      <section id="stories" className="py-20 md:py-28 bg-cream">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
           <ScrollReveal>
             <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">What parents are saying</h2>
