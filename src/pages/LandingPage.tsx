@@ -116,18 +116,14 @@ function ClarityCheckMock() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <TiltCard>
+    <div>
       <motion.div
         initial={shouldReduceMotion ? false : { opacity: 0, y: 26 }}
         whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       >
-        <motion.div
-          animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
-          transition={shouldReduceMotion ? undefined : { duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          className="rounded-2xl shadow-card bg-white p-6 md:p-7"
-        >
+        <div className="rounded-2xl shadow-card bg-white p-6 md:p-7">
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="label-text text-coral mb-1">Clarity Check</p>
@@ -162,9 +158,9 @@ function ClarityCheckMock() {
               </motion.div>
             ))}
           </motion.div>
-        </motion.div>
+        </div>
       </motion.div>
-    </TiltCard>
+    </div>
   );
 }
 
@@ -395,17 +391,18 @@ export default function LandingPage() {
                 className="font-display text-[40px] md:text-[72px] font-medium text-charcoal leading-[1.0] tracking-tight mb-6"
               >
                 Turn your child's report card into your{' '}
-                <span className="relative inline-block overflow-hidden align-baseline">
-                  <span className="invisible">next move</span>
-                  <motion.span
-                    initial={shouldReduceMotion ? false : { clipPath: 'inset(0 0 0 100%)', x: 14 }}
-                    animate={{ clipPath: 'inset(0 0 0 0%)', x: 0 }}
-                    transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute inset-0 text-coral font-semibold"
-                  >
-                    next move
-                  </motion.span>
-                </span>
+                <motion.span
+                  initial={shouldReduceMotion ? false : { backgroundPosition: '100% 0' }}
+                  animate={{ backgroundPosition: '0% 0' }}
+                  transition={{ duration: 0.95, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  className="inline-block font-semibold text-transparent bg-clip-text"
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, var(--charcoal) 50% 100%)',
+                    backgroundSize: '200% 100%',
+                  }}
+                >
+                  next move
+                </motion.span>
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.55 }}
@@ -482,7 +479,7 @@ export default function LandingPage() {
             ].map((step, i) => (
               <ScrollReveal key={step.num} delay={i * 0.2}>
                 <div className="text-center md:text-left">
-                  <span className="font-display text-[72px] font-normal text-coral/15 leading-none">{step.num}</span>
+                  <span className="font-display text-[88px] md:text-[104px] font-semibold text-coral/80 leading-none drop-shadow-[0_10px_24px_rgba(232,93,62,0.20)]">{step.num}</span>
                   <div className="flex items-center gap-3 mt-2 mb-3">
                     {step.icon}
                     <h3 className="font-display text-2xl font-medium text-charcoal">{step.title}</h3>
