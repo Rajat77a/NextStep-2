@@ -23,8 +23,12 @@ export default function TeacherManagement() {
   }, [user]);
 
   const loadClasses = () => {
+    if (!user?.schoolId) {
+      setClasses([]);
+      return;
+    }
+
     const classList = storage.getClasses().filter((classItem) => {
-      if (!user?.schoolId) return false;
       return classItem.schoolId === user.schoolId;
     });
 
@@ -32,17 +36,25 @@ export default function TeacherManagement() {
   };
 
   const loadTeachers = () => {
+    if (!user?.schoolId) {
+      setTeachers([]);
+      return;
+    }
+
     const users = storage.getUsers();
 
-    const teacherList = users.filter((teacher) => {
-      return teacher.role === 'teacher' && teacher.schoolId === user?.schoolId;
+    const schoolTeachers = users.filter((teacher) => {
+      return (
+        teacher.role === 'teacher' &&
+        teacher.schoolId === user.schoolId
+      );
     });
 
-    setTeachers(teacherList);
+    setTeachers(schoolTeachers);
   };
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleInvite = (event: React.FormEvent) => {
+    event.preventDefault();
 
     setInviteError('');
 
@@ -54,10 +66,10 @@ export default function TeacherManagement() {
     const cleanEmail = email.trim().toLowerCase();
     const users = storage.getUsers();
 
-    const existingTeacherIndex = users.findIndex((existingUser) => {
+    const existingTeacherIndex = users.findIndex((storedUser) => {
       return (
-        existingUser.email.toLowerCase() === cleanEmail &&
-        existingUser.role === 'teacher'
+        storedUser.role === 'teacher' &&
+        storedUser.email.trim().toLowerCase() === cleanEmail
       );
     });
 
@@ -68,9 +80,11 @@ export default function TeacherManagement() {
       return;
     }
 
+    const existingTeacher = users[existingTeacherIndex];
+
     users[existingTeacherIndex] = {
-      ...users[existingTeacherIndex],
-      fullName: name.trim() || users[existingTeacherIndex].fullName,
+      ...existingTeacher,
+      fullName: name.trim() || existingTeacher.fullName,
       schoolId: user.schoolId,
       invitationStatus: 'pending',
       updatedAt: new Date().toISOString(),
@@ -93,8 +107,16 @@ export default function TeacherManagement() {
     });
   };
 
-  const isTeacherActive = (teacher: User, teacherClasses: Class[]) => {
-    return teacher.invitationStatus === 'accepted' || teacherClasses.length > 0;
+  const getTeacherStatus = (teacher: User, teacherClasses: Class[]) => {
+    if (teacher.invitationStatus === 'accepted' || teacherClasses.length > 0) {
+      return 'active';
+    }
+
+    if (teacher.invitationStatus === 'pending') {
+      return 'pending';
+    }
+
+    return 'none';
   };
 
   const openModal = () => {
@@ -163,7 +185,7 @@ export default function TeacherManagement() {
             <tbody>
               {teachers.map((teacher) => {
                 const teacherClasses = getTeacherClasses(teacher);
-                const active = isTeacherActive(teacher, teacherClasses);
+                const status = getTeacherStatus(teacher, teacherClasses);
 
                 return (
                   <tr
@@ -189,17 +211,23 @@ export default function TeacherManagement() {
                     <td className="py-3 px-4">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-body text-[10px] font-semibold ${
-                          active ? 'bg-sage/10 text-sage' : 'bg-amber/10 text-amber'
+                          status === 'active'
+                            ? 'bg-sage/10 text-sage'
+                            : status === 'pending'
+                              ? 'bg-amber/10 text-amber'
+                              : 'bg-light-gray text-medium-gray'
                         }`}
                       >
-                        {active ? (
+                        {status === 'active' ? (
                           <>
                             <Check size={10} /> Active
                           </>
-                        ) : (
+                        ) : status === 'pending' ? (
                           <>
                             <Clock size={10} /> Request sent
                           </>
+                        ) : (
+                          <>Not invited</>
                         )}
                       </span>
                     </td>
