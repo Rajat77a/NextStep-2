@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, X, Check, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { createSchool } from '@/api/data';
 import { storage } from '@/api/storage';
 import type { User, Class } from '@/types';
 
@@ -22,21 +23,32 @@ export default function TeacherManagement() {
     loadClasses();
   }, [user]);
 
+  const getCurrentSchoolId = () => {
+    const users = storage.getUsers();
+    const currentAdmin = users.find((storedUser) => storedUser.id === user?.id);
+
+    return currentAdmin?.schoolId || user?.schoolId || null;
+  };
+
   const loadClasses = () => {
-    if (!user?.schoolId) {
+    const schoolId = getCurrentSchoolId();
+
+    if (!schoolId) {
       setClasses([]);
       return;
     }
 
     const classList = storage.getClasses().filter((classItem) => {
-      return classItem.schoolId === user.schoolId;
+      return classItem.schoolId === schoolId;
     });
 
     setClasses(classList);
   };
 
   const loadTeachers = () => {
-    if (!user?.schoolId) {
+    const schoolId = getCurrentSchoolId();
+
+    if (!schoolId) {
       setTeachers([]);
       return;
     }
@@ -46,21 +58,27 @@ export default function TeacherManagement() {
     const schoolTeachers = users.filter((teacher) => {
       return (
         teacher.role === 'teacher' &&
-        teacher.schoolId === user.schoolId
+        teacher.schoolId === schoolId
       );
     });
 
     setTeachers(schoolTeachers);
   };
 
-  const handleInvite = (event: React.FormEvent) => {
+  const handleInvite = async (event: React.FormEvent) => {
     event.preventDefault();
 
     setInviteError('');
 
-    if (!user?.schoolId) {
-      setInviteError('School admin account is not connected to a school yet.');
-      return;
+    let schoolId = getCurrentSchoolId();
+
+    if (!schoolId) {
+      const school = await createSchool({
+        name: 'My School',
+        boardType: 'CBSE',
+      });
+
+      schoolId = school.id;
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -85,7 +103,7 @@ export default function TeacherManagement() {
     users[existingTeacherIndex] = {
       ...existingTeacher,
       fullName: name.trim() || existingTeacher.fullName,
-      schoolId: user.schoolId,
+      schoolId,
       invitationStatus: 'pending',
       updatedAt: new Date().toISOString(),
     };
