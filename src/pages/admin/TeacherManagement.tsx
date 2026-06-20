@@ -12,21 +12,19 @@ export default function TeacherManagement() {
   const [teachers, setTeachers] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [showModal, setShowModal] = useState(false);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [inviteError, setInviteError] = useState('');
 
   useEffect(() => {
-    if (!user?.schoolId) return;
-
     loadTeachers();
     loadClasses();
   }, [user]);
 
   const loadClasses = () => {
-    if (!user?.schoolId) return;
-
     const classList = storage.getClasses().filter((classItem) => {
+      if (!user?.schoolId) return false;
       return classItem.schoolId === user.schoolId;
     });
 
@@ -34,50 +32,31 @@ export default function TeacherManagement() {
   };
 
   const loadTeachers = () => {
-    if (!user?.schoolId) return;
+    const users = storage.getUsers();
 
-    const allTeachers = storage.getUsers().filter((teacher) => {
-      return teacher.role === 'teacher' && teacher.schoolId === user.schoolId;
+    const teacherList = users.filter((teacher) => {
+      return teacher.role === 'teacher' && teacher.schoolId === user?.schoolId;
     });
 
-    const uniqueTeachers = allTeachers.reduce<User[]>((result, teacher) => {
-      const existingIndex = result.findIndex((savedTeacher) => {
-        return savedTeacher.email.toLowerCase() === teacher.email.toLowerCase();
-      });
-
-      if (existingIndex === -1) {
-        result.push(teacher);
-        return result;
-      }
-
-      const existingTeacher = result[existingIndex];
-
-      const teacherIsAccepted = teacher.invitationStatus === 'accepted' || !!teacher.lastLoginAt;
-      const existingIsAccepted =
-        existingTeacher.invitationStatus === 'accepted' || !!existingTeacher.lastLoginAt;
-
-      if (teacherIsAccepted && !existingIsAccepted) {
-        result[existingIndex] = teacher;
-      }
-
-      return result;
-    }, []);
-
-    setTeachers(uniqueTeachers);
+    setTeachers(teacherList);
   };
 
-  const handleInvite = async (e: React.FormEvent) => {
+  const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!user?.schoolId) return;
 
     setInviteError('');
 
+    if (!user?.schoolId) {
+      setInviteError('School admin account is not connected to a school yet.');
+      return;
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
     const users = storage.getUsers();
 
     const existingTeacherIndex = users.findIndex((existingUser) => {
       return (
-        existingUser.email.toLowerCase() === email.toLowerCase() &&
+        existingUser.email.toLowerCase() === cleanEmail &&
         existingUser.role === 'teacher'
       );
     });
@@ -91,7 +70,7 @@ export default function TeacherManagement() {
 
     users[existingTeacherIndex] = {
       ...users[existingTeacherIndex],
-      fullName: name || users[existingTeacherIndex].fullName,
+      fullName: name.trim() || users[existingTeacherIndex].fullName,
       schoolId: user.schoolId,
       invitationStatus: 'pending',
       updatedAt: new Date().toISOString(),
@@ -109,51 +88,26 @@ export default function TeacherManagement() {
   };
 
   const getTeacherClasses = (teacher: User) => {
-    const allUsers = storage.getUsers();
-
-    const matchingTeacherIds = allUsers
-      .filter((storedUser) => {
-        return (
-          storedUser.role === 'teacher' &&
-          storedUser.email.toLowerCase() === teacher.email.toLowerCase()
-        );
-      })
-      .map((storedUser) => storedUser.id);
-
     return classes.filter((classItem) => {
-      return matchingTeacherIds.includes(classItem.teacherId);
+      return classItem.teacherId === teacher.id;
     });
   };
 
   const isTeacherActive = (teacher: User, teacherClasses: Class[]) => {
-    const allUsers = storage.getUsers();
-
-    const matchingTeacherAccounts = allUsers.filter((storedUser) => {
-      return (
-        storedUser.role === 'teacher' &&
-        storedUser.email.toLowerCase() === teacher.email.toLowerCase()
-      );
-    });
-
-    return (
-      teacherClasses.length > 0 ||
-      matchingTeacherAccounts.some((storedUser) => {
-        return storedUser.invitationStatus === 'accepted' || !!storedUser.lastLoginAt;
-      })
-    );
+    return teacher.invitationStatus === 'accepted' || teacherClasses.length > 0;
   };
 
   const openModal = () => {
-    setInviteError('');
     setName('');
     setEmail('');
+    setInviteError('');
     setShowModal(true);
   };
 
   const closeModal = () => {
-    setInviteError('');
     setName('');
     setEmail('');
+    setInviteError('');
     setShowModal(false);
   };
 
@@ -213,7 +167,7 @@ export default function TeacherManagement() {
 
                 return (
                   <tr
-                    key={`${teacher.id}-${teacher.email}`}
+                    key={teacher.id}
                     className="border-b border-light-gray/50 hover:bg-cream/30 transition-colors"
                   >
                     <td className="py-3 px-4 font-body text-sm text-charcoal">
@@ -259,7 +213,7 @@ export default function TeacherManagement() {
         {teachers.length === 0 && (
           <div className="text-center py-10">
             <p className="font-body text-medium-gray">
-              No teachers yet. Invite your first teacher after they sign up.
+              No teachers invited yet. Teachers must sign up before you can send a request.
             </p>
           </div>
         )}
