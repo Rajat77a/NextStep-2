@@ -281,9 +281,13 @@ export async function seedDatabase() {
         allClarityChecks.push(clarityCheck);
 
         // Create plan progress with some items completed
-        const actionItems = clarityCheck.thirtyDayPlan.flatMap(week =>
-          week.actions.map(a => ({ text: a.text, completed: Math.random() > 0.6, week: week.weekNumber }))
-        );
+        const actionItems = clarityCheck.thirtyDayPlan.flatMap((week, index) => {
+          if (week.actions) {
+            return week.actions.map(a => ({ text: a.text, completed: Math.random() > 0.6, week: week.weekNumber || index + 1 }));
+          }
+
+          return [{ text: week.habit || `Week ${week.week || index + 1} habit`, completed: Math.random() > 0.6, week: week.week || index + 1 }];
+        });
         const done = actionItems.filter(a => a.completed).length;
         allProgress.push({
           id: generateId(),

@@ -4,8 +4,15 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Copy, Check, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getReportCards, getClarityCheck } from '@/api/data';
-import FlagBadge from '@/components/shared/FlagBadge';
-import type { ClarityCheck as IClarityCheck } from '@/types';
+import type { ClarityCheck as IClarityCheck, TeacherQuestion } from '@/types';
+
+function questionToText(question: string | TeacherQuestion): string {
+  return typeof question === 'string' ? question : question.question;
+}
+
+function questionContext(question: string | TeacherQuestion): string | null {
+  return typeof question === 'string' ? null : question.context;
+}
 
 export default function TeacherQuestions() {
   const { user } = useAuth();
@@ -32,7 +39,7 @@ export default function TeacherQuestions() {
     const text = [
       'Questions for the Teacher',
       '',
-      ...check.teacherQuestions.map((q, i) => `${i + 1}. [${q.subject}] ${q.question}\n   Context: ${q.context}\n   Why: ${q.whyItMatters}`),
+      ...check.teacherQuestions.map((q, i) => `${i + 1}. ${questionToText(q)}`),
       ...extraQuestions.map((q, i) => `${check.teacherQuestions.length + i + 1}. ${q}`),
     ].join('\n\n');
     navigator.clipboard.writeText(text);
@@ -84,15 +91,21 @@ export default function TeacherQuestions() {
             transition={{ delay: 0.1 + i * 0.08 }}
             className="bg-white rounded-2xl shadow-card p-6"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <FlagBadge flag="yellow" size="sm" />
-              <span className="font-body text-xs font-semibold text-charcoal/60 uppercase tracking-wider">{q.subject}</span>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <span className="font-body text-xs font-semibold text-charcoal/60 uppercase tracking-wider">QUESTION {i + 1}</span>
+              <button
+                onClick={() => navigator.clipboard.writeText(questionToText(q))}
+                className="flex items-center gap-1 text-coral font-body text-xs font-semibold hover:underline"
+              >
+                <Copy size={12} /> Copy
+              </button>
             </div>
-            <h4 className="font-display text-lg text-charcoal mb-3">{q.question}</h4>
-            <div className="bg-cream rounded-lg p-3 mb-3">
-              <p className="font-body text-xs text-charcoal/60">Based on: "{q.context}"</p>
-            </div>
-            <p className="font-body text-sm text-charcoal/70">{q.whyItMatters}</p>
+            <h4 className="font-display text-lg text-charcoal mb-3">{questionToText(q)}</h4>
+            {questionContext(q) && (
+              <div className="bg-cream rounded-lg p-3">
+                <p className="font-body text-xs text-charcoal/60">Based on: "{questionContext(q)}"</p>
+              </div>
+            )}
           </motion.div>
         ))}
 

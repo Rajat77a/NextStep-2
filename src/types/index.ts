@@ -75,10 +75,13 @@ export interface SubjectGrade {
 }
 
 export interface ConversationScript {
-  opening: string;
-  acknowledgeGood: string[];
+  openingLine?: string;
+  avoidSaying?: string[];
+  tryInstead?: string[];
+  opening?: string;
+  acknowledgeGood?: string[];
   exploreChallenges?: string[];
-  closeWithSupport: string;
+  closeWithSupport?: string;
 }
 
 export interface TeacherQuestion {
@@ -95,10 +98,12 @@ export interface PlanAction {
 }
 
 export interface PlanWeek {
-  weekNumber: number;
-  weekTitle: string;
-  dateRange: string;
-  actions: PlanAction[];
+  week?: number;
+  habit?: string;
+  weekNumber?: number;
+  weekTitle?: string;
+  dateRange?: string;
+  actions?: PlanAction[];
 }
 
 export interface ClarityCheck {
@@ -108,9 +113,25 @@ export interface ClarityCheck {
   overallStatus: FlagStatus;
   summaryText: string;
   conversationScript: ConversationScript;
-  teacherQuestions: TeacherQuestion[];
+  teacherQuestions: Array<string | TeacherQuestion>;
   thirtyDayPlan: PlanWeek[];
   generatedAt: string;
+}
+
+export interface AIReportSubject {
+  subject: string;
+  grade: string;
+  flag: FlagStatus;
+  reasoning: string;
+}
+
+export interface AIReportAnalysis {
+  studentName: string;
+  term: string;
+  subjects: AIReportSubject[];
+  teacherQuestions: string[];
+  conversationScript: ConversationScript;
+  thirtyDayPlan: PlanWeek[];
 }
 
 export interface TeacherNote {

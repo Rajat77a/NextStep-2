@@ -26,17 +26,25 @@ export default function ConversationGuide() {
 
   const handleCopy = () => {
     if (!check) return;
+    const script = check.conversationScript;
+    const openingLine = script.openingLine || script.opening || '';
+    const avoidSaying = script.avoidSaying || [];
+    const tryInstead = script.tryInstead || [
+      ...(script.acknowledgeGood || []),
+      ...(script.exploreChallenges || []),
+      script.closeWithSupport || '',
+    ].filter(Boolean);
     const text = [
       "Tonight's Conversation Script",
       '',
       'OPENING:',
-      check.conversationScript.opening,
+      openingLine,
       '',
-      ...check.conversationScript.acknowledgeGood.map((s, i) => `ACKNOWLEDGE ${i + 1}:\n${s}`),
-      ...(check.conversationScript.exploreChallenges || []).map((s, i) => `EXPLORE ${i + 1}:\n${s}`),
+      'AVOID SAYING:',
+      ...avoidSaying.map((s, i) => `${i + 1}. ${s}`),
       '',
-      'CLOSE:',
-      check.conversationScript.closeWithSupport,
+      'TRY INSTEAD:',
+      ...tryInstead.map((s, i) => `${i + 1}. ${s}`),
     ].join('\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -54,12 +62,13 @@ export default function ConversationGuide() {
   }
 
   const script = check.conversationScript;
-  const beats = [
-    { label: 'START HERE', color: 'sage', border: 'border-l-sage', bg: 'bg-sage/[0.08]', icon: <Heart size={16} className="text-sage" />, text: script.opening, tip: 'Start with curiosity, not evaluation.' },
-    ...script.acknowledgeGood.map((s, i) => ({ label: 'ACKNOWLEDGE', color: 'sage', border: 'border-l-sage', bg: 'bg-sage/[0.04]', icon: <Check size={16} className="text-sage" />, text: s, tip: i === 0 ? 'Recognize effort before addressing challenges.' : undefined })),
-    ...(script.exploreChallenges || []).map((s, i) => ({ label: 'EXPLORE GENTLY', color: 'amber', border: 'border-l-amber', bg: 'bg-amber/[0.04]', icon: <MessageCircle size={16} className="text-amber" />, text: s, tip: i === 0 ? 'Use open-ended questions. Avoid "why did you..."' : undefined })),
-    { label: 'CLOSE', color: 'sage', border: 'border-l-sage', bg: 'bg-sage/[0.08]', icon: <Heart size={16} className="text-sage" />, text: script.closeWithSupport, tip: 'End with love and a plan.' },
-  ];
+  const openingLine = script.openingLine || script.opening || '';
+  const avoidSaying = script.avoidSaying || [];
+  const tryInstead = script.tryInstead || [
+    ...(script.acknowledgeGood || []),
+    ...(script.exploreChallenges || []),
+    script.closeWithSupport || '',
+  ].filter(Boolean);
 
   return (
     <div className="max-w-3xl mx-auto px-5 md:px-12 py-6 md:py-8">
@@ -87,26 +96,44 @@ export default function ConversationGuide() {
         </p>
       </motion.div>
 
-      {/* Conversation Beats */}
       <div className="space-y-4">
-        {beats.map((beat, i) => (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl shadow-card p-6 border-l-4 border-l-sage"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Heart size={16} className="text-sage" />
+            <span className="label-text text-sage">OPENING LINE</span>
+          </div>
+          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed">"{openingLine}"</p>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-2xl shadow-card p-6 border-l-4 border-l-coral">
+          <div className="flex items-center gap-2 mb-3">
+            <MessageCircle size={16} className="text-coral" />
+            <span className="label-text text-coral">AVOID SAYING</span>
+          </div>
+          <ul className="space-y-3">
+            {avoidSaying.map((line, i) => <li key={i} className="font-body text-sm text-charcoal/75">"{line}"</li>)}
+          </ul>
+        </motion.div>
+
+        {tryInstead.map((line, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 + i * 0.12, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className={`bg-white rounded-2xl shadow-card p-6 border-l-4 ${beat.border}`}
+            className="bg-white rounded-2xl shadow-card p-6 border-l-4 border-l-sage"
           >
             <div className="flex items-center gap-2 mb-3">
-              {beat.icon}
-              <span className={`label-text text-${beat.color}`}>{beat.label}</span>
+              <Check size={16} className="text-sage" />
+              <span className="label-text text-sage">TRY INSTEAD</span>
             </div>
             <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-3">
-              "{beat.text}"
+              "{line}"
             </p>
-            {beat.tip && (
-              <p className="font-body text-xs text-medium-gray">{beat.tip}</p>
-            )}
           </motion.div>
         ))}
       </div>

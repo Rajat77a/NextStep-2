@@ -226,6 +226,33 @@ export async function addStudent(data: {
   return student;
 }
 
+export async function addParentStudent(fullName: string): Promise<Student> {
+  await delay(150);
+
+  const user = requireRole(['parent']);
+  const students = storage.getStudents();
+  const existingStudent = students.find((student) => {
+    return student.parentId === user.id && student.fullName.toLowerCase() === fullName.toLowerCase();
+  });
+
+  if (existingStudent) return existingStudent;
+
+  const student: Student = {
+    id: generateId(),
+    schoolId: user.schoolId || 'parent-local-school',
+    classId: 'parent-local-class',
+    rollNumber: `parent-${students.length + 1}`,
+    fullName,
+    parentId: user.id,
+    createdAt: new Date().toISOString(),
+  };
+
+  students.push(student);
+  storage.setStudents(students);
+
+  return student;
+}
+
 export async function getStudents(filters?: {
   classId?: string;
   parentId?: string;

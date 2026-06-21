@@ -8,6 +8,8 @@ import FlagBadge from '@/components/shared/FlagBadge';
 import type { ReportCard, SubjectGrade } from '@/types';
 import { storage } from '@/api/storage';
 
+const flagRank = { green: 3, yellow: 2, red: 1 } as const;
+
 export default function ProgressTracking() {
   const { user } = useAuth();
   const [reportCards, setReportCards] = useState<ReportCard[]>([]);
@@ -41,7 +43,7 @@ export default function ProgressTracking() {
         <div className="text-center py-12">
           <TrendingUp size={40} className="mx-auto text-light-gray mb-4" />
           <h2 className="font-display text-2xl text-charcoal mb-2">Not Enough Data Yet</h2>
-          <p className="font-body text-medium-gray">Upload report cards from multiple terms to see progress tracking.</p>
+          <p className="font-body text-medium-gray">Upload next term's report card to see what's changed.</p>
         </div>
       </div>
     );
@@ -59,8 +61,8 @@ export default function ProgressTracking() {
     const lg = latestGrades.find(g => g.subjectName === subject);
     const pg = prevGrades.find(g => g.subjectName === subject);
     if (lg && pg) {
-      if (lg.normalizedScore > pg.normalizedScore) improvements.push(`${subject} improved from ${pg.grade} to ${lg.grade}`);
-      else if (lg.normalizedScore < pg.normalizedScore) watchAreas.push(`${subject} dropped from ${pg.grade} to ${lg.grade}`);
+      if (flagRank[lg.flag] > flagRank[pg.flag]) improvements.push(`${subject} improved from ${pg.flag} to ${lg.flag}`);
+      else if (flagRank[lg.flag] < flagRank[pg.flag]) watchAreas.push(`${subject} moved from ${pg.flag} to ${lg.flag}`);
     }
   });
 
@@ -79,7 +81,7 @@ export default function ProgressTracking() {
         {subjects.map((subject, i) => {
           const lg = latestGrades.find(g => g.subjectName === subject);
           const pg = prevGrades.find(g => g.subjectName === subject);
-          const trend = lg && pg ? (lg.normalizedScore > pg.normalizedScore ? 'up' : lg.normalizedScore < pg.normalizedScore ? 'down' : 'flat') : 'flat';
+          const trend = lg && pg ? (flagRank[lg.flag] > flagRank[pg.flag] ? 'up' : flagRank[lg.flag] < flagRank[pg.flag] ? 'down' : 'flat') : 'flat';
           return (
             <motion.div
               key={subject}
@@ -93,9 +95,9 @@ export default function ProgressTracking() {
                 {lg && <FlagBadge flag={lg.flag} size="sm" />}
               </div>
               <div className="flex items-center gap-3 mb-3">
-                {pg && <span className="px-3 py-1 bg-light-gray rounded-full font-body text-sm font-medium text-charcoal">{pg.grade}</span>}
+                {pg && <span className="px-3 py-1 bg-light-gray rounded-full font-body text-sm font-medium text-charcoal">{pg.flag}</span>}
                 {trend === 'up' ? <TrendingUp size={18} className="text-sage" /> : trend === 'down' ? <TrendingDown size={18} className="text-coral" /> : <Minus size={18} className="text-medium-gray" />}
-                {lg && <span className={`px-3 py-1 rounded-full font-body text-sm font-medium ${lg.flag === 'green' ? 'bg-sage/10 text-sage' : lg.flag === 'yellow' ? 'bg-amber/10 text-amber' : 'bg-coral/10 text-coral'}`}>{lg.grade}</span>}
+                {lg && <span className={`px-3 py-1 rounded-full font-body text-sm font-medium ${lg.flag === 'green' ? 'bg-sage/10 text-sage' : lg.flag === 'yellow' ? 'bg-amber/10 text-amber' : 'bg-coral/10 text-coral'}`}>{lg.flag}</span>}
               </div>
               {lg?.aiNote && <p className="font-body text-xs text-charcoal/60">{lg.aiNote.slice(0, 100)}...</p>}
             </motion.div>

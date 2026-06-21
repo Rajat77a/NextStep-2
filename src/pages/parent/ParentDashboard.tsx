@@ -42,7 +42,11 @@ export default function ParentDashboard() {
   }, [user]);
 
   const latestCard = reportCards[0];
-  // flag counts computed inline below
+  const latestFlagCounts = {
+    green: latestGrades.filter((grade) => grade.flag === 'green').length,
+    yellow: latestGrades.filter((grade) => grade.flag === 'yellow').length,
+    red: latestGrades.filter((grade) => grade.flag === 'red').length,
+  };
 
   if (loading) {
     return (
@@ -84,8 +88,12 @@ export default function ParentDashboard() {
               <FlagBadge flag={latestCheck?.overallStatus || 'green'} />
             </div>
             <div>
-              <p className="label-text text-medium-gray mb-1">Subjects Analyzed</p>
-              <p className="font-body font-medium text-charcoal">{latestGrades.length}</p>
+              <p className="label-text text-medium-gray mb-1">Flag Distribution</p>
+              <div className="flex flex-wrap gap-1">
+                <span className="px-2 py-0.5 bg-sage/10 text-sage rounded-full font-body text-[10px] font-semibold">{latestFlagCounts.green} green</span>
+                <span className="px-2 py-0.5 bg-amber/10 text-amber rounded-full font-body text-[10px] font-semibold">{latestFlagCounts.yellow} yellow</span>
+                <span className="px-2 py-0.5 bg-coral/10 text-coral rounded-full font-body text-[10px] font-semibold">{latestFlagCounts.red} red</span>
+              </div>
             </div>
             <div>
               <p className="label-text text-medium-gray mb-1">Plan Progress</p>

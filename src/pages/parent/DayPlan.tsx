@@ -52,7 +52,9 @@ export default function DayPlan() {
   }
 
   const plan = check.thirtyDayPlan;
-  const focusAreas = check.teacherQuestions.map(q => q.subject);
+  const focusAreas = check.teacherQuestions.map((q, index) =>
+    typeof q === 'string' ? `Focus ${index + 1}` : q.subject
+  );
   const isComplete = progress ? progress.completionRate === 100 : false;
 
   return (
@@ -90,7 +92,7 @@ export default function DayPlan() {
         <div className="flex flex-wrap gap-2 mb-3">
           {focusAreas.map(f => <FlagBadge key={f} flag="yellow" showLabel={false} size="sm" />)}
         </div>
-        <p className="font-body text-sm text-medium-gray">Based on {check.teacherQuestions.length} flagged areas from the latest report card</p>
+        <p className="font-body text-sm text-medium-gray">Based on {check.teacherQuestions.length} AI-generated follow-up questions from the latest report card</p>
       </motion.div>
 
       {/* Completion Celebration */}
@@ -104,21 +106,24 @@ export default function DayPlan() {
 
       {/* Weekly Breakdown */}
       <div className="space-y-6">
-        {plan.map((week, wi) => (
+        {plan.map((week, wi) => {
+          const weekNumber = week.week ?? week.weekNumber ?? wi + 1;
+          const actions = week.actions || [{ text: week.habit || '', timeEstimate: 'This week', whyItHelps: 'Small repeated habits are easier to sustain.' }];
+          return (
           <motion.div
-            key={week.weekNumber}
+            key={weekNumber}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 + wi * 0.15 }}
             className="bg-white rounded-2xl shadow-card p-6"
           >
             <div className="mb-4">
-              <h4 className="font-display text-xl text-charcoal">{week.weekTitle}</h4>
-              <p className="font-body text-sm text-medium-gray">Week {week.weekNumber}</p>
+              <h4 className="font-display text-xl text-charcoal">{week.weekTitle || `Week ${weekNumber}`}</h4>
+              <p className="font-body text-sm text-medium-gray">Week {weekNumber}</p>
             </div>
             <div className="space-y-3">
-              {week.actions.map((action, ai) => {
-                const globalIndex = plan.slice(0, wi).reduce((acc, w) => acc + w.actions.length, 0) + ai;
+              {actions.map((action, ai) => {
+                const globalIndex = plan.slice(0, wi).reduce((acc, w) => acc + (w.actions?.length || 1), 0) + ai;
                 const isDone = progress?.actionItems[globalIndex]?.completed || false;
                 return (
                   <div
@@ -146,7 +151,7 @@ export default function DayPlan() {
               })}
             </div>
           </motion.div>
-        ))}
+        )})}
       </div>
     </div>
   );
