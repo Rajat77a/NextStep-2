@@ -49,6 +49,7 @@ export default function UploadReport() {
   const [selectedChild, setSelectedChild] = useState('');
   const [newChildName, setNewChildName] = useState('');
   const [children, setChildren] = useState<Student[]>([]);
+  const [analyzedStudentId, setAnalyzedStudentId] = useState('');
   const [analysis, setAnalysis] = useState<AIReportAnalysis | null>(null);
   const [grades, setGrades] = useState<SubjectGrade[]>([]);
   const [ocrText, setOcrText] = useState('');
@@ -72,6 +73,8 @@ export default function UploadReport() {
     setAnalysis(null);
     setGrades([]);
     setOcrText('');
+    setAnalyzedStudentId('');
+    setFile(null);
 
     if (!nextFile) return;
 
@@ -146,6 +149,7 @@ export default function UploadReport() {
 
       setAnalysis(aiAnalysis);
       setGrades(analyzedGrades);
+      setAnalyzedStudentId(student.id);
       setStep(2);
     } catch (e: any) {
       setError(e.message || 'Could not analyze the report card.');
@@ -156,14 +160,14 @@ export default function UploadReport() {
   };
 
   const handleConfirm = async () => {
-    if (!analysis) return;
+    if (!analysis || !analyzedStudentId) return;
 
     setLoading(true);
     setError('');
 
     try {
       const card = await uploadReportCard({
-        studentId: selectedChild,
+        studentId: analyzedStudentId,
         term: analysis.term || `Report uploaded ${new Date().toLocaleDateString()}`,
         boardType: board,
         file: file || undefined,
