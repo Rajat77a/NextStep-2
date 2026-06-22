@@ -57,6 +57,16 @@ export default function UploadReport() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState('');
 
+  // Change loading message after 2 seconds so the screen never looks blank
+  useEffect(() => {
+    if (!loading) return;
+    setLoadingMessage('Reading your report card...');
+    const timer = setTimeout(() => {
+      setLoadingMessage('Putting together your guide...');
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   useEffect(() => {
     async function loadChildren() {
       if (!user) return;
@@ -152,7 +162,7 @@ export default function UploadReport() {
       setAnalyzedStudentId(student.id);
       setStep(2);
     } catch (e: any) {
-      setError(e.message || 'Could not analyze the report card.');
+      setError(e.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -198,7 +208,7 @@ export default function UploadReport() {
       setStep(3);
       setTimeout(() => navigate('/parent/clarity', { state: { reportCardId: card.id } }), 1200);
     } catch (e: any) {
-      setError(e.message || 'Could not save the analysis.');
+      setError(e.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -70,7 +70,7 @@ export default function PortalNav() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`nav-text px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                  className={`relative nav-text px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
                     isActive
                       ? 'text-coral bg-coral/5'
                       : 'text-medium-gray hover:text-charcoal hover:bg-white/60'
