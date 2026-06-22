@@ -1,73 +1,129 @@
-# React + TypeScript + Vite
+# NextStep·AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **Turn any school report card into a clear, actionable guide for parents.**
 
-Currently, two official plugins are available:
+NextStep·AI is an EdTech web app that lets parents upload a child's report card (JPG, PNG, or PDF), runs OCR to extract the text, sends it to an AI model for structured analysis, and returns:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🟢 / 🟡 / 🔴 subject-level flag scores
+- A plain-English **Clarity Check** summary
+- A personalised **Tonight's Conversation** script
+- Ready-made **Teacher Questions**
+- A **30-Day Home Support Plan**
+- A **Progress Tracker** to mark habits complete
 
-## React Compiler
+Teachers and school admins get their own portals with class-level pattern views.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Live Demo
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+> Deployed on Vercel — link coming soon.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Layer | Technology |
+|---|---|
+| Framework | React 18 + TypeScript + Vite |
+| Routing | React Router v6 |
+| Styling | Tailwind CSS v3 |
+| Animation | Framer Motion |
+| Icons | Lucide React |
+| AI / OCR | Claude API + Tesseract.js |
+| Storage | LocalStorage (MVP) |
+| Deploy | Vercel |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+
+### Installation
+
+```bash
+git clone https://github.com/Rajat77a/NextStep-2.git
+cd NextStep-2
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Environment Variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Copy the example file and fill in your keys:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
 ```
+
+| Variable | Description |
+|---|---|
+| `VITE_ANTHROPIC_API_KEY` | Claude API key from console.anthropic.com |
+
+### Run Locally
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173).
+
+---
+
+## Project Structure
+
+```
+src/
+├── api/          # Data layer (localStorage) + AI analysis calls
+├── components/
+│   ├── shared/   # PortalNav, FlagBadge, ScrollReveal
+│   └── ui/       # Reusable UI primitives
+├── hooks/        # useAuth
+├── lib/          # reportOcr — Tesseract wrapper
+├── pages/
+│   ├── parent/   # UploadReport, ClarityCheck, ConversationGuide …
+│   ├── teacher/  # TeacherDashboard, TeacherClasses, ClassPatterns
+│   └── admin/    # AdminDashboard, ClassManagement, StudentRoster …
+└── types/        # Shared TypeScript interfaces
+```
+
+---
+
+## User Roles
+
+| Role | Access |
+|---|---|
+| **Parent** | Upload reports, view Clarity Check, conversation guide, 30-day plan |
+| **Teacher** | View class-level patterns and student flag summaries |
+| **Admin** | Manage classes, students, teachers, and subscriptions |
+
+---
+
+## Docs
+
+All detailed documentation lives in [`/docs`](./docs/).
+
+| Document | Description |
+|---|---|
+| [Product Overview](./docs/product-overview.md) | Vision and feature summary |
+| [Report Card Flow](./docs/report-card-flow.md) | OCR → AI → storage pipeline |
+| [Data Model](./docs/data-model.md) | Entity definitions and relationships |
+| [Routing](./docs/routing.md) | URL structure for all three portals |
+| [Roadmap](./docs/roadmap.md) | Planned features and milestones |
+| [Troubleshooting](./docs/troubleshooting.md) | Common issues and fixes |
+| [Vercel Deployment](./docs/vercel-deployment.md) | How to deploy |
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for commit conventions and PR guidelines.
+
+---
+
+## License
+
+MIT © 2026 Rajat Krishnan
