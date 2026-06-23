@@ -102,10 +102,8 @@ export interface PlanAction {
 }
 
 export interface PlanWeek {
-  week?: number;
-  habit?: string;
-  weekNumber?: number;
-  weekTitle?: string;
+  weekNumber: number;
+  weekTitle: string;
   dateRange?: string;
   actions?: PlanAction[];
 }
@@ -196,4 +194,5 @@ export interface StudentWithDetails extends Student {
   overallFlag?: FlagStatus;
   latestReportCard?: ReportCard;
 }
+
 
