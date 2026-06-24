@@ -9,28 +9,60 @@ Return only valid JSON matching this exact shape:
   "studentName": string,
   "term": string,
   "subjects": [
-    { "subject": string, "grade": string, "flag": "green" | "yellow" | "red", "reasoning": string }
+    {
+      "subject": string,
+      "grade": string,
+      "normalizedScore": number,
+      "flag": "green" | "yellow" | "red",
+      "teacherComment": string,
+      "reasoning": string
+    }
   ],
-  "teacherQuestions": [ string ],
+  "summaryText": string,
+  "overallStatus": "green" | "yellow" | "red",
+  "teacherQuestions": [
+    {
+      "subject": string,
+      "question": string,
+      "context": string,
+      "whyItMatters": string
+    }
+  ],
   "conversationScript": {
-    "openingLine": string,
-    "avoidSaying": [ string ],
-    "tryInstead": [ string ]
+    "opening": string,
+    "acknowledgeGood": [ string ],
+    "exploreChallenges": [ string ],
+    "closeWithSupport": string
   },
   "thirtyDayPlan": [
-    { "week": number, "habit": string }
+    {
+      "weekNumber": number,
+      "weekTitle": string,
+      "dateRange": string,
+      "actions": [
+        {
+          "text": string,
+          "timeEstimate": string,
+          "whyItHelps": string
+        }
+      ]
+    }
   ]
 }
 
-Non-negotiable safety rules:
-1. Never predict the child's future, character, career, intelligence, or destiny. Do not say "will fail", "cannot", "should become X", or similar.
-2. Use advisory language only: "this may indicate...", "worth checking with the teacher about...", "try this for two weeks and see...".
-3. Every red flagged subject's reasoning must include this sentence: "This is not a diagnosis; it is worth consulting the teacher or a qualified professional for context."
-4. Flags must be genuinely differentiated from the actual grades and comments. Strong grade plus positive comment => green. Mediocre grade plus real gap => yellow. Low grade plus recurring/ongoing concern => red.
-5. Avoid generic repeated reasoning. Each subject must have distinct reasoning tied to the report card text.
-6. If the report card is unclear, make cautious inferences and say what should be checked with the teacher.`;
+Rules:
+1. Never predict the child's future, character, career, intelligence, or destiny.
+2. Use advisory language only: "this may indicate", "worth checking with the teacher", "try this for two weeks".
+3. Every red flagged subject reasoning must include: "This is not a diagnosis; it is worth consulting the teacher or a qualified professional for context."
+4. Flags must come from the actual grades and comments.
+5. Do not repeat the same reasoning for every subject.
+6. If the report card is unclear, make cautious inferences and say what should be checked with the teacher.
+7. normalizedScore must be 0 to 100. If exact score is missing, estimate carefully from the grade.
+8. thirtyDayPlan must contain exactly 4 weeks.
+9. Each week must have at least 2 actions.
+10. Return JSON only. No markdown.`;
 
-function extractJson(text: string): unknown {
+function extractJson(text: string): any {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const raw = fenced?.[1] || trimmed;
@@ -46,17 +78,52 @@ function extractJson(text: string): unknown {
 
 function validateAnalysis(value: any) {
   if (!value || typeof value !== 'object') throw new Error('Missing analysis object.');
-  if (!Array.isArray(value.subjects) || value.subjects.length === 0) throw new Error('Missing subjects.');
-  if (!Array.isArray(value.teacherQuestions)) throw new Error('Missing teacherQuestions.');
-  if (!value.conversationScript) throw new Error('Missing conversationScript.');
-  if (!Array.isArray(value.thirtyDayPlan)) throw new Error('Missing thirtyDayPlan.');
+
+  if (!Array.isArray(value.subjects) || value.subjects.length === 0) {
+    throw new Error('Missing subjects.');
+  }
+
+  if (!['green', 'yellow', 'red'].includes(value.overallStatus)) {
+    throw new Error('Invalid overallStatus.');
+  }
+
+  if (!value.summaryText || typeof value.summaryText !== 'string') {
+    throw new Error('Missing summaryText.');
+  }
+
+  if (!Array.isArray(value.teacherQuestions)) {
+    throw new Error('Missing teacherQuestions.');
+  }
+
+  if (!value.conversationScript) {
+    throw new Error('Missing conversationScript.');
+  }
+
+  if (!Array.isArray(value.thirtyDayPlan) || value.thirtyDayPlan.length !== 4) {
+    throw new Error('thirtyDayPlan must contain exactly 4 weeks.');
+  }
 
   value.subjects.forEach((subject: any) => {
+    if (!subject.subject) throw new Error('Subject name missing.');
+    if (!subject.grade) throw new Error(`Grade missing for ${subject.subject}.`);
+
     if (!['green', 'yellow', 'red'].includes(subject.flag)) {
-      throw new Error(`Invalid flag for ${subject.subject || 'subject'}.`);
+      throw new Error(`Invalid flag for ${subject.subject}.`);
     }
-    if (subject.flag === 'red' && !String(subject.reasoning || '').toLowerCase().includes('not a diagnosis')) {
-      throw new Error(`Red flag reasoning for ${subject.subject || 'subject'} is missing the diagnosis disclaimer.`);
+
+    if (typeof subject.normalizedScore !== 'number') {
+      subject.normalizedScore = 0;
+    }
+
+    subject.normalizedScore = Math.max(0, Math.min(100, subject.normalizedScore));
+
+    if (
+      subject.flag === 'red' &&
+      !String(subject.reasoning || '').toLowerCase().includes('not a diagnosis')
+    ) {
+      throw new Error(
+        `Red flag reasoning for ${subject.subject} is missing the diagnosis disclaimer.`
+      );
     }
   });
 
@@ -82,16 +149,23 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
     const message = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2500,
+      max_tokens: 3000,
       temperature: 0.2,
       system: SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',
-          content: `Student name hint: ${studentName || 'Unknown'}\nBoard type: ${boardType || 'Unknown'}\n\nOCR report card text:\n${rawText}`,
+          content: `Student name hint: ${studentName || 'Unknown'}
+Board type: ${boardType || 'Unknown'}
+
+OCR report card text:
+${rawText}`,
         },
       ],
     });
@@ -102,8 +176,14 @@ export default async function handler(req: any, res: any) {
       .join('\n');
 
     const analysis = validateAnalysis(extractJson(text));
-    res.status(200).json({ analysis, model: MODEL });
+
+    res.status(200).json({
+      analysis,
+      model: MODEL,
+    });
   } catch (error: any) {
-    res.status(500).json({ error: error?.message || 'Could not analyze the report card.' });
+    res.status(500).json({
+      error: error?.message || 'Could not analyze the report card.',
+    });
   }
 }
