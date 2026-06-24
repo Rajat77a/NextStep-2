@@ -121,7 +121,9 @@ export interface ClarityCheck {
 export interface AIReportSubject {
   subject: string;
   grade: string;
+  normalizedScore: number;
   flag: FlagStatus;
+  teacherComment: string;
   reasoning: string;
 }
 
@@ -129,7 +131,9 @@ export interface AIReportAnalysis {
   studentName: string;
   term: string;
   subjects: AIReportSubject[];
-  teacherQuestions: string[];
+  summaryText: string;
+  overallStatus: FlagStatus;
+  teacherQuestions: TeacherQuestion[];
   conversationScript: ConversationScript;
   thirtyDayPlan: PlanWeek[];
 }
