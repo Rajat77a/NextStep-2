@@ -38,7 +38,8 @@ function PortalLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <PortalNav />
-      <div className="pt-16 md:pt-[72px] min-h-screen bg-cream">
+      {/* desktop: offset for 68px collapsed sidebar | mobile: offset for top bar + bottom tab bar */}
+      <div className="md:pl-[68px] pt-14 md:pt-0 pb-16 md:pb-0 min-h-screen bg-cream">
         {children}
       </div>
     </>

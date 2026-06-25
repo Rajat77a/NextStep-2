@@ -20,23 +20,28 @@ export default function ParentDashboard() {
   useEffect(() => {
     async function load() {
       if (!user) return;
-      const kids = await getStudents({ parentId: user.id });
-      setChildren(kids);
-      if (kids.length > 0) {
-        const cards = await getReportCards({ studentId: kids[0].id });
-        setReportCards(cards);
-        if (cards.length > 0) {
-          const check = await getClarityCheck(cards[0].id);
-          setLatestCheck(check);
-          const grades = storage.getSubjectGrades().filter(g => g.reportCardId === cards[0].id);
-          setLatestGrades(grades);
-          if (check) {
-            const prog = await getPlanProgress(check.id);
-            if (prog) setProgress({ completionRate: prog.completionRate });
+      try {
+        const kids = await getStudents({ parentId: user.id });
+        setChildren(kids);
+        if (kids.length > 0) {
+          const cards = await getReportCards({ studentId: kids[0].id });
+          setReportCards(cards);
+          if (cards.length > 0) {
+            const check = await getClarityCheck(cards[0].id);
+            setLatestCheck(check);
+            const grades = storage.getSubjectGrades().filter(g => g.reportCardId === cards[0].id);
+            setLatestGrades(grades);
+            if (check) {
+              const prog = await getPlanProgress(check.id);
+              if (prog) setProgress({ completionRate: prog.completionRate });
+            }
           }
         }
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     load();
   }, [user]);
