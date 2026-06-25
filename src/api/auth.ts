@@ -51,13 +51,11 @@ export async function register(data: {
     throw createApiError(409, signUpError?.message || 'Registration failed', 'email');
   }
 
-  // Insert profile row with role and display name (email stored by Supabase Auth, not here)
+  // Insert profile row — only columns confirmed to exist in the profiles table
   const { error: profileError } = await supabase.from('profiles').insert({
     id: authData.user.id,
     full_name: data.fullName,
     role: data.role,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
   });
 
   if (profileError) {
