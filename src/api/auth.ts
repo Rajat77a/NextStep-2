@@ -9,6 +9,9 @@ function createApiError(code: number, message: string, field?: string): ApiError
 
 /** Fetch the profile row for the currently signed-in Supabase user */
 async function fetchProfile(supabaseUserId: string): Promise<Omit<User, 'passwordHash'> | null> {
+  // Get email from Supabase Auth (not profiles table)
+  const { data: authUser } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -19,7 +22,7 @@ async function fetchProfile(supabaseUserId: string): Promise<Omit<User, 'passwor
 
   return {
     id: data.id,
-    email: data.email,
+    email: authUser?.user?.email ?? data.email ?? '',
     fullName: data.full_name,
     role: data.role,
     schoolId: data.school_id ?? null,
@@ -48,10 +51,9 @@ export async function register(data: {
     throw createApiError(409, signUpError?.message || 'Registration failed', 'email');
   }
 
-  // Insert profile row with role and display name
+  // Insert profile row with role and display name (email stored by Supabase Auth, not here)
   const { error: profileError } = await supabase.from('profiles').insert({
     id: authData.user.id,
-    email: data.email,
     full_name: data.fullName,
     role: data.role,
     created_at: new Date().toISOString(),
