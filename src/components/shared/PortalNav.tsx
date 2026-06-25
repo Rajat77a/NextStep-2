@@ -4,38 +4,38 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Upload, ClipboardCheck, MessageCircle,
   HelpCircle, Calendar, TrendingUp, Users, BookOpen,
-  Settings, LogOut, Bell, School, BarChart3,
+  Settings, LogOut, Bell, School, BarChart3, X, Check,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
-interface NavItem {
-  label: string;
-  path: string;
-  icon: React.ReactNode;
-}
+interface NavItem { label: string; path: string; icon: React.ReactNode }
 
 const parentNav: NavItem[] = [
-  { label: 'Dashboard',         path: '/parent',              icon: <LayoutDashboard size={20} /> },
-  { label: 'Upload Report',     path: '/parent/upload',       icon: <Upload size={20} /> },
-  { label: 'Clarity Check',     path: '/parent/clarity',      icon: <ClipboardCheck size={20} /> },
-  { label: 'Conversation',      path: '/parent/conversation', icon: <MessageCircle size={20} /> },
-  { label: 'Ask Teacher',       path: '/parent/questions',    icon: <HelpCircle size={20} /> },
-  { label: '30-Day Plan',       path: '/parent/plan',         icon: <Calendar size={20} /> },
-  { label: 'Progress',          path: '/parent/progress',     icon: <TrendingUp size={20} /> },
+  { label: 'Dashboard',     path: '/parent',              icon: <LayoutDashboard size={19} /> },
+  { label: 'Upload Report', path: '/parent/upload',       icon: <Upload size={19} /> },
+  { label: 'Clarity Check', path: '/parent/clarity',      icon: <ClipboardCheck size={19} /> },
+  { label: 'Conversation',  path: '/parent/conversation', icon: <MessageCircle size={19} /> },
+  { label: 'Ask Teacher',   path: '/parent/questions',    icon: <HelpCircle size={19} /> },
+  { label: '30-Day Plan',   path: '/parent/plan',         icon: <Calendar size={19} /> },
+  { label: 'Progress',      path: '/parent/progress',     icon: <TrendingUp size={19} /> },
 ];
-
 const teacherNav: NavItem[] = [
-  { label: 'Dashboard',     path: '/teacher',          icon: <LayoutDashboard size={20} /> },
-  { label: 'My Classes',    path: '/teacher/classes',  icon: <Users size={20} /> },
-  { label: 'Class Patterns',path: '/teacher/patterns', icon: <BarChart3 size={20} /> },
+  { label: 'Dashboard',      path: '/teacher',          icon: <LayoutDashboard size={19} /> },
+  { label: 'My Classes',     path: '/teacher/classes',  icon: <Users size={19} /> },
+  { label: 'Class Patterns', path: '/teacher/patterns', icon: <BarChart3 size={19} /> },
+];
+const adminNav: NavItem[] = [
+  { label: 'Dashboard',    path: '/admin',              icon: <LayoutDashboard size={19} /> },
+  { label: 'Classes',      path: '/admin/classes',      icon: <BookOpen size={19} /> },
+  { label: 'Students',     path: '/admin/students',     icon: <Users size={19} /> },
+  { label: 'Teachers',     path: '/admin/teachers',     icon: <School size={19} /> },
+  { label: 'Subscription', path: '/admin/subscription', icon: <Settings size={19} /> },
 ];
 
-const adminNav: NavItem[] = [
-  { label: 'Dashboard',    path: '/admin',                icon: <LayoutDashboard size={20} /> },
-  { label: 'Classes',      path: '/admin/classes',        icon: <BookOpen size={20} /> },
-  { label: 'Students',     path: '/admin/students',       icon: <Users size={20} /> },
-  { label: 'Teachers',     path: '/admin/teachers',       icon: <School size={20} /> },
-  { label: 'Subscription', path: '/admin/subscription',   icon: <Settings size={20} /> },
+const SAMPLE_NOTIFS = [
+  { id: 1, title: 'AI analysis complete', body: 'Report card processed — clarity check ready', time: '2m ago', read: false },
+  { id: 2, title: '30-day plan reminder', body: 'Week 1 check-in: 3 tasks pending', time: '1h ago', read: false },
+  { id: 3, title: 'New tip available', body: 'Maths conversation guide updated', time: 'Yesterday', read: true },
 ];
 
 export default function PortalNav() {
@@ -43,22 +43,22 @@ export default function PortalNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState(SAMPLE_NOTIFS);
 
   if (!user) return null;
 
   const navItems = user.role === 'parent' ? parentNav
-                 : user.role === 'teacher' ? teacherNav
-                 : adminNav;
-
+                 : user.role === 'teacher' ? teacherNav : adminNav;
   const portalPrefix = `/${user.role}`;
   const initials = user.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const unread = notifs.filter(n => !n.read).length;
 
   const isActive = (item: NavItem) =>
     location.pathname === item.path ||
     (item.path !== portalPrefix && location.pathname.startsWith(item.path));
 
-  // Bottom 5 items for mobile tab bar
-  const mobileItems = navItems.slice(0, 5);
+  const markAllRead = () => setNotifs(prev => prev.map(n => ({ ...n, read: true })));
 
   return (
     <>
@@ -66,29 +66,30 @@ export default function PortalNav() {
       <motion.aside
         initial={false}
         animate={{ width: expanded ? 220 : 68 }}
-        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         onMouseEnter={() => setExpanded(true)}
-        onMouseLeave={() => setExpanded(false)}
+        onMouseLeave={() => { setExpanded(false); setNotifOpen(false); }}
         className="hidden md:flex fixed top-0 left-0 h-screen z-50 flex-col
-                   bg-charcoal border-r border-white/5 overflow-hidden"
-        style={{ boxShadow: '4px 0 24px rgba(0,0,0,0.12)' }}
+                   bg-[#1a1a1f] overflow-hidden"
+        style={{ boxShadow: '2px 0 20px rgba(0,0,0,0.25)' }}
       >
         {/* Logo */}
         <Link
           to={portalPrefix}
-          className="flex items-center gap-3 h-16 px-4 shrink-0 border-b border-white/5"
+          className="flex items-center gap-3 h-[64px] px-[14px] shrink-0
+                     border-b border-white/[0.06]"
         >
-          <div className="w-9 h-9 rounded-xl bg-coral flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-coral flex items-center justify-center shrink-0 shadow-lg shadow-coral/30">
             <span className="font-display font-bold text-white text-sm">N</span>
           </div>
           <AnimatePresence>
             {expanded && (
               <motion.span
-                initial={{ opacity: 0, x: -8 }}
+                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.2 }}
-                className="font-display font-semibold text-white text-lg whitespace-nowrap"
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.18 }}
+                className="font-display font-semibold text-white text-[17px] whitespace-nowrap"
               >
                 NextStep<span className="text-coral">.</span>AI
               </motion.span>
@@ -97,51 +98,69 @@ export default function PortalNav() {
         </Link>
 
         {/* Nav Items */}
-        <nav className="flex-1 py-4 flex flex-col gap-1 px-2 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 py-3 flex flex-col overflow-y-auto overflow-x-hidden">
           {navItems.map(item => {
             const active = isActive(item);
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative flex items-center gap-3 h-11 px-3 rounded-xl transition-all duration-200 group
-                  ${active
-                    ? 'bg-coral text-white shadow-lg shadow-coral/20'
-                    : 'text-white/50 hover:text-white hover:bg-white/8'
-                  }`}
+                className="relative flex items-center gap-3 h-[46px] mx-2 px-3 rounded-lg
+                           transition-colors duration-150 group select-none"
               >
-                {/* Active indicator dot */}
+                {/* Left accent stripe — perfectly centred on the row */}
                 {active && (
-                  <motion.div
-                    layoutId="sidebarActive"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-full -ml-2"
+                  <motion.span
+                    layoutId="activeStripe"
+                    className="absolute left-0 top-1/2 -translate-y-1/2
+                               w-[3px] h-[22px] rounded-full bg-coral"
+                    style={{ left: '-8px' }}
                   />
                 )}
-                <span className="shrink-0">{item.icon}</span>
+
+                {/* Icon — coral when active, glows; else muted */}
+                <span
+                  className={`shrink-0 transition-all duration-150 ${
+                    active
+                      ? 'text-coral'
+                      : 'text-white/35 group-hover:text-white/75'
+                  }`}
+                  style={active ? { filter: 'drop-shadow(0 0 6px rgba(231,90,62,0.6))' } : {}}
+                >
+                  {item.icon}
+                </span>
+
+                {/* Label */}
                 <AnimatePresence>
                   {expanded && (
                     <motion.span
-                      initial={{ opacity: 0, x: -6 }}
+                      initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -6 }}
-                      transition={{ duration: 0.18 }}
-                      className="font-body text-sm font-medium whitespace-nowrap"
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.15 }}
+                      className={`text-[13.5px] font-medium whitespace-nowrap transition-colors duration-150 ${
+                        active
+                          ? 'text-white'
+                          : 'text-white/40 group-hover:text-white/80'
+                      }`}
                     >
                       {item.label}
                     </motion.span>
                   )}
                 </AnimatePresence>
 
-                {/* Tooltip when collapsed */}
+                {/* Collapsed tooltip */}
                 {!expanded && (
-                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-charcoal border border-white/10
-                                  rounded-lg text-white text-xs font-body font-medium whitespace-nowrap
-                                  opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity
-                                  shadow-xl z-50">
+                  <span className="absolute left-full ml-4 px-2.5 py-1.5
+                                   bg-[#2a2a32] border border-white/10
+                                   rounded-lg text-white/80 text-[12px] font-medium
+                                   whitespace-nowrap opacity-0 group-hover:opacity-100
+                                   pointer-events-none transition-opacity duration-150
+                                   shadow-xl z-50">
                     {item.label}
-                    <div className="absolute right-full top-1/2 -translate-y-1/2 border-4
-                                    border-transparent border-r-charcoal" />
-                  </div>
+                    <span className="absolute right-full top-1/2 -translate-y-1/2
+                                     border-4 border-transparent border-r-[#2a2a32]" />
+                  </span>
                 )}
               </Link>
             );
@@ -149,43 +168,98 @@ export default function PortalNav() {
         </nav>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-white/5 px-2 py-3 flex flex-col gap-1">
-          {/* Bell */}
-          <button className="relative flex items-center gap-3 h-11 px-3 rounded-xl
-                             text-white/50 hover:text-white hover:bg-white/8 transition-all group">
-            <Bell size={20} className="shrink-0" />
-            <span className="absolute top-2 left-7 w-2 h-2 bg-coral rounded-full border border-charcoal" />
+        <div className="shrink-0 border-t border-white/[0.06] px-2 py-3 flex flex-col gap-0.5">
+
+          {/* Notifications */}
+          <div className="relative">
+            <button
+              onClick={() => setNotifOpen(o => !o)}
+              className="relative w-full flex items-center gap-3 h-[46px] px-3 rounded-lg
+                         text-white/35 hover:text-white/75 transition-colors duration-150 group"
+            >
+              <Bell size={19} className="shrink-0" />
+              {unread > 0 && (
+                <span className="absolute top-3 left-7 w-[7px] h-[7px] bg-coral rounded-full
+                                 border border-[#1a1a1f]" />
+              )}
+              <AnimatePresence>
+                {expanded && (
+                  <motion.span
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80
+                               transition-colors whitespace-nowrap"
+                  >
+                    Notifications{unread > 0 && <span className="ml-2 px-1.5 py-0.5 bg-coral/20 text-coral text-[10px] rounded-full">{unread}</span>}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+
+            {/* Notification Panel */}
             <AnimatePresence>
-              {expanded && (
-                <motion.span
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="font-body text-sm whitespace-nowrap"
-                >Notifications</motion.span>
+              {notifOpen && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10, scale: 0.97 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: -10, scale: 0.97 }}
+                  transition={{ duration: 0.18 }}
+                  className="absolute bottom-full left-full ml-3 mb-0 w-72
+                             bg-[#22222a] border border-white/10 rounded-2xl
+                             shadow-2xl overflow-hidden z-50"
+                  style={{ bottom: 0 }}
+                >
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                    <span className="text-white font-medium text-sm">Notifications</span>
+                    <button onClick={markAllRead} className="text-[11px] text-coral hover:text-coral/70 transition-colors">
+                      Mark all read
+                    </button>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {notifs.map(n => (
+                      <div key={n.id} className={`px-4 py-3 border-b border-white/[0.04] flex gap-3
+                                                   transition-colors hover:bg-white/[0.03] ${n.read ? 'opacity-50' : ''}`}>
+                        <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${n.read ? 'bg-transparent' : 'bg-coral'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-[12.5px] font-medium leading-tight">{n.title}</p>
+                          <p className="text-white/40 text-[11px] mt-0.5 leading-tight">{n.body}</p>
+                          <p className="text-white/25 text-[10px] mt-1">{n.time}</p>
+                        </div>
+                        {!n.read && (
+                          <button onClick={() => setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
+                                  className="shrink-0 text-white/20 hover:text-white/60 transition-colors mt-0.5">
+                            <Check size={12} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
               )}
             </AnimatePresence>
-          </button>
+          </div>
 
           {/* Settings */}
           <button
             onClick={() => navigate(`/${user.role}/settings`)}
-            className="flex items-center gap-3 h-11 px-3 rounded-xl
-                       text-white/50 hover:text-white hover:bg-white/8 transition-all"
+            className="w-full flex items-center gap-3 h-[46px] px-3 rounded-lg
+                       text-white/35 hover:text-white/75 transition-colors duration-150 group"
           >
-            <Settings size={20} className="shrink-0" />
+            <Settings size={19} className="shrink-0" />
             <AnimatePresence>
               {expanded && (
                 <motion.span
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="font-body text-sm whitespace-nowrap"
+                  className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80
+                             transition-colors whitespace-nowrap"
                 >Settings</motion.span>
               )}
             </AnimatePresence>
           </button>
 
           {/* Profile row */}
-          <div className="flex items-center gap-3 h-12 px-3 mt-1 rounded-xl bg-white/5">
-            <div className="w-8 h-8 rounded-full bg-coral flex items-center justify-center shrink-0">
-              <span className="text-white font-body font-bold text-xs">{initials}</span>
+          <div className="flex items-center gap-3 h-[52px] px-3 mt-1 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+            <div className="w-[30px] h-[30px] rounded-full bg-coral/90 flex items-center justify-center shrink-0">
+              <span className="text-white font-semibold text-[11px]">{initials}</span>
             </div>
             <AnimatePresence>
               {expanded && (
@@ -193,8 +267,8 @@ export default function PortalNav() {
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="flex-1 min-w-0"
                 >
-                  <p className="font-body text-sm font-medium text-white truncate">{user.fullName}</p>
-                  <p className="font-body text-[10px] text-white/40 capitalize">{user.role}</p>
+                  <p className="text-[12.5px] font-medium text-white/90 truncate leading-tight">{user.fullName}</p>
+                  <p className="text-[10px] text-white/30 capitalize leading-tight mt-0.5">{user.role}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -203,10 +277,11 @@ export default function PortalNav() {
                 <motion.button
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   onClick={() => logout()}
-                  className="p-1.5 rounded-lg hover:bg-coral/20 text-white/40 hover:text-coral transition-all"
                   title="Sign out"
+                  className="shrink-0 p-1.5 rounded-lg text-white/25
+                             hover:text-coral hover:bg-coral/10 transition-all"
                 >
-                  <LogOut size={15} />
+                  <LogOut size={14} />
                 </motion.button>
               )}
             </AnimatePresence>
@@ -214,38 +289,78 @@ export default function PortalNav() {
         </div>
       </motion.aside>
 
-      {/* ── MOBILE TOP BAR (logo + profile only) ────────────────── */}
+      {/* ── MOBILE TOP BAR ──────────────────────────────────────── */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 h-14
-                         bg-charcoal flex items-center justify-between px-4
-                         border-b border-white/5">
+                         bg-[#1a1a1f] flex items-center justify-between px-4
+                         border-b border-white/[0.06]">
         <Link to={portalPrefix} className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-coral flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-coral flex items-center justify-center shadow-md shadow-coral/30">
             <span className="font-display font-bold text-white text-xs">N</span>
           </div>
-          <span className="font-display font-semibold text-white text-base">
+          <span className="font-display font-semibold text-white text-[15px]">
             NextStep<span className="text-coral">.</span>AI
           </span>
         </Link>
-        <div className="flex items-center gap-3">
-          <button className="relative p-2">
-            <Bell size={18} className="text-white/60" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-coral rounded-full" />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setNotifOpen(o => !o)}
+            className="relative p-2 rounded-lg text-white/50 hover:text-white transition-colors"
+          >
+            <Bell size={18} />
+            {unread > 0 && <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-coral rounded-full" />}
           </button>
           <button
             onClick={() => navigate(`/${user.role}/settings`)}
-            className="w-8 h-8 rounded-full bg-coral flex items-center justify-center"
+            className="w-8 h-8 rounded-full bg-coral/90 flex items-center justify-center shadow-md shadow-coral/30"
           >
-            <span className="text-white font-body font-bold text-xs">{initials}</span>
+            <span className="text-white font-semibold text-[11px]">{initials}</span>
           </button>
         </div>
+
+        {/* Mobile notification dropdown */}
+        <AnimatePresence>
+          {notifOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                transition={{ duration: 0.18 }}
+                className="absolute top-full right-3 mt-2 w-72
+                           bg-[#22222a] border border-white/10 rounded-2xl
+                           shadow-2xl overflow-hidden z-50"
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                  <span className="text-white font-medium text-sm">Notifications</span>
+                  <div className="flex items-center gap-3">
+                    <button onClick={markAllRead} className="text-[11px] text-coral">Mark all read</button>
+                    <button onClick={() => setNotifOpen(false)} className="text-white/40 hover:text-white">
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+                {notifs.map(n => (
+                  <div key={n.id} className={`px-4 py-3 border-b border-white/[0.04] flex gap-3 ${n.read ? 'opacity-50' : ''}`}>
+                    <div className={`mt-1 w-1.5 h-1.5 rounded-full shrink-0 ${n.read ? 'bg-transparent' : 'bg-coral'}`} />
+                    <div>
+                      <p className="text-white text-[12.5px] font-medium">{n.title}</p>
+                      <p className="text-white/40 text-[11px] mt-0.5">{n.body}</p>
+                      <p className="text-white/25 text-[10px] mt-1">{n.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </header>
 
-      {/* ── MOBILE BOTTOM TAB BAR ────────────────────────────────── */}
+      {/* ── MOBILE BOTTOM TABS ───────────────────────────────────── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16
-                      bg-charcoal border-t border-white/5 flex items-center
-                      justify-around px-2"
+                      bg-[#1a1a1f] border-t border-white/[0.06] flex items-center justify-around px-1"
            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {mobileItems.map(item => {
+        {navItems.slice(0, 5).map(item => {
           const active = isActive(item);
           return (
             <Link
@@ -254,15 +369,18 @@ export default function PortalNav() {
               className="flex flex-col items-center justify-center gap-1 flex-1 py-2 relative"
             >
               {active && (
-                <motion.div
-                  layoutId="mobileActive"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-coral rounded-full"
+                <motion.span
+                  layoutId="mobileActiveBar"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[2px] rounded-full bg-coral"
                 />
               )}
-              <span className={active ? 'text-coral' : 'text-white/40'}>
+              <span
+                className={`transition-all ${active ? 'text-coral' : 'text-white/30'}`}
+                style={active ? { filter: 'drop-shadow(0 0 5px rgba(231,90,62,0.5))' } : {}}
+              >
                 {item.icon}
               </span>
-              <span className={`font-body text-[9px] font-medium leading-none ${active ? 'text-coral' : 'text-white/40'}`}>
+              <span className={`text-[9px] font-medium ${active ? 'text-coral' : 'text-white/30'}`}>
                 {item.label.split(' ')[0]}
               </span>
             </Link>
