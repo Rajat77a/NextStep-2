@@ -60,6 +60,10 @@ export interface ReportCard {
   boardType: BoardType;
   createdAt: string;
   status: ReportStatus;
+  /** Raw OCR text extracted from the uploaded report card file */
+  raw_text?: string;
+  /** Structured JSON returned by the Grok AI analysis */
+  ai_response?: AIReportAnalysis;
 }
 
 export interface SubjectGrade {

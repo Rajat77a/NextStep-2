@@ -366,6 +366,8 @@ export async function uploadReportCard(data: {
   boardType: string;
   file?: File;
   uploadMethod?: string;
+  /** Raw OCR text extracted from the uploaded file — saved to ReportCard.raw_text */
+  raw_text?: string;
 }): Promise<ReportCard> {
   await delay(300);
 
@@ -385,6 +387,7 @@ export async function uploadReportCard(data: {
     boardType: data.boardType as any,
     createdAt: new Date().toISOString(),
     status: 'processing',
+    ...(data.raw_text ? { raw_text: data.raw_text } : {}),
   };
 
   const reportCards = storage.getReportCards();
@@ -450,6 +453,32 @@ export async function deleteReportCard(id: string): Promise<void> {
 
   const reportCards = storage.getReportCards().filter((card) => card.id !== id);
   storage.setReportCards(reportCards);
+}
+
+/**
+ * Patches the structured Grok AI response onto an existing ReportCard record.
+ * Called immediately after analyzeReportText() returns successfully, before
+ * the user confirms and subjects/clarity check are saved.
+ */
+export async function updateReportCardAiResponse(
+  id: string,
+  ai_response: import('@/types').AIReportAnalysis
+): Promise<ReportCard> {
+  requireAuth();
+
+  const cards = storage.getReportCards();
+  const index = cards.findIndex((card) => card.id === id);
+
+  if (index === -1) throw createApiError(404, 'Report card not found');
+
+  cards[index] = {
+    ...cards[index],
+    ai_response,
+    status: 'ready',
+  };
+
+  storage.setReportCards(cards);
+  return cards[index];
 }
 
 // ===== Subject Grades =====

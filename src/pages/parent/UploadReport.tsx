@@ -16,6 +16,7 @@ import {
   addSubjectGrades,
   saveClarityCheck,
   createPlanProgress,
+  updateReportCardAiResponse,
 } from '@/api/data';
 import {
   analyzeReportText,
@@ -183,7 +184,12 @@ export default function UploadReport() {
         boardType: board,
         file: file || undefined,
         uploadMethod: 'parent',
+        // ── Save raw OCR text to ReportCard.raw_text ──
+        raw_text: rawText || undefined,
       });
+
+      // ── Save the full structured Grok AI response to ReportCard.ai_response ──
+      await updateReportCardAiResponse(card.id, analysis);
 
       await addSubjectGrades(card.id, grades);
 
