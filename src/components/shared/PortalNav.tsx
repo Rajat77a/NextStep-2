@@ -50,16 +50,19 @@ export default function PortalNav() {
     location.pathname === item.path ||
     (item.path !== portalPrefix && location.pathname.startsWith(item.path));
 
+  // Keep sidebar expanded while notif panel is open
+  const sidebarExpanded = expanded || notifOpen;
+
   return (
     <>
       {/* ── DESKTOP SIDEBAR ─────────────────────────────────────── */}
       <motion.aside
         initial={false}
-        animate={{ width: expanded ? 220 : 68 }}
+        animate={{ width: sidebarExpanded ? 220 : 68 }}
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         onMouseEnter={() => setExpanded(true)}
-        onMouseLeave={() => { setExpanded(false); setNotifOpen(false); }}
-        className="hidden md:flex fixed top-0 left-0 h-screen z-50 flex-col bg-[#1a1a1f] overflow-hidden"
+        onMouseLeave={() => { if (!notifOpen) setExpanded(false); }}
+        className="hidden md:flex fixed top-0 left-0 h-screen z-50 flex-col bg-[#1a1a1f] overflow-visible"
         style={{ boxShadow: '2px 0 20px rgba(0,0,0,0.25)' }}
       >
         {/* Logo */}
@@ -71,7 +74,7 @@ export default function PortalNav() {
             <span className="font-display font-bold text-white text-sm">N</span>
           </div>
           <AnimatePresence>
-            {expanded && (
+            {sidebarExpanded && (
               <motion.span
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -86,26 +89,22 @@ export default function PortalNav() {
         </Link>
 
         {/* Nav Items */}
-        <nav className="flex-1 py-3 flex flex-col overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 py-3 flex flex-col overflow-y-auto overflow-x-visible">
           {navItems.map(item => {
             const active = isActive(item);
             return (
-              // Outer wrapper: full width, relative, so the stripe can sit at left-0 with no clipping
               <div key={item.path} className="relative">
-                {/* Coral stripe — lives on the wrapper, not inside the rounded Link */}
                 {active && (
                   <motion.span
                     layoutId="activeStripe"
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[24px] rounded-r-full bg-coral"
                   />
                 )}
-
                 <Link
                   to={item.path}
                   className="flex items-center gap-3 h-[46px] mx-2 px-3 rounded-lg
                              transition-colors duration-150 group select-none"
                 >
-                  {/* Icon */}
                   <span
                     className={`shrink-0 transition-all duration-150 ${
                       active ? 'text-coral' : 'text-white/35 group-hover:text-white/75'
@@ -114,10 +113,8 @@ export default function PortalNav() {
                   >
                     {item.icon}
                   </span>
-
-                  {/* Label */}
                   <AnimatePresence>
-                    {expanded && (
+                    {sidebarExpanded && (
                       <motion.span
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -131,9 +128,7 @@ export default function PortalNav() {
                       </motion.span>
                     )}
                   </AnimatePresence>
-
-                  {/* Collapsed tooltip */}
-                  {!expanded && (
+                  {!sidebarExpanded && (
                     <span className="absolute left-full ml-4 px-2.5 py-1.5
                                      bg-[#2a2a32] border border-white/10 rounded-lg
                                      text-white/80 text-[12px] font-medium whitespace-nowrap
@@ -154,55 +149,24 @@ export default function PortalNav() {
         <div className="shrink-0 border-t border-white/[0.06] px-2 py-3 flex flex-col gap-0.5">
 
           {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setNotifOpen(o => !o)}
-              className="relative w-full flex items-center gap-3 h-[46px] px-3 rounded-lg
-                         text-white/35 hover:text-white/75 transition-colors duration-150 group"
-            >
-              <Bell size={19} className="shrink-0" />
-              <AnimatePresence>
-                {expanded && (
-                  <motion.span
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80 transition-colors whitespace-nowrap"
-                  >
-                    Notifications
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-
-            {/* Notification panel */}
+          <button
+            onClick={() => setNotifOpen(o => !o)}
+            className="relative w-full flex items-center gap-3 h-[46px] px-3 rounded-lg
+                       text-white/35 hover:text-white/75 transition-colors duration-150 group"
+          >
+            <Bell size={19} className="shrink-0" />
             <AnimatePresence>
-              {notifOpen && (
-                <motion.div
-                  initial={{ opacity: 0, x: -8, scale: 0.97 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -8, scale: 0.97 }}
-                  transition={{ duration: 0.18 }}
-                  className="absolute bottom-0 left-full ml-3 w-72
-                             bg-[#22222a] border border-white/10 rounded-2xl
-                             shadow-2xl overflow-hidden z-50"
+              {sidebarExpanded && (
+                <motion.span
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80
+                             transition-colors whitespace-nowrap"
                 >
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-                    <span className="text-white font-medium text-sm">Notifications</span>
-                    <button onClick={() => setNotifOpen(false)} className="text-white/40 hover:text-white transition-colors">
-                      <X size={14} />
-                    </button>
-                  </div>
-                  {/* Empty state — no fake data */}
-                  <div className="px-4 py-10 flex flex-col items-center text-center">
-                    <Bell size={28} className="text-white/15 mb-3" />
-                    <p className="text-white/50 text-[13px] font-medium">No notifications yet</p>
-                    <p className="text-white/25 text-[11px] mt-1">
-                      You'll see updates here when something happens
-                    </p>
-                  </div>
-                </motion.div>
+                  Notifications
+                </motion.span>
               )}
             </AnimatePresence>
-          </div>
+          </button>
 
           {/* Settings */}
           <button
@@ -212,10 +176,11 @@ export default function PortalNav() {
           >
             <Settings size={19} className="shrink-0" />
             <AnimatePresence>
-              {expanded && (
+              {sidebarExpanded && (
                 <motion.span
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80 transition-colors whitespace-nowrap"
+                  className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80
+                             transition-colors whitespace-nowrap"
                 >
                   Settings
                 </motion.span>
@@ -229,7 +194,7 @@ export default function PortalNav() {
               <span className="text-white font-semibold text-[11px]">{initials}</span>
             </div>
             <AnimatePresence>
-              {expanded && (
+              {sidebarExpanded && (
                 <motion.div
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="flex-1 min-w-0"
@@ -240,7 +205,7 @@ export default function PortalNav() {
               )}
             </AnimatePresence>
             <AnimatePresence>
-              {expanded && (
+              {sidebarExpanded && (
                 <motion.button
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   onClick={() => logout()}
@@ -254,6 +219,51 @@ export default function PortalNav() {
           </div>
         </div>
       </motion.aside>
+
+      {/* ── NOTIFICATION OVERLAY (renders outside sidebar so mouse events don't kill it) ── */}
+      <AnimatePresence>
+        {notifOpen && (
+          <>
+            {/* Backdrop — click anywhere to close */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { setNotifOpen(false); setExpanded(false); }}
+              className="fixed inset-0 z-[55] bg-black/20"
+            />
+            {/* Panel — positioned next to sidebar */}
+            <motion.div
+              initial={{ opacity: 0, x: -12, scale: 0.97 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -12, scale: 0.97 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed z-[60] w-80 bg-[#22222a] border border-white/10
+                         rounded-2xl shadow-2xl overflow-hidden"
+              style={{ left: 232, bottom: 80 }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                <span className="text-white font-semibold text-[15px]">Notifications</span>
+                <button
+                  onClick={() => { setNotifOpen(false); setExpanded(false); }}
+                  className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="px-5 py-12 flex flex-col items-center text-center">
+                <div className="w-12 h-12 rounded-full bg-white/[0.04] flex items-center justify-center mb-4">
+                  <Bell size={22} className="text-white/20" />
+                </div>
+                <p className="text-white/60 text-[14px] font-medium">No notifications yet</p>
+                <p className="text-white/30 text-[12px] mt-2 max-w-[200px] leading-relaxed">
+                  Updates about report analysis, plan reminders, and more will appear here
+                </p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── MOBILE TOP BAR ──────────────────────────────────────── */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 h-14
@@ -281,38 +291,6 @@ export default function PortalNav() {
             <span className="text-white font-semibold text-[11px]">{initials}</span>
           </button>
         </div>
-
-        {/* Mobile notification dropdown */}
-        <AnimatePresence>
-          {notifOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                transition={{ duration: 0.18 }}
-                className="absolute top-full right-3 mt-2 w-72
-                           bg-[#22222a] border border-white/10 rounded-2xl
-                           shadow-2xl overflow-hidden z-50"
-              >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-                  <span className="text-white font-medium text-sm">Notifications</span>
-                  <button onClick={() => setNotifOpen(false)} className="text-white/40 hover:text-white">
-                    <X size={14} />
-                  </button>
-                </div>
-                <div className="px-4 py-10 flex flex-col items-center text-center">
-                  <Bell size={28} className="text-white/15 mb-3" />
-                  <p className="text-white/50 text-[13px] font-medium">No notifications yet</p>
-                  <p className="text-white/25 text-[11px] mt-1">
-                    You'll see updates here when something happens
-                  </p>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
       </header>
 
       {/* ── MOBILE BOTTOM TABS ───────────────────────────────────── */}

@@ -237,7 +237,7 @@ export async function addParentStudent(fullName: string): Promise<Student> {
   const { data: existing } = await supabase
     .from('students')
     .select('*')
-    .eq('parent_id', supaUserId)
+    .eq('user_id', supaUserId)
     .ilike('full_name', fullName)
     .maybeSingle();
 
@@ -248,7 +248,7 @@ export async function addParentStudent(fullName: string): Promise<Student> {
       classId: existing.class_id ?? 'parent-local-class',
       rollNumber: existing.roll_number ?? '',
       fullName: existing.full_name,
-      parentId: existing.parent_id,
+      parentId: existing.user_id,
       createdAt: existing.created_at,
     };
   }
@@ -256,7 +256,7 @@ export async function addParentStudent(fullName: string): Promise<Student> {
   const { data, error } = await supabase
     .from('students')
     .insert({
-      parent_id: supaUserId,
+      user_id: supaUserId,
       full_name: fullName,
       school_id: null,
       class_id: null,
@@ -273,7 +273,7 @@ export async function addParentStudent(fullName: string): Promise<Student> {
     classId: data.class_id ?? 'parent-local-class',
     rollNumber: data.roll_number ?? '',
     fullName: data.full_name,
-    parentId: data.parent_id,
+    parentId: data.user_id,
     createdAt: data.created_at,
   };
 }
@@ -288,7 +288,7 @@ export async function getStudents(filters?: {
     const { data, error } = await supabase
       .from('students')
       .select('*')
-      .eq('parent_id', filters.parentId)
+      .eq('user_id', filters.parentId)
       .order('created_at', { ascending: true });
 
     if (error) throw createApiError(500, error.message);
@@ -299,7 +299,7 @@ export async function getStudents(filters?: {
       classId: row.class_id ?? 'parent-local-class',
       rollNumber: row.roll_number ?? '',
       fullName: row.full_name,
-      parentId: row.parent_id,
+      parentId: row.user_id,
       createdAt: row.created_at,
     }));
   }
@@ -449,7 +449,7 @@ export async function getReportCards(filters?: {
       const { data: myStudents } = await supabase
         .from('students')
         .select('id')
-        .eq('parent_id', supaUserId);
+        .eq('user_id', supaUserId);
 
       const studentIds = (myStudents ?? []).map((s: any) => s.id);
       if (studentIds.length === 0) return [];
