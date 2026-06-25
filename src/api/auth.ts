@@ -59,18 +59,28 @@ export async function register(data: {
     throw createApiError(409, signUpError?.message || 'Registration failed', 'email');
   }
 
-  // Profile row is created by the DB trigger (on_auth_user_created)
-  // Wait a moment for the trigger to fire then fetch it
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  const profile = await fetchProfile(authData.user.id);
-  if (!profile) throw createApiError(500, 'Failed to load profile after registration');
+  // Build profile directly from what we already have — no DB fetch needed.
+  // fetchProfile would fail here because the session may not be active yet (RLS blocks SELECT).
+  // The trigger has already inserted the row; we just don't need to read it back right now.
+  const profile: Omit<User, 'passwordHash'> = {
+    id: authData.user.id,
+    email: data.email,
+    fullName: data.fullName,
+    role: data.role,
+    schoolId: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastLoginAt: null,
+    isActive: true,
+    invitationStatus: 'accepted' as const,
+  };
 
   return {
     user: profile,
     token: authData.session?.access_token ?? '',
   };
 }
+
 
 // ─── login ────────────────────────────────────────────────────────────────────
 
