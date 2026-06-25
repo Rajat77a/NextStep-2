@@ -1,10 +1,37 @@
-import { storage } from './storage';
-import { hashPassword, verifyPassword, generateToken, decodeToken, generateId, delay } from '@/lib/crypto';
+import { supabase } from '@/lib/supabase';
 import type { User, AuthResponse, ApiError } from '@/types';
 
 function createApiError(code: number, message: string, field?: string): ApiError {
   return { code, message, field };
 }
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+/** Fetch the profile row for the currently signed-in Supabase user */
+async function fetchProfile(supabaseUserId: string): Promise<Omit<User, 'passwordHash'> | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', supabaseUserId)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    email: data.email,
+    fullName: data.full_name,
+    role: data.role,
+    schoolId: data.school_id ?? null,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    lastLoginAt: data.last_login_at ?? null,
+    isActive: true,
+    invitationStatus: data.invitation_status,
+  };
+}
+
+// ─── register ─────────────────────────────────────────────────────────────────
 
 export async function register(data: {
   email: string;
@@ -12,85 +39,74 @@ export async function register(data: {
   fullName: string;
   role: 'parent' | 'teacher' | 'admin';
 }): Promise<AuthResponse> {
-  await delay(200);
+  const { data: authData, error: signUpError } = await supabase.auth.signUp({
+    email: data.email,
+    password: data.password,
+  });
 
-  const users = storage.getUsers();
-  if (users.find(u => u.email === data.email)) {
-    throw createApiError(409, 'An account with this email already exists', 'email');
+  if (signUpError || !authData.user) {
+    throw createApiError(409, signUpError?.message || 'Registration failed', 'email');
   }
 
-  const passwordHash = await hashPassword(data.password);
-  const user: User = {
-    id: generateId(),
+  // Insert profile row with role and display name
+  const { error: profileError } = await supabase.from('profiles').insert({
+    id: authData.user.id,
     email: data.email,
-    passwordHash,
-    fullName: data.fullName,
+    full_name: data.fullName,
     role: data.role,
-    schoolId: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    lastLoginAt: new Date().toISOString(),
-    isActive: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+
+  if (profileError) {
+    throw createApiError(500, profileError.message);
+  }
+
+  const profile = await fetchProfile(authData.user.id);
+  if (!profile) throw createApiError(500, 'Failed to load profile after registration');
+
+  return {
+    user: profile,
+    token: authData.session?.access_token ?? '',
   };
-
-  users.push(user);
-  storage.setUsers(users);
-
-  const token = generateToken(user.id, user.role, user.schoolId);
-  storage.setToken(token);
-
-  const { passwordHash: _, ...userWithoutPassword } = user;
-  return { user: userWithoutPassword as Omit<User, 'passwordHash'>, token };
 }
+
+// ─── login ────────────────────────────────────────────────────────────────────
 
 export async function login(data: { email: string; password: string }): Promise<AuthResponse> {
-  await delay(200);
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
+    email: data.email,
+    password: data.password,
+  });
 
-  const users = storage.getUsers();
-  const user = users.find(u => u.email === data.email);
-  if (!user) {
+  if (error || !authData.user) {
     throw createApiError(401, 'Invalid email or password');
   }
 
-  const valid = await verifyPassword(data.password, user.passwordHash);
-  if (!valid) {
-    throw createApiError(401, 'Invalid email or password');
-  }
+  const profile = await fetchProfile(authData.user.id);
+  if (!profile) throw createApiError(404, 'Profile not found — please contact support');
 
-  user.lastLoginAt = new Date().toISOString();
-  storage.setUsers(users);
-
-  const token = generateToken(user.id, user.role, user.schoolId);
-  storage.setToken(token);
-
-  const { passwordHash: _, ...userWithoutPassword } = user;
-  return { user: userWithoutPassword as Omit<User, 'passwordHash'>, token };
+  return {
+    user: profile,
+    token: authData.session?.access_token ?? '',
+  };
 }
 
-export function logout(): void {
-  storage.clearToken();
+// ─── logout ───────────────────────────────────────────────────────────────────
+
+export async function logout(): Promise<void> {
+  await supabase.auth.signOut();
 }
 
-export function getCurrentUser(): Omit<User, 'passwordHash'> | null {
-  const token = storage.getToken();
-  if (!token) return null;
+// ─── session / current user ───────────────────────────────────────────────────
 
-  const payload = decodeToken(token);
-  if (!payload) {
-    storage.clearToken();
-    return null;
-  }
-
-  const users = storage.getUsers();
-  const user = users.find(u => u.id === payload.sub);
-  if (!user || !user.isActive) {
-    storage.clearToken();
-    return null;
-  }
-
-  const { passwordHash: _, ...userWithoutPassword } = user;
-  return userWithoutPassword as Omit<User, 'passwordHash'>;
+export async function getCurrentUser(): Promise<Omit<User, 'passwordHash'> | null> {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session?.user) return null;
+  return fetchProfile(data.session.user.id);
 }
+
+// ─── update profile ───────────────────────────────────────────────────────────
 
 export async function updateProfile(data: {
   fullName?: string;
@@ -98,50 +114,55 @@ export async function updateProfile(data: {
   currentPassword?: string;
   newPassword?: string;
 }): Promise<Omit<User, 'passwordHash'>> {
-  await delay(150);
+  const { data: sessionData } = await supabase.auth.getSession();
+  const supaUser = sessionData.session?.user;
+  if (!supaUser) throw createApiError(401, 'Not authenticated');
 
-  const currentUser = getCurrentUser();
-  if (!currentUser) throw createApiError(401, 'Not authenticated');
-
-  const users = storage.getUsers();
-  const user = users.find(u => u.id === currentUser.id);
-  if (!user) throw createApiError(404, 'User not found');
-
-  if (data.email && data.email !== user.email) {
-    if (users.find(u => u.email === data.email && u.id !== user.id)) {
-      throw createApiError(409, 'Email already in use', 'email');
-    }
-    user.email = data.email;
+  // Update Supabase Auth email / password if requested
+  if (data.email || data.newPassword) {
+    const updates: { email?: string; password?: string } = {};
+    if (data.email) updates.email = data.email;
+    if (data.newPassword) updates.password = data.newPassword;
+    const { error } = await supabase.auth.updateUser(updates);
+    if (error) throw createApiError(400, error.message);
   }
 
-  if (data.fullName) user.fullName = data.fullName;
+  // Update profile row
+  const profileUpdates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (data.fullName) profileUpdates.full_name = data.fullName;
+  if (data.email) profileUpdates.email = data.email;
 
-  if (data.newPassword) {
-    if (!data.currentPassword) {
-      throw createApiError(400, 'Current password is required', 'currentPassword');
-    }
-    const valid = await verifyPassword(data.currentPassword, user.passwordHash);
-    if (!valid) {
-      throw createApiError(400, 'Current password is incorrect', 'currentPassword');
-    }
-    user.passwordHash = await hashPassword(data.newPassword);
-  }
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update(profileUpdates)
+    .eq('id', supaUser.id);
 
-  user.updatedAt = new Date().toISOString();
-  storage.setUsers(users);
+  if (profileError) throw createApiError(500, profileError.message);
 
-  const { passwordHash: _, ...userWithoutPassword } = user;
-  return userWithoutPassword as Omit<User, 'passwordHash'>;
+  const profile = await fetchProfile(supaUser.id);
+  if (!profile) throw createApiError(500, 'Failed to reload profile');
+  return profile;
 }
 
-export function requireAuth(): Omit<User, 'passwordHash'> {
-  const user = getCurrentUser();
+// ─── password reset ───────────────────────────────────────────────────────────
+
+export async function resetPasswordForEmail(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
+  if (error) throw createApiError(400, error.message);
+}
+
+// ─── guards ───────────────────────────────────────────────────────────────────
+
+export async function requireAuth(): Promise<Omit<User, 'passwordHash'>> {
+  const user = await getCurrentUser();
   if (!user) throw createApiError(401, 'Please sign in to continue');
   return user;
 }
 
-export function requireRole(allowedRoles: string[]): Omit<User, 'passwordHash'> {
-  const user = requireAuth();
+export async function requireRole(allowedRoles: string[]): Promise<Omit<User, 'passwordHash'>> {
+  const user = await requireAuth();
   if (!allowedRoles.includes(user.role)) {
     throw createApiError(403, 'You do not have permission to access this resource');
   }

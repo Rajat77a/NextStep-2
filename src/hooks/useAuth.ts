@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { register as apiRegister, login as apiLogin, logout as apiLogout, getCurrentUser, updateProfile as apiUpdateProfile } from '@/api/auth';
-import { seedDatabase } from '@/api/seed';
+import { supabase } from '@/lib/supabase';
+import {
+  register as apiRegister,
+  login as apiLogin,
+  logout as apiLogout,
+  getCurrentUser,
+  updateProfile as apiUpdateProfile,
+  resetPasswordForEmail as apiResetPassword,
+} from '@/api/auth';
 import type { UserRole } from '@/types';
 
 export function useAuth() {
@@ -8,12 +15,34 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Bootstrap: load current session on mount, then listen for auth changes
   useEffect(() => {
-    seedDatabase().then(() => {
-      const u = getCurrentUser();
-      setUser(u);
-      setLoading(false);
+    let mounted = true;
+
+    getCurrentUser().then((u) => {
+      if (mounted) {
+        setUser(u);
+        setLoading(false);
+      }
     });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (!mounted) return;
+        if (session?.user) {
+          const profile = await getCurrentUser();
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -51,8 +80,8 @@ export function useAuth() {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    apiLogout();
+  const logout = useCallback(async () => {
+    await apiLogout();
     setUser(null);
     window.location.href = '/';
   }, []);
@@ -74,5 +103,15 @@ export function useAuth() {
     }
   }, []);
 
-  return { user, loading, error, login, register, logout, updateUser };
+  const resetPassword = useCallback(async (email: string) => {
+    setError(null);
+    try {
+      await apiResetPassword(email);
+    } catch (e: any) {
+      setError(e.message || 'Reset failed');
+      throw e;
+    }
+  }, []);
+
+  return { user, loading, error, login, register, logout, updateUser, resetPassword };
 }

@@ -5,15 +5,14 @@ import { ArrowLeft, TrendingUp, TrendingDown, Minus, Check, Eye } from 'lucide-r
 import { useAuth } from '@/hooks/useAuth';
 import { getReportCards } from '@/api/data';
 import FlagBadge from '@/components/shared/FlagBadge';
-import type { ReportCard, SubjectGrade } from '@/types';
-import { storage } from '@/api/storage';
+import type { ReportCard, AIReportSubject } from '@/types';
 
 const flagRank = { green: 3, yellow: 2, red: 1 } as const;
 
 export default function ProgressTracking() {
   const { user } = useAuth();
   const [reportCards, setReportCards] = useState<ReportCard[]>([]);
-  const [gradesByCard, setGradesByCard] = useState<Record<string, SubjectGrade[]>>({});
+  const [gradesByCard, setGradesByCard] = useState<Record<string, AIReportSubject[]>>({});
   const [subjects, setSubjects] = useState<string[]>([]);
 
   useEffect(() => {
@@ -21,12 +20,12 @@ export default function ProgressTracking() {
       if (!user) return;
       const cards = await getReportCards();
       setReportCards(cards.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
-      const allGrades: Record<string, SubjectGrade[]> = {};
+      const allGrades: Record<string, AIReportSubject[]> = {};
       const subjectSet = new Set<string>();
       for (const card of cards) {
-        const g = storage.getSubjectGrades().filter(sg => sg.reportCardId === card.id);
+        const g = card.ai_response?.subjects || [];
         allGrades[card.id] = g;
-        g.forEach(sg => subjectSet.add(sg.subjectName));
+        g.forEach(sg => subjectSet.add(sg.subject));
       }
       setGradesByCard(allGrades);
       setSubjects([...subjectSet]);
@@ -58,8 +57,8 @@ export default function ProgressTracking() {
   const watchAreas: string[] = [];
 
   subjects.forEach(subject => {
-    const lg = latestGrades.find(g => g.subjectName === subject);
-    const pg = prevGrades.find(g => g.subjectName === subject);
+    const lg = latestGrades.find(g => g.subject === subject);
+    const pg = prevGrades.find(g => g.subject === subject);
     if (lg && pg) {
       if (flagRank[lg.flag] > flagRank[pg.flag]) improvements.push(`${subject} improved from ${pg.flag} to ${lg.flag}`);
       else if (flagRank[lg.flag] < flagRank[pg.flag]) watchAreas.push(`${subject} moved from ${pg.flag} to ${lg.flag}`);
@@ -79,8 +78,8 @@ export default function ProgressTracking() {
       {/* Subject-by-Subject Grid */}
       <div className="grid md:grid-cols-2 gap-4 mb-8">
         {subjects.map((subject, i) => {
-          const lg = latestGrades.find(g => g.subjectName === subject);
-          const pg = prevGrades.find(g => g.subjectName === subject);
+          const lg = latestGrades.find(g => g.subject === subject);
+          const pg = prevGrades.find(g => g.subject === subject);
           const trend = lg && pg ? (flagRank[lg.flag] > flagRank[pg.flag] ? 'up' : flagRank[lg.flag] < flagRank[pg.flag] ? 'down' : 'flat') : 'flat';
           return (
             <motion.div
@@ -99,7 +98,7 @@ export default function ProgressTracking() {
                 {trend === 'up' ? <TrendingUp size={18} className="text-sage" /> : trend === 'down' ? <TrendingDown size={18} className="text-coral" /> : <Minus size={18} className="text-medium-gray" />}
                 {lg && <span className={`px-3 py-1 rounded-full font-body text-sm font-medium ${lg.flag === 'green' ? 'bg-sage/10 text-sage' : lg.flag === 'yellow' ? 'bg-amber/10 text-amber' : 'bg-coral/10 text-coral'}`}>{lg.flag}</span>}
               </div>
-              {lg?.aiNote && <p className="font-body text-xs text-charcoal/60">{lg.aiNote.slice(0, 100)}...</p>}
+              {lg?.reasoning && <p className="font-body text-xs text-charcoal/60">{lg.reasoning.slice(0, 100)}...</p>}
             </motion.div>
           );
         })}

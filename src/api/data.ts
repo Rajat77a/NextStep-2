@@ -1,6 +1,7 @@
 import { storage } from './storage';
 import { generateId, delay } from '@/lib/crypto';
 import { requireAuth, requireRole } from './auth';
+import { supabase } from '@/lib/supabase';
 import type {
   School,
   Class,
@@ -22,7 +23,7 @@ function createApiError(code: number, message: string): ApiError {
 export async function createSchool(data: Partial<School>): Promise<School> {
   await delay(150);
 
-  const user = requireRole(['admin']);
+  const user = await requireRole(['admin']);
   const schools = storage.getSchools();
 
   const school: School = {
@@ -53,7 +54,7 @@ export async function createSchool(data: Partial<School>): Promise<School> {
 export async function getMySchool(): Promise<School | null> {
   await delay(100);
 
-  const user = requireAuth();
+  const user = await await requireAuth();
 
   if (!user.schoolId) return null;
 
@@ -88,7 +89,7 @@ export async function createClass(data: {
 }): Promise<Class> {
   await delay(150);
 
-  const user = requireRole(['admin']);
+  const user = await requireRole(['admin']);
 
   if (!user.schoolId) throw createApiError(400, 'No school associated');
 
@@ -115,7 +116,7 @@ export async function getClasses(filters?: {
 }): Promise<Class[]> {
   await delay(100);
 
-  const user = requireAuth();
+  const user = await await requireAuth();
   const classes = storage.getClasses();
 
   if (filters?.schoolId) {
@@ -175,7 +176,7 @@ export async function addStudent(data: {
 }): Promise<Student> {
   await delay(200);
 
-  const user = requireAuth();
+  const user = await await requireAuth();
   const classes = storage.getClasses();
   const classItem = classes.find((storedClass) => storedClass.id === data.classId);
 
@@ -227,30 +228,55 @@ export async function addStudent(data: {
 }
 
 export async function addParentStudent(fullName: string): Promise<Student> {
-  await delay(150);
+  // Get current Supabase session to find parent ID
+  const { data: sessionData } = await supabase.auth.getSession();
+  const supaUserId = sessionData.session?.user?.id;
+  if (!supaUserId) throw createApiError(401, 'Please sign in to continue');
 
-  const user = requireRole(['parent']);
-  const students = storage.getStudents();
-  const existingStudent = students.find((student) => {
-    return student.parentId === user.id && student.fullName.toLowerCase() === fullName.toLowerCase();
-  });
+  // Check for duplicate in Supabase
+  const { data: existing } = await supabase
+    .from('students')
+    .select('*')
+    .eq('parent_id', supaUserId)
+    .ilike('full_name', fullName)
+    .maybeSingle();
 
-  if (existingStudent) return existingStudent;
+  if (existing) {
+    return {
+      id: existing.id,
+      schoolId: existing.school_id ?? 'parent-local-school',
+      classId: existing.class_id ?? 'parent-local-class',
+      rollNumber: existing.roll_number ?? '',
+      fullName: existing.full_name,
+      parentId: existing.parent_id,
+      createdAt: existing.created_at,
+    };
+  }
 
-  const student: Student = {
-    id: generateId(),
-    schoolId: user.schoolId || 'parent-local-school',
-    classId: 'parent-local-class',
-    rollNumber: `parent-${students.length + 1}`,
-    fullName,
-    parentId: user.id,
-    createdAt: new Date().toISOString(),
+  const { data, error } = await supabase
+    .from('students')
+    .insert({
+      parent_id: supaUserId,
+      full_name: fullName,
+      school_id: null,
+      class_id: null,
+      roll_number: '',
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error || !data) throw createApiError(500, error?.message || 'Could not add student');
+
+  return {
+    id: data.id,
+    schoolId: data.school_id ?? 'parent-local-school',
+    classId: data.class_id ?? 'parent-local-class',
+    rollNumber: data.roll_number ?? '',
+    fullName: data.full_name,
+    parentId: data.parent_id,
+    createdAt: data.created_at,
   };
-
-  students.push(student);
-  storage.setStudents(students);
-
-  return student;
 }
 
 export async function getStudents(filters?: {
@@ -258,34 +284,32 @@ export async function getStudents(filters?: {
   parentId?: string;
   schoolId?: string;
 }): Promise<Student[]> {
-  await delay(100);
-
-  const user = requireAuth();
-  let students = storage.getStudents();
-
-  if (filters?.classId) {
-    students = students.filter((student) => student.classId === filters.classId);
-  }
-
+  // Parent: fetch from Supabase
   if (filters?.parentId) {
-    students = students.filter((student) => student.parentId === filters.parentId);
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .eq('parent_id', filters.parentId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw createApiError(500, error.message);
+
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      schoolId: row.school_id ?? 'parent-local-school',
+      classId: row.class_id ?? 'parent-local-class',
+      rollNumber: row.roll_number ?? '',
+      fullName: row.full_name,
+      parentId: row.parent_id,
+      createdAt: row.created_at,
+    }));
   }
 
-  if (filters?.schoolId) {
-    students = students.filter((student) => student.schoolId === filters.schoolId);
-  }
-
-  if (user.role === 'parent') {
-    students = students.filter((student) => student.parentId === user.id);
-  } else if (user.role === 'teacher') {
-    const classes = storage.getClasses().filter((classItem) => classItem.teacherId === user.id);
-    const classIds = classes.map((classItem) => classItem.id);
-
-    students = students.filter((student) => classIds.includes(student.classId));
-  } else if (user.role === 'admin' && user.schoolId) {
-    students = students.filter((student) => student.schoolId === user.schoolId);
-  }
-
+  // Admin / teacher: keep localStorage path
+  await delay(100);
+  let students = storage.getStudents();
+  if (filters?.classId) students = students.filter((s) => s.classId === filters.classId);
+  if (filters?.schoolId) students = students.filter((s) => s.schoolId === filters.schoolId);
   return students;
 }
 
@@ -299,7 +323,7 @@ export async function getStudent(id: string): Promise<Student | null> {
 export async function updateStudent(id: string, data: Partial<Student>): Promise<Student> {
   await delay(150);
 
-  requireAuth();
+  await requireAuth();
 
   const students = storage.getStudents();
   const index = students.findIndex((student) => student.id === id);
@@ -369,116 +393,137 @@ export async function uploadReportCard(data: {
   /** Raw OCR text extracted from the uploaded file — saved to ReportCard.raw_text */
   raw_text?: string;
 }): Promise<ReportCard> {
-  await delay(300);
+  const { data: sessionData } = await supabase.auth.getSession();
+  const supaUserId = sessionData.session?.user?.id;
+  if (!supaUserId) throw createApiError(401, 'Please sign in to continue');
 
-  const user = requireAuth();
-  const students = storage.getStudents();
-  const student = students.find((storedStudent) => storedStudent.id === data.studentId);
+  const { data: row, error } = await supabase
+    .from('report_cards')
+    .insert({
+      student_id: data.studentId,
+      uploaded_by: supaUserId,
+      upload_source: data.uploadMethod || 'self_uploaded',
+      board_type: data.boardType,
+      term: data.term,
+      raw_text: data.raw_text ?? null,
+      ai_response: null,
+      status: 'processing',
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
 
-  if (!student) throw createApiError(404, 'Student not found');
+  if (error || !row) throw createApiError(500, error?.message || 'Could not save report card');
 
-  const reportCard: ReportCard = {
-    id: generateId(),
-    studentId: data.studentId,
-    classId: student.classId,
-    term: data.term,
-    uploadedBy: user.id,
-    uploadMethod: (data.uploadMethod as any) || 'parent',
-    boardType: data.boardType as any,
-    createdAt: new Date().toISOString(),
-    status: 'processing',
-    ...(data.raw_text ? { raw_text: data.raw_text } : {}),
+  return {
+    id: row.id,
+    studentId: row.student_id,
+    classId: row.class_id ?? 'parent-local-class',
+    term: row.term,
+    uploadedBy: row.uploaded_by,
+    uploadMethod: (row.upload_source as any) || 'parent',
+    boardType: row.board_type as any,
+    createdAt: row.created_at,
+    status: row.status as any,
+    raw_text: row.raw_text ?? undefined,
+    ai_response: row.ai_response ?? undefined,
   };
-
-  const reportCards = storage.getReportCards();
-  reportCards.push(reportCard);
-  storage.setReportCards(reportCards);
-
-  setTimeout(() => {
-    const allReportCards = storage.getReportCards();
-    const index = allReportCards.findIndex((storedCard) => storedCard.id === reportCard.id);
-
-    if (index !== -1) {
-      allReportCards[index].status = 'ready';
-      storage.setReportCards(allReportCards);
-    }
-  }, 2000);
-
-  return reportCard;
 }
 
 export async function getReportCards(filters?: {
   studentId?: string;
   classId?: string;
 }): Promise<ReportCard[]> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const supaUserId = sessionData.session?.user?.id;
+
+  // Build query — fetch from Supabase for authenticated users
+  if (supaUserId) {
+    let query = supabase
+      .from('report_cards')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (filters?.studentId) {
+      query = query.eq('student_id', filters.studentId);
+    } else {
+      // Scope to parent's own children
+      const { data: myStudents } = await supabase
+        .from('students')
+        .select('id')
+        .eq('parent_id', supaUserId);
+
+      const studentIds = (myStudents ?? []).map((s: any) => s.id);
+      if (studentIds.length === 0) return [];
+      query = query.in('student_id', studentIds);
+    }
+
+    const { data, error } = await query;
+    if (error) throw createApiError(500, error.message);
+
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      studentId: row.student_id,
+      classId: row.class_id ?? 'parent-local-class',
+      term: row.term,
+      uploadedBy: row.uploaded_by,
+      uploadMethod: (row.upload_source as any) || 'parent',
+      boardType: row.board_type as any,
+      createdAt: row.created_at,
+      status: row.status as any,
+      raw_text: row.raw_text ?? undefined,
+      ai_response: row.ai_response ?? undefined,
+    }));
+  }
+
+  // Fallback: localStorage (admin/teacher without Supabase tables)
   await delay(100);
-
-  const user = requireAuth();
+  await requireAuth();
   let reportCards = storage.getReportCards();
-
-  if (filters?.studentId) {
-    reportCards = reportCards.filter((card) => card.studentId === filters.studentId);
-  }
-
-  if (filters?.classId) {
-    reportCards = reportCards.filter((card) => card.classId === filters.classId);
-  }
-
-  if (user.role === 'parent') {
-    const students = storage.getStudents().filter((student) => student.parentId === user.id);
-    const studentIds = students.map((student) => student.id);
-
-    reportCards = reportCards.filter((card) => studentIds.includes(card.studentId));
-  } else if (user.role === 'teacher') {
-    const classes = storage.getClasses().filter((classItem) => classItem.teacherId === user.id);
-    const classIds = classes.map((classItem) => classItem.id);
-
-    reportCards = reportCards.filter((card) => classIds.includes(card.classId));
-  } else if (user.role === 'admin' && user.schoolId) {
-    const students = storage.getStudents().filter((student) => student.schoolId === user.schoolId);
-    const studentIds = students.map((student) => student.id);
-
-    reportCards = reportCards.filter((card) => studentIds.includes(card.studentId));
-  }
-
-  return reportCards.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  if (filters?.studentId) reportCards = reportCards.filter((c) => c.studentId === filters.studentId);
+  if (filters?.classId) reportCards = reportCards.filter((c) => c.classId === filters.classId);
+  return reportCards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function deleteReportCard(id: string): Promise<void> {
   await delay(150);
 
-  requireAuth();
+  await requireAuth();
 
   const reportCards = storage.getReportCards().filter((card) => card.id !== id);
   storage.setReportCards(reportCards);
 }
 
 /**
- * Patches the structured Grok AI response onto an existing ReportCard record.
- * Called immediately after analyzeReportText() returns successfully, before
- * the user confirms and subjects/clarity check are saved.
+ * Patches the structured Grok AI response onto an existing ReportCard record in Supabase.
+ * Called immediately after analyzeReportText() returns successfully.
  */
 export async function updateReportCardAiResponse(
   id: string,
   ai_response: import('@/types').AIReportAnalysis
 ): Promise<ReportCard> {
-  requireAuth();
+  const { data, error } = await supabase
+    .from('report_cards')
+    .update({ ai_response, status: 'ready' })
+    .eq('id', id)
+    .select()
+    .single();
 
-  const cards = storage.getReportCards();
-  const index = cards.findIndex((card) => card.id === id);
+  if (error || !data) throw createApiError(500, error?.message || 'Could not save AI response');
 
-  if (index === -1) throw createApiError(404, 'Report card not found');
-
-  cards[index] = {
-    ...cards[index],
-    ai_response,
-    status: 'ready',
+  return {
+    id: data.id,
+    studentId: data.student_id,
+    classId: data.class_id ?? 'parent-local-class',
+    term: data.term,
+    uploadedBy: data.uploaded_by,
+    uploadMethod: (data.upload_source as any) || 'parent',
+    boardType: data.board_type as any,
+    createdAt: data.created_at,
+    status: data.status as any,
+    raw_text: data.raw_text ?? undefined,
+    ai_response: data.ai_response ?? undefined,
   };
-
-  storage.setReportCards(cards);
-  return cards[index];
 }
 
 // ===== Subject Grades =====
@@ -488,7 +533,7 @@ export async function addSubjectGrades(
 ): Promise<SubjectGrade[]> {
   await delay(200);
 
-  requireAuth();
+  await requireAuth();
 
   const allGrades = storage.getSubjectGrades();
 
@@ -513,7 +558,7 @@ export async function addSubjectGrades(
 export async function getSubjectGrades(reportCardId: string): Promise<SubjectGrade[]> {
   await delay(80);
 
-  requireAuth();
+  await requireAuth();
 
   return storage.getSubjectGrades().filter((grade) => grade.reportCardId === reportCardId);
 }
@@ -558,7 +603,7 @@ export async function addTeacherNote(data: {
 }): Promise<TeacherNote> {
   await delay(150);
 
-  const user = requireRole(['teacher']);
+  const user = await requireRole(['teacher']);
   const notes = storage.getTeacherNotes();
 
   const note: TeacherNote = {
@@ -587,7 +632,7 @@ export async function getTeacherNotes(studentId: string): Promise<TeacherNote[]>
 export async function updateTeacherNote(id: string, note: string): Promise<TeacherNote> {
   await delay(150);
 
-  const user = requireRole(['teacher']);
+  const user = await requireRole(['teacher']);
   const notes = storage.getTeacherNotes();
   const index = notes.findIndex((storedNote) => storedNote.id === id && storedNote.teacherId === user.id);
 
@@ -618,7 +663,7 @@ export async function createPlanProgress(
 ): Promise<PlanProgress> {
   await delay(150);
 
-  const user = requireRole(['parent']);
+  const user = await requireRole(['parent']);
 
   const progress: PlanProgress = {
     id: generateId(),
@@ -667,7 +712,7 @@ export async function updateActionItem(
 export async function getAdminDashboard(): Promise<DashboardSummary> {
   await delay(200);
 
-  const user = requireRole(['admin']);
+  const user = await requireRole(['admin']);
 
   if (!user.schoolId) {
     return {
@@ -771,7 +816,7 @@ export async function getTeacherDashboard(): Promise<{
 }> {
   await delay(200);
 
-  const user = requireRole(['teacher']);
+  const user = await requireRole(['teacher']);
   const classes = storage.getClasses().filter((classItem) => classItem.teacherId === user.id);
   const classIds = classes.map((classItem) => classItem.id);
 
