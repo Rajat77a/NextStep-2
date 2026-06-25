@@ -17,6 +17,7 @@ import {
   saveClarityCheck,
   createPlanProgress,
   updateReportCardAiResponse,
+  addParentStudent,
 } from '@/api/data';
 import {
   analyzeReportText,
@@ -80,6 +81,24 @@ export default function UploadReport() {
   const [analysis, setAnalysis] = useState<AIReportAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [addChildName, setAddChildName] = useState('');
+  const [addingChild, setAddingChild] = useState(false);
+
+  const handleAddChild = async () => {
+    const name = addChildName.trim();
+    if (!name) return;
+    setAddingChild(true);
+    try {
+      const newChild = await addParentStudent(name);
+      setChildren((prev) => [...prev, newChild]);
+      setSelectedChild(newChild.id);
+      setAddChildName('');
+    } catch (e: any) {
+      setError(e?.message || 'Could not add child.');
+    } finally {
+      setAddingChild(false);
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -327,17 +346,38 @@ export default function UploadReport() {
               <label className="block font-body text-sm font-medium text-charcoal mb-2">
                 Which child is this for?
               </label>
-              <select
-                value={selectedChild}
-                onChange={(e) => setSelectedChild(e.target.value)}
-                className="w-full px-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal focus:border-coral outline-none"
-              >
-                {children.map((child) => (
-                  <option key={child.id} value={child.id}>
-                    {child.fullName}
-                  </option>
-                ))}
-              </select>
+              {children.length === 0 ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={addChildName}
+                    onChange={(e) => setAddChildName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddChild()}
+                    placeholder="Type your child's name"
+                    className="flex-1 px-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal focus:border-coral outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddChild}
+                    disabled={addingChild || !addChildName.trim()}
+                    className="px-4 py-3 rounded-[10px] bg-coral text-white font-body text-sm font-semibold hover:bg-coral-dark transition-all disabled:opacity-40"
+                  >
+                    {addingChild ? '...' : 'Add'}
+                  </button>
+                </div>
+              ) : (
+                <select
+                  value={selectedChild}
+                  onChange={(e) => setSelectedChild(e.target.value)}
+                  className="w-full px-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal focus:border-coral outline-none"
+                >
+                  {children.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.fullName}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="mb-6">
