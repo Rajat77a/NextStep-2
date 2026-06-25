@@ -261,7 +261,6 @@ export async function addParentStudent(fullName: string): Promise<Student> {
       school_id: null,
       class_id: null,
       roll_number: '',
-      created_at: new Date().toISOString(),
     })
     .select()
     .single();
@@ -408,7 +407,6 @@ export async function uploadReportCard(data: {
       raw_text: data.raw_text ?? null,
       ai_response: null,
       status: 'processing',
-      created_at: new Date().toISOString(),
     })
     .select()
     .single();

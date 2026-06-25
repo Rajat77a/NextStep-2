@@ -7,30 +7,31 @@ function createApiError(code: number, message: string, field?: string): ApiError
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-/** Fetch the profile row for the currently signed-in Supabase user */
+/** Fetch the profile row for the currently signed-in Supabase user.
+ * Falls back to auth metadata so a missing profile row never blocks login. */
 async function fetchProfile(supabaseUserId: string): Promise<Omit<User, 'passwordHash'> | null> {
-  // Get email from Supabase Auth (not profiles table)
   const { data: authUser } = await supabase.auth.getUser();
+  if (!authUser?.user) return null;
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', supabaseUserId)
     .single();
 
-  if (error || !data) return null;
-
+  // Build from DB row if available, else fall back to auth metadata
+  const meta = authUser.user.user_metadata ?? {};
   return {
-    id: data.id,
-    email: authUser?.user?.email ?? data.email ?? '',
-    fullName: data.full_name,
-    role: data.role,
-    schoolId: data.school_id ?? null,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-    lastLoginAt: data.last_login_at ?? null,
+    id: authUser.user.id,
+    email: authUser.user.email ?? '',
+    fullName: data?.full_name ?? meta.full_name ?? '',
+    role: (data?.role ?? meta.role ?? 'parent') as 'parent' | 'teacher' | 'admin',
+    schoolId: data?.school_id ?? null,
+    createdAt: data?.created_at ?? authUser.user.created_at ?? new Date().toISOString(),
+    updatedAt: data?.updated_at ?? new Date().toISOString(),
+    lastLoginAt: data?.last_login_at ?? null,
     isActive: true,
-    invitationStatus: data.invitation_status,
+    invitationStatus: (data?.invitation_status ?? 'accepted') as 'pending' | 'accepted',
   };
 }
 
@@ -138,17 +139,18 @@ export async function updateProfile(data: {
     if (error) throw createApiError(400, error.message);
   }
 
-  // Update profile row
-  const profileUpdates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  // Update profile row — only update columns that actually exist in the profiles table
+  // Do NOT include updated_at or email (email lives in auth.users, not profiles)
+  const profileUpdates: Record<string, unknown> = {};
   if (data.fullName) profileUpdates.full_name = data.fullName;
-  if (data.email) profileUpdates.email = data.email;
 
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .update(profileUpdates)
-    .eq('id', supaUser.id);
-
-  if (profileError) throw createApiError(500, profileError.message);
+  if (Object.keys(profileUpdates).length > 0) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update(profileUpdates)
+      .eq('id', supaUser.id);
+    if (profileError) throw createApiError(500, profileError.message);
+  }
 
   const profile = await fetchProfile(supaUser.id);
   if (!profile) throw createApiError(500, 'Failed to reload profile');
