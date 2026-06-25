@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Upload, ClipboardCheck, MessageCircle,
   HelpCircle, Calendar, TrendingUp, Users, BookOpen,
-  Settings, LogOut, Bell, School, BarChart3, X, Check,
+  Settings, LogOut, Bell, School, BarChart3, X,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -32,19 +32,12 @@ const adminNav: NavItem[] = [
   { label: 'Subscription', path: '/admin/subscription', icon: <Settings size={19} /> },
 ];
 
-const SAMPLE_NOTIFS = [
-  { id: 1, title: 'AI analysis complete', body: 'Report card processed — clarity check ready', time: '2m ago', read: false },
-  { id: 2, title: '30-day plan reminder', body: 'Week 1 check-in: 3 tasks pending', time: '1h ago', read: false },
-  { id: 3, title: 'New tip available', body: 'Maths conversation guide updated', time: 'Yesterday', read: true },
-];
-
 export default function PortalNav() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState(SAMPLE_NOTIFS);
 
   if (!user) return null;
 
@@ -52,13 +45,10 @@ export default function PortalNav() {
                  : user.role === 'teacher' ? teacherNav : adminNav;
   const portalPrefix = `/${user.role}`;
   const initials = user.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  const unread = notifs.filter(n => !n.read).length;
 
   const isActive = (item: NavItem) =>
     location.pathname === item.path ||
     (item.path !== portalPrefix && location.pathname.startsWith(item.path));
-
-  const markAllRead = () => setNotifs(prev => prev.map(n => ({ ...n, read: true })));
 
   return (
     <>
@@ -69,15 +59,13 @@ export default function PortalNav() {
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         onMouseEnter={() => setExpanded(true)}
         onMouseLeave={() => { setExpanded(false); setNotifOpen(false); }}
-        className="hidden md:flex fixed top-0 left-0 h-screen z-50 flex-col
-                   bg-[#1a1a1f] overflow-hidden"
+        className="hidden md:flex fixed top-0 left-0 h-screen z-50 flex-col bg-[#1a1a1f] overflow-hidden"
         style={{ boxShadow: '2px 0 20px rgba(0,0,0,0.25)' }}
       >
         {/* Logo */}
         <Link
           to={portalPrefix}
-          className="flex items-center gap-3 h-[64px] px-[14px] shrink-0
-                     border-b border-white/[0.06]"
+          className="flex items-center gap-3 h-[64px] px-[14px] shrink-0 border-b border-white/[0.06]"
         >
           <div className="w-9 h-9 rounded-xl bg-coral flex items-center justify-center shrink-0 shadow-lg shadow-coral/30">
             <span className="font-display font-bold text-white text-sm">N</span>
@@ -102,67 +90,62 @@ export default function PortalNav() {
           {navItems.map(item => {
             const active = isActive(item);
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="relative flex items-center gap-3 h-[46px] mx-2 px-3 rounded-lg
-                           transition-colors duration-150 group select-none"
-              >
-                {/* Left accent stripe — perfectly centred on the row */}
+              // Outer wrapper: full width, relative, so the stripe can sit at left-0 with no clipping
+              <div key={item.path} className="relative">
+                {/* Coral stripe — lives on the wrapper, not inside the rounded Link */}
                 {active && (
                   <motion.span
                     layoutId="activeStripe"
-                    className="absolute left-0 top-1/2 -translate-y-1/2
-                               w-[3px] h-[22px] rounded-full bg-coral"
-                    style={{ left: '-8px' }}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[24px] rounded-r-full bg-coral"
                   />
                 )}
 
-                {/* Icon — coral when active, glows; else muted */}
-                <span
-                  className={`shrink-0 transition-all duration-150 ${
-                    active
-                      ? 'text-coral'
-                      : 'text-white/35 group-hover:text-white/75'
-                  }`}
-                  style={active ? { filter: 'drop-shadow(0 0 6px rgba(231,90,62,0.6))' } : {}}
+                <Link
+                  to={item.path}
+                  className="flex items-center gap-3 h-[46px] mx-2 px-3 rounded-lg
+                             transition-colors duration-150 group select-none"
                 >
-                  {item.icon}
-                </span>
-
-                {/* Label */}
-                <AnimatePresence>
-                  {expanded && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -8 }}
-                      transition={{ duration: 0.15 }}
-                      className={`text-[13.5px] font-medium whitespace-nowrap transition-colors duration-150 ${
-                        active
-                          ? 'text-white'
-                          : 'text-white/40 group-hover:text-white/80'
-                      }`}
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-
-                {/* Collapsed tooltip */}
-                {!expanded && (
-                  <span className="absolute left-full ml-4 px-2.5 py-1.5
-                                   bg-[#2a2a32] border border-white/10
-                                   rounded-lg text-white/80 text-[12px] font-medium
-                                   whitespace-nowrap opacity-0 group-hover:opacity-100
-                                   pointer-events-none transition-opacity duration-150
-                                   shadow-xl z-50">
-                    {item.label}
-                    <span className="absolute right-full top-1/2 -translate-y-1/2
-                                     border-4 border-transparent border-r-[#2a2a32]" />
+                  {/* Icon */}
+                  <span
+                    className={`shrink-0 transition-all duration-150 ${
+                      active ? 'text-coral' : 'text-white/35 group-hover:text-white/75'
+                    }`}
+                    style={active ? { filter: 'drop-shadow(0 0 6px rgba(231,90,62,0.55))' } : {}}
+                  >
+                    {item.icon}
                   </span>
-                )}
-              </Link>
+
+                  {/* Label */}
+                  <AnimatePresence>
+                    {expanded && (
+                      <motion.span
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className={`text-[13.5px] font-medium whitespace-nowrap transition-colors duration-150 ${
+                          active ? 'text-white' : 'text-white/40 group-hover:text-white/80'
+                        }`}
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Collapsed tooltip */}
+                  {!expanded && (
+                    <span className="absolute left-full ml-4 px-2.5 py-1.5
+                                     bg-[#2a2a32] border border-white/10 rounded-lg
+                                     text-white/80 text-[12px] font-medium whitespace-nowrap
+                                     opacity-0 group-hover:opacity-100 pointer-events-none
+                                     transition-opacity duration-150 shadow-xl z-50">
+                      {item.label}
+                      <span className="absolute right-full top-1/2 -translate-y-1/2
+                                       border-4 border-transparent border-r-[#2a2a32]" />
+                    </span>
+                  )}
+                </Link>
+              </div>
             );
           })}
         </nav>
@@ -178,60 +161,43 @@ export default function PortalNav() {
                          text-white/35 hover:text-white/75 transition-colors duration-150 group"
             >
               <Bell size={19} className="shrink-0" />
-              {unread > 0 && (
-                <span className="absolute top-3 left-7 w-[7px] h-[7px] bg-coral rounded-full
-                                 border border-[#1a1a1f]" />
-              )}
               <AnimatePresence>
                 {expanded && (
                   <motion.span
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80
-                               transition-colors whitespace-nowrap"
+                    className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80 transition-colors whitespace-nowrap"
                   >
-                    Notifications{unread > 0 && <span className="ml-2 px-1.5 py-0.5 bg-coral/20 text-coral text-[10px] rounded-full">{unread}</span>}
+                    Notifications
                   </motion.span>
                 )}
               </AnimatePresence>
             </button>
 
-            {/* Notification Panel */}
+            {/* Notification panel */}
             <AnimatePresence>
               {notifOpen && (
                 <motion.div
-                  initial={{ opacity: 0, x: -10, scale: 0.97 }}
+                  initial={{ opacity: 0, x: -8, scale: 0.97 }}
                   animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -10, scale: 0.97 }}
+                  exit={{ opacity: 0, x: -8, scale: 0.97 }}
                   transition={{ duration: 0.18 }}
-                  className="absolute bottom-full left-full ml-3 mb-0 w-72
+                  className="absolute bottom-0 left-full ml-3 w-72
                              bg-[#22222a] border border-white/10 rounded-2xl
                              shadow-2xl overflow-hidden z-50"
-                  style={{ bottom: 0 }}
                 >
                   <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
                     <span className="text-white font-medium text-sm">Notifications</span>
-                    <button onClick={markAllRead} className="text-[11px] text-coral hover:text-coral/70 transition-colors">
-                      Mark all read
+                    <button onClick={() => setNotifOpen(false)} className="text-white/40 hover:text-white transition-colors">
+                      <X size={14} />
                     </button>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {notifs.map(n => (
-                      <div key={n.id} className={`px-4 py-3 border-b border-white/[0.04] flex gap-3
-                                                   transition-colors hover:bg-white/[0.03] ${n.read ? 'opacity-50' : ''}`}>
-                        <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${n.read ? 'bg-transparent' : 'bg-coral'}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white text-[12.5px] font-medium leading-tight">{n.title}</p>
-                          <p className="text-white/40 text-[11px] mt-0.5 leading-tight">{n.body}</p>
-                          <p className="text-white/25 text-[10px] mt-1">{n.time}</p>
-                        </div>
-                        {!n.read && (
-                          <button onClick={() => setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
-                                  className="shrink-0 text-white/20 hover:text-white/60 transition-colors mt-0.5">
-                            <Check size={12} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                  {/* Empty state — no fake data */}
+                  <div className="px-4 py-10 flex flex-col items-center text-center">
+                    <Bell size={28} className="text-white/15 mb-3" />
+                    <p className="text-white/50 text-[13px] font-medium">No notifications yet</p>
+                    <p className="text-white/25 text-[11px] mt-1">
+                      You'll see updates here when something happens
+                    </p>
                   </div>
                 </motion.div>
               )}
@@ -249,9 +215,10 @@ export default function PortalNav() {
               {expanded && (
                 <motion.span
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80
-                             transition-colors whitespace-nowrap"
-                >Settings</motion.span>
+                  className="text-[13.5px] font-medium text-white/40 group-hover:text-white/80 transition-colors whitespace-nowrap"
+                >
+                  Settings
+                </motion.span>
               )}
             </AnimatePresence>
           </button>
@@ -278,8 +245,7 @@ export default function PortalNav() {
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   onClick={() => logout()}
                   title="Sign out"
-                  className="shrink-0 p-1.5 rounded-lg text-white/25
-                             hover:text-coral hover:bg-coral/10 transition-all"
+                  className="shrink-0 p-1.5 rounded-lg text-white/25 hover:text-coral hover:bg-coral/10 transition-all"
                 >
                   <LogOut size={14} />
                 </motion.button>
@@ -307,7 +273,6 @@ export default function PortalNav() {
             className="relative p-2 rounded-lg text-white/50 hover:text-white transition-colors"
           >
             <Bell size={18} />
-            {unread > 0 && <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-coral rounded-full" />}
           </button>
           <button
             onClick={() => navigate(`/${user.role}/settings`)}
@@ -333,23 +298,17 @@ export default function PortalNav() {
               >
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
                   <span className="text-white font-medium text-sm">Notifications</span>
-                  <div className="flex items-center gap-3">
-                    <button onClick={markAllRead} className="text-[11px] text-coral">Mark all read</button>
-                    <button onClick={() => setNotifOpen(false)} className="text-white/40 hover:text-white">
-                      <X size={14} />
-                    </button>
-                  </div>
+                  <button onClick={() => setNotifOpen(false)} className="text-white/40 hover:text-white">
+                    <X size={14} />
+                  </button>
                 </div>
-                {notifs.map(n => (
-                  <div key={n.id} className={`px-4 py-3 border-b border-white/[0.04] flex gap-3 ${n.read ? 'opacity-50' : ''}`}>
-                    <div className={`mt-1 w-1.5 h-1.5 rounded-full shrink-0 ${n.read ? 'bg-transparent' : 'bg-coral'}`} />
-                    <div>
-                      <p className="text-white text-[12.5px] font-medium">{n.title}</p>
-                      <p className="text-white/40 text-[11px] mt-0.5">{n.body}</p>
-                      <p className="text-white/25 text-[10px] mt-1">{n.time}</p>
-                    </div>
-                  </div>
-                ))}
+                <div className="px-4 py-10 flex flex-col items-center text-center">
+                  <Bell size={28} className="text-white/15 mb-3" />
+                  <p className="text-white/50 text-[13px] font-medium">No notifications yet</p>
+                  <p className="text-white/25 text-[11px] mt-1">
+                    You'll see updates here when something happens
+                  </p>
+                </div>
               </motion.div>
             </>
           )}
@@ -357,9 +316,12 @@ export default function PortalNav() {
       </header>
 
       {/* ── MOBILE BOTTOM TABS ───────────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16
-                      bg-[#1a1a1f] border-t border-white/[0.06] flex items-center justify-around px-1"
-           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-16
+                   bg-[#1a1a1f] border-t border-white/[0.06]
+                   flex items-center justify-around px-1"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         {navItems.slice(0, 5).map(item => {
           const active = isActive(item);
           return (

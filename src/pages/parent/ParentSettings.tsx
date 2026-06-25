@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, User, Lock, Shield } from 'lucide-react';
+import { ArrowLeft, User, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ParentSettings() {
@@ -82,18 +82,10 @@ export default function ParentSettings() {
 
         {/* Privacy */}
         <div className="bg-white rounded-2xl shadow-card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Shield size={18} className="text-coral" />
-            <h3 className="font-display text-lg text-charcoal">Privacy</h3>
-          </div>
+          <h3 className="font-display text-lg text-charcoal mb-4">Privacy</h3>
           <div className="bg-cream rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <Shield size={16} className="text-sage flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-body text-sm font-medium text-charcoal mb-1">Your data is private</p>
-                <p className="font-body text-xs text-medium-gray leading-relaxed">No teacher or school admin can see your Clarity Check, conversation guides, or 30-day plans. Your child's data is encrypted and never shared with third parties.</p>
-              </div>
-            </div>
+            <p className="font-body text-sm font-medium text-charcoal mb-1">Your data is private</p>
+            <p className="font-body text-xs text-medium-gray leading-relaxed">No teacher or school admin can see your Clarity Check, conversation guides, or 30-day plans. Your child's data is never shared with third parties.</p>
           </div>
         </div>
 
