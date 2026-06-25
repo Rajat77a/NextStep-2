@@ -42,25 +42,26 @@ export async function register(data: {
   fullName: string;
   role: 'parent' | 'teacher' | 'admin';
 }): Promise<AuthResponse> {
+  // Pass full_name and role as metadata so the DB trigger inserts the profile row
+  // (client-side insert violates RLS — trigger runs as SECURITY DEFINER, bypassing it)
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
+    options: {
+      data: {
+        full_name: data.fullName,
+        role: data.role,
+      },
+    },
   });
 
   if (signUpError || !authData.user) {
     throw createApiError(409, signUpError?.message || 'Registration failed', 'email');
   }
 
-  // Insert profile row — only columns confirmed to exist in the profiles table
-  const { error: profileError } = await supabase.from('profiles').insert({
-    id: authData.user.id,
-    full_name: data.fullName,
-    role: data.role,
-  });
-
-  if (profileError) {
-    throw createApiError(500, profileError.message);
-  }
+  // Profile row is created by the DB trigger (on_auth_user_created)
+  // Wait a moment for the trigger to fire then fetch it
+  await new Promise(resolve => setTimeout(resolve, 500));
 
   const profile = await fetchProfile(authData.user.id);
   if (!profile) throw createApiError(500, 'Failed to load profile after registration');
