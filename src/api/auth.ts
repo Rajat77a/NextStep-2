@@ -5,10 +5,25 @@ function createApiError(code: number, message: string, field?: string): ApiError
   return { code, message, field };
 }
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
+function buildProfileFromUser(
+  supaUser: import('@supabase/supabase-js').User,
+  dbRow?: Record<string, any> | null
+): Omit<User, 'passwordHash'> {
+  const meta = supaUser.user_metadata ?? {};
+  return {
+    id: supaUser.id,
+    email: supaUser.email ?? '',
+    fullName: dbRow?.full_name ?? meta.full_name ?? meta.name ?? supaUser.email?.split('@')[0] ?? 'User',
+    role: (dbRow?.role ?? meta.role ?? 'parent') as 'parent' | 'teacher' | 'admin',
+    schoolId: dbRow?.school_id ?? meta.school_id ?? null,
+    createdAt: dbRow?.created_at ?? supaUser.created_at ?? new Date().toISOString(),
+    updatedAt: dbRow?.updated_at ?? new Date().toISOString(),
+    lastLoginAt: dbRow?.last_login_at ?? null,
+    isActive: true,
+    invitationStatus: (dbRow?.invitation_status ?? 'accepted') as 'pending' | 'accepted',
+  };
+}
 
-/** Fetch the profile row for the currently signed-in Supabase user.
- * Falls back to auth metadata so a missing profile row never blocks login. */
 async function fetchProfile(supabaseUserId: string): Promise<Omit<User, 'passwordHash'> | null> {
   const { data: authUser } = await supabase.auth.getUser();
   if (!authUser?.user) return null;
@@ -17,89 +32,51 @@ async function fetchProfile(supabaseUserId: string): Promise<Omit<User, 'passwor
     .from('profiles')
     .select('*')
     .eq('id', supabaseUserId)
-    .single();
+    .maybeSingle();
 
-  // Build from DB row if available, else fall back to auth metadata
-  const meta = authUser.user.user_metadata ?? {};
-  return {
-    id: authUser.user.id,
-    email: authUser.user.email ?? '',
-    fullName: data?.full_name ?? meta.full_name ?? '',
-    role: (data?.role ?? meta.role ?? 'parent') as 'parent' | 'teacher' | 'admin',
-    schoolId: data?.school_id ?? null,
-    createdAt: data?.created_at ?? authUser.user.created_at ?? new Date().toISOString(),
-    updatedAt: data?.updated_at ?? new Date().toISOString(),
-    lastLoginAt: data?.last_login_at ?? null,
-    isActive: true,
-    invitationStatus: (data?.invitation_status ?? 'accepted') as 'pending' | 'accepted',
-  };
+  return buildProfileFromUser(authUser.user, data);
 }
 
-// ─── register ─────────────────────────────────────────────────────────────────
+// ─── Google OAuth ─────────────────────────────────────────────────────────────
 
-export async function register(data: {
-  email: string;
-  password: string;
-  fullName: string;
-  role: 'parent' | 'teacher' | 'admin';
-}): Promise<AuthResponse> {
-  // Pass full_name and role as metadata so the DB trigger inserts the profile row
-  // (client-side insert violates RLS — trigger runs as SECURITY DEFINER, bypassing it)
-  const { data: authData, error: signUpError } = await supabase.auth.signUp({
-    email: data.email,
-    password: data.password,
+export async function signInWithGoogle(): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
     options: {
-      data: {
-        full_name: data.fullName,
-        role: data.role,
-      },
+      redirectTo: `${window.location.origin}/auth/callback`,
     },
   });
-
-  if (signUpError || !authData.user) {
-    throw createApiError(409, signUpError?.message || 'Registration failed', 'email');
-  }
-
-  // Build profile directly from what we already have — no DB fetch needed.
-  // fetchProfile would fail here because the session may not be active yet (RLS blocks SELECT).
-  // The trigger has already inserted the row; we just don't need to read it back right now.
-  const profile: Omit<User, 'passwordHash'> = {
-    id: authData.user.id,
-    email: data.email,
-    fullName: data.fullName,
-    role: data.role,
-    schoolId: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    lastLoginAt: null,
-    isActive: true,
-    invitationStatus: 'accepted' as const,
-  };
-
-  return {
-    user: profile,
-    token: authData.session?.access_token ?? '',
-  };
+  if (error) throw createApiError(400, error.message);
 }
 
+// ─── Email OTP ────────────────────────────────────────────────────────────────
 
-// ─── login ────────────────────────────────────────────────────────────────────
+export async function sendOtp(email: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+    },
+  });
+  if (error) throw createApiError(400, error.message);
+}
 
-export async function login(data: { email: string; password: string }): Promise<AuthResponse> {
-  const { data: authData, error } = await supabase.auth.signInWithPassword({
-    email: data.email,
-    password: data.password,
+export async function verifyOtp(email: string, token: string): Promise<AuthResponse> {
+  const { data: authData, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
   });
 
   if (error || !authData.user) {
-    throw createApiError(401, 'Invalid email or password');
+    throw createApiError(401, error?.message || 'Invalid or expired OTP');
   }
 
   const profile = await fetchProfile(authData.user.id);
-  if (!profile) throw createApiError(404, 'Profile not found — please contact support');
+  const user = profile ?? buildProfileFromUser(authData.user);
 
   return {
-    user: profile,
+    user,
     token: authData.session?.access_token ?? '',
   };
 }
@@ -125,12 +102,12 @@ export async function updateProfile(data: {
   email?: string;
   currentPassword?: string;
   newPassword?: string;
+  role?: 'parent' | 'teacher' | 'admin';
 }): Promise<Omit<User, 'passwordHash'>> {
   const { data: sessionData } = await supabase.auth.getSession();
   const supaUser = sessionData.session?.user;
   if (!supaUser) throw createApiError(401, 'Not authenticated');
 
-  // Update Supabase Auth email / password if requested
   if (data.email || data.newPassword) {
     const updates: { email?: string; password?: string } = {};
     if (data.email) updates.email = data.email;
@@ -139,10 +116,9 @@ export async function updateProfile(data: {
     if (error) throw createApiError(400, error.message);
   }
 
-  // Update profile row — only update columns that actually exist in the profiles table
-  // Do NOT include updated_at or email (email lives in auth.users, not profiles)
   const profileUpdates: Record<string, unknown> = {};
   if (data.fullName) profileUpdates.full_name = data.fullName;
+  if (data.role) profileUpdates.role = data.role;
 
   if (Object.keys(profileUpdates).length > 0) {
     const { error: profileError } = await supabase
@@ -155,15 +131,6 @@ export async function updateProfile(data: {
   const profile = await fetchProfile(supaUser.id);
   if (!profile) throw createApiError(500, 'Failed to reload profile');
   return profile;
-}
-
-// ─── password reset ───────────────────────────────────────────────────────────
-
-export async function resetPasswordForEmail(email: string): Promise<void> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
-  });
-  if (error) throw createApiError(400, error.message);
 }
 
 // ─── guards ───────────────────────────────────────────────────────────────────

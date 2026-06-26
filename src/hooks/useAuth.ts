@@ -1,16 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
-  register as apiRegister,
-  login as apiLogin,
+  signInWithGoogle as apiSignInWithGoogle,
+  sendOtp as apiSendOtp,
+  verifyOtp as apiVerifyOtp,
   logout as apiLogout,
   updateProfile as apiUpdateProfile,
-  resetPasswordForEmail as apiResetPassword,
 } from '@/api/auth';
-import type { UserRole } from '@/types';
 
-// Build a minimal user from a Supabase session — never hits the DB.
-// Falls back gracefully so login is NEVER blocked by a missing profile row.
 function buildUserFromSession(session: import('@supabase/supabase-js').Session): Omit<import('@/types').User, 'passwordHash'> {
   const meta = session.user.user_metadata ?? {};
   return {
@@ -35,23 +32,16 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true;
 
-    // Hard timeout: if Supabase takes > 4s to respond, stop loading.
-    // This prevents the spinner from hanging forever on slow/paused projects.
     const timeout = setTimeout(() => {
       if (mounted) setLoading(false);
     }, 4000);
 
-    // Single source of truth: onAuthStateChange fires immediately with
-    // the current session (INITIAL_SESSION event), replacing the need
-    // for a separate getCurrentUser() call on mount.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (!mounted) return;
         clearTimeout(timeout);
 
         if (session) {
-          // Build user directly from session metadata — zero extra DB calls.
-          // This is instant and never hangs.
           setUser(buildUserFromSession(session));
         } else {
           setUser(null);
@@ -67,35 +57,37 @@ export function useAuth() {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const signInWithGoogle = useCallback(async () => {
+    setError(null);
+    try {
+      await apiSignInWithGoogle();
+    } catch (e: any) {
+      setError(e.message || 'Google sign-in failed');
+    }
+  }, []);
+
+  const sendOtp = useCallback(async (email: string) => {
     setError(null);
     setLoading(true);
     try {
-      const result = await apiLogin({ email, password });
-      setUser(result.user);
-      return result.user;
+      await apiSendOtp(email);
     } catch (e: any) {
-      setError(e.message || 'Login failed');
+      setError(e.message || 'Failed to send OTP');
       throw e;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const register = useCallback(async (data: {
-    email: string;
-    password: string;
-    fullName: string;
-    role: UserRole;
-  }) => {
+  const verifyOtp = useCallback(async (email: string, token: string) => {
     setError(null);
     setLoading(true);
     try {
-      const result = await apiRegister(data);
+      const result = await apiVerifyOtp(email, token);
       setUser(result.user);
       return result.user;
     } catch (e: any) {
-      setError(e.message || 'Registration failed');
+      setError(e.message || 'OTP verification failed');
       throw e;
     } finally {
       setLoading(false);
@@ -113,6 +105,7 @@ export function useAuth() {
     email?: string;
     currentPassword?: string;
     newPassword?: string;
+    role?: 'parent' | 'teacher' | 'admin';
   }) => {
     setError(null);
     try {
@@ -125,15 +118,5 @@ export function useAuth() {
     }
   }, []);
 
-  const resetPassword = useCallback(async (email: string) => {
-    setError(null);
-    try {
-      await apiResetPassword(email);
-    } catch (e: any) {
-      setError(e.message || 'Reset failed');
-      throw e;
-    }
-  }, []);
-
-  return { user, loading, error, login, register, logout, updateUser, resetPassword };
+  return { user, loading, error, signInWithGoogle, sendOtp, verifyOtp, logout, updateUser };
 }

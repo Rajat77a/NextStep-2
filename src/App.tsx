@@ -9,6 +9,7 @@ import LandingPage from '@/pages/LandingPage';
 // Auth
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
+import AuthCallback from '@/pages/AuthCallback';
 
 // Parent Portal
 import ParentDashboard from '@/pages/parent/ParentDashboard';
@@ -63,6 +64,7 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/signup" element={user ? <Navigate to={`/${user.role}`} replace /> : <SignupPage />} />
 
         {/* Parent Portal */}
