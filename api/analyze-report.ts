@@ -2,7 +2,7 @@
 // Required env var: NextStep (set your Gemini API key in Vercel)
 // Get a key from: https://aistudio.google.com/apikey
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const SYSTEM_PROMPT = `You analyze school report cards for parents.
