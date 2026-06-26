@@ -2,16 +2,16 @@ import type { AIReportAnalysis, BoardType } from '@/types';
 
 export async function analyzeReportText(data: {
   rawText: string;
-  studentName: string;
-  boardType: BoardType;
+  studentName?: string;
+  boardType?: BoardType;
 }): Promise<AIReportAnalysis> {
   const response = await fetch('/api/analyze-report', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       rawText: data.rawText,
-      studentName: data.studentName,
-      boardType: data.boardType,
+      studentName: data.studentName || '',
+      boardType: data.boardType || 'Other',
     }),
   });
 
