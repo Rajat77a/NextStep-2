@@ -1,5 +1,5 @@
 // Grok API (xAI) — OpenAI-compatible endpoint
-// Required env var: GROK_API_KEY
+// Required env var: NextStep
 // Add in Vercel → Project Settings → Environment Variables
 
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
@@ -141,11 +141,11 @@ export default async function handler(req: any, res: any) {
   }
 
   // ── API key guard — visible error, no silent failure ──
-  const apiKey = process.env.GROK_API_KEY;
+  const apiKey = process.env.NextStep;
   if (!apiKey) {
     res.status(500).json({
       error:
-        'GROK_API_KEY is not configured. Add it in Vercel → Project Settings → Environment Variables, then redeploy.',
+        'NextStep API key is not configured. Add it in Vercel → Project Settings → Environment Variables, then redeploy.',
     });
     return;
   }
