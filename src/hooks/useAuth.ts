@@ -4,34 +4,55 @@ import {
   register as apiRegister,
   login as apiLogin,
   logout as apiLogout,
-  getCurrentUser,
   updateProfile as apiUpdateProfile,
   resetPasswordForEmail as apiResetPassword,
 } from '@/api/auth';
 import type { UserRole } from '@/types';
+
+// Build a minimal user from a Supabase session — never hits the DB.
+// Falls back gracefully so login is NEVER blocked by a missing profile row.
+function buildUserFromSession(session: import('@supabase/supabase-js').Session): Omit<import('@/types').User, 'passwordHash'> {
+  const meta = session.user.user_metadata ?? {};
+  return {
+    id: session.user.id,
+    email: session.user.email ?? '',
+    fullName: meta.full_name ?? meta.name ?? session.user.email?.split('@')[0] ?? 'User',
+    role: (meta.role ?? 'parent') as 'parent' | 'teacher' | 'admin',
+    schoolId: meta.school_id ?? null,
+    createdAt: session.user.created_at ?? new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastLoginAt: null,
+    isActive: true,
+    invitationStatus: 'accepted' as const,
+  };
+}
 
 export function useAuth() {
   const [user, setUser] = useState<Omit<import('@/types').User, 'passwordHash'> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Bootstrap: load current session on mount, then listen for auth changes
   useEffect(() => {
     let mounted = true;
 
-    getCurrentUser().then((u) => {
-      if (mounted) {
-        setUser(u);
-        setLoading(false);
-      }
-    });
+    // Hard timeout: if Supabase takes > 4s to respond, stop loading.
+    // This prevents the spinner from hanging forever on slow/paused projects.
+    const timeout = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 4000);
 
+    // Single source of truth: onAuthStateChange fires immediately with
+    // the current session (INITIAL_SESSION event), replacing the need
+    // for a separate getCurrentUser() call on mount.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         if (!mounted) return;
-        if (session?.user) {
-          const profile = await getCurrentUser();
-          setUser(profile);
+        clearTimeout(timeout);
+
+        if (session) {
+          // Build user directly from session metadata — zero extra DB calls.
+          // This is instant and never hangs.
+          setUser(buildUserFromSession(session));
         } else {
           setUser(null);
         }
@@ -41,6 +62,7 @@ export function useAuth() {
 
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
