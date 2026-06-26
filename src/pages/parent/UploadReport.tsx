@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -11,13 +11,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  getStudents,
   uploadReportCard,
   addSubjectGrades,
   saveClarityCheck,
   createPlanProgress,
   updateReportCardAiResponse,
-  addParentStudent,
 } from '@/api/data';
 import {
   analyzeReportText,
@@ -26,12 +24,8 @@ import {
 } from '@/api/analysis';
 import type {
   AIReportAnalysis,
-  BoardType,
-  Student,
   SubjectGrade,
 } from '@/types';
-
-const boards: BoardType[] = ['CBSE', 'ICSE', 'IGCSE', 'State', 'Other'];
 
 function canReadTextDirectly(file: File) {
   const name = file.name.toLowerCase();
@@ -74,45 +68,10 @@ export default function UploadReport() {
   const [step, setStep] = useState(1);
   const [file, setFile] = useState<File | null>(null);
   const [rawText, setRawText] = useState('');
-  const [board, setBoard] = useState<BoardType>('CBSE');
-  const [selectedChild, setSelectedChild] = useState('');
-  const [children, setChildren] = useState<Student[]>([]);
   const [grades, setGrades] = useState<SubjectGrade[]>([]);
   const [analysis, setAnalysis] = useState<AIReportAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [addChildName, setAddChildName] = useState('');
-  const [addingChild, setAddingChild] = useState(false);
-
-  const handleAddChild = async () => {
-    const name = addChildName.trim();
-    if (!name) return;
-    setAddingChild(true);
-    try {
-      const newChild = await addParentStudent(name);
-      setChildren((prev) => [...prev, newChild]);
-      setSelectedChild(newChild.id);
-      setAddChildName('');
-    } catch (e: any) {
-      setError(e?.message || 'Could not add child.');
-    } finally {
-      setAddingChild(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    getStudents({ parentId: user.id })
-      .then(setChildren)
-      .catch((err) => setError(err?.message || 'Could not load children.'));
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (children.length > 0 && !selectedChild) {
-      setSelectedChild(children[0].id);
-    }
-  }, [children, selectedChild]);
 
   const handleFileSelect = async (selectedFile: File) => {
     setFile(selectedFile);
@@ -134,11 +93,6 @@ export default function UploadReport() {
   };
 
   const handleProcess = async () => {
-    if (!selectedChild) {
-      setError('Please select a child.');
-      return;
-    }
-
     if (!rawText.trim() || rawText.trim().length < 20) {
       setError(
         'Please paste the report card text before analyzing. Image/PDF OCR can be added later, but the AI needs text to read right now.'
@@ -150,16 +104,8 @@ export default function UploadReport() {
     setError('');
 
     try {
-      const student = children.find((child) => child.id === selectedChild);
-
-      if (!student) {
-        throw new Error('Selected child was not found.');
-      }
-
       const aiResult = await analyzeReportText({
         rawText,
-        studentName: student.fullName,
-        boardType: board,
       });
 
       setAnalysis(aiResult);
@@ -198,9 +144,9 @@ export default function UploadReport() {
       const clarityData = mapAIAnalysisToClarityCheck(analysis);
 
       const card = await uploadReportCard({
-        studentId: selectedChild,
+        studentId: user.id,
         term: analysis.term || 'Current Term',
-        boardType: board,
+        boardType: 'Other',
         file: file || undefined,
         uploadMethod: 'parent',
         // ── Save raw OCR text to ReportCard.raw_text ──
@@ -329,7 +275,7 @@ export default function UploadReport() {
               )}
             </div>
 
-            <div className="mb-4">
+            <div className="mb-6">
               <label className="block font-body text-sm font-medium text-charcoal mb-2">
                 Report card text
               </label>
@@ -342,61 +288,6 @@ export default function UploadReport() {
               />
             </div>
 
-            <div className="mb-4">
-              <label className="block font-body text-sm font-medium text-charcoal mb-2">
-                Which child is this for?
-              </label>
-              {children.length === 0 ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={addChildName}
-                    onChange={(e) => setAddChildName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddChild()}
-                    placeholder="Type your child's name"
-                    className="flex-1 px-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal focus:border-coral outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddChild}
-                    disabled={addingChild || !addChildName.trim()}
-                    className="px-4 py-3 rounded-[10px] bg-coral text-white font-body text-sm font-semibold hover:bg-coral-dark transition-all disabled:opacity-40"
-                  >
-                    {addingChild ? '...' : 'Add'}
-                  </button>
-                </div>
-              ) : (
-                <select
-                  value={selectedChild}
-                  onChange={(e) => setSelectedChild(e.target.value)}
-                  className="w-full px-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal focus:border-coral outline-none"
-                >
-                  {children.map((child) => (
-                    <option key={child.id} value={child.id}>
-                      {child.fullName}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            <div className="mb-6">
-              <label className="block font-body text-sm font-medium text-charcoal mb-2">
-                Which board is this from?
-              </label>
-              <select
-                value={board}
-                onChange={(e) => setBoard(e.target.value as BoardType)}
-                className="w-full px-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal focus:border-coral outline-none"
-              >
-                {boards.map((boardOption) => (
-                  <option key={boardOption} value={boardOption}>
-                    {boardOption}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {error && (
               <div className="mb-4 p-3 bg-coral/10 border border-coral/20 rounded-lg text-coral text-sm font-body flex items-center gap-2">
                 <AlertCircle size={14} />
@@ -406,7 +297,7 @@ export default function UploadReport() {
 
             <button
               onClick={handleProcess}
-              disabled={loading || !selectedChild || !rawText.trim()}
+              disabled={loading || !rawText.trim()}
               className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {loading ? (
