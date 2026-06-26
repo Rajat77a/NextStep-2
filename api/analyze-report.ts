@@ -1,9 +1,9 @@
-// Grok API (xAI) — OpenAI-compatible endpoint
-// Required env var: NextStep
-// Add in Vercel → Project Settings → Environment Variables
+// Google Gemini API
+// Required env var: NextStep (set your Gemini API key in Vercel)
+// Get a key from: https://aistudio.google.com/apikey
 
-const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
-const MODEL = 'grok-3-mini';
+const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const SYSTEM_PROMPT = `You analyze school report cards for parents.
 
@@ -74,7 +74,7 @@ function extractJson(text: string): any {
   const end = raw.lastIndexOf('}');
 
   if (start === -1 || end === -1) {
-    throw new Error('Grok did not return a JSON object.');
+    throw new Error('Gemini did not return a JSON object.');
   }
 
   return JSON.parse(raw.slice(start, end + 1));
@@ -140,12 +140,12 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  // ── API key guard — visible error, no silent failure ──
-  const apiKey = process.env.NextStep;
+  // ── API key guard ──
+  const apiKey = (process.env.NextStep || '').trim();
   if (!apiKey) {
     res.status(500).json({
       error:
-        'NextStep API key is not configured. Add it in Vercel → Project Settings → Environment Variables, then redeploy.',
+        'Gemini API key is not configured. Add NextStep in Vercel → Project Settings → Environment Variables, then redeploy.',
     });
     return;
   }
@@ -154,7 +154,7 @@ export default async function handler(req: any, res: any) {
     const { rawText, studentName, boardType } = req.body || {};
 
     if (!rawText || String(rawText).trim().length < 20) {
-      res.status(400).json({ error: 'The OCR text was too short to analyze. Please upload a clearer image.' });
+      res.status(400).json({ error: 'The text was too short to analyze. Please paste more text.' });
       return;
     }
 
@@ -162,43 +162,48 @@ export default async function handler(req: any, res: any) {
       `Student name hint: ${studentName || 'Unknown'}`,
       `Board type: ${boardType || 'Unknown'}`,
       '',
-      'OCR report card text:',
+      'Report card text:',
       rawText,
     ].join('\n');
 
-    // ── Call Grok via OpenAI-compatible REST API ──
-    const grokResponse = await fetch(GROK_API_URL, {
+    // ── Call Gemini REST API ──
+    const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 3000,
-        temperature: 0.2,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userMessage },
+        systemInstruction: {
+          parts: [{ text: SYSTEM_PROMPT }],
+        },
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: userMessage }],
+          },
         ],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 3000,
+        },
       }),
     });
 
-    if (!grokResponse.ok) {
-      const errBody = await grokResponse.text().catch(() => '');
-      throw new Error(`Grok API error ${grokResponse.status}: ${errBody || grokResponse.statusText}`);
+    if (!geminiResponse.ok) {
+      const errBody = await geminiResponse.text().catch(() => '');
+      throw new Error(`Gemini API error ${geminiResponse.status}: ${errBody || geminiResponse.statusText}`);
     }
 
-    const grokData = await grokResponse.json();
-    const text: string = grokData?.choices?.[0]?.message?.content ?? '';
+    const geminiData = await geminiResponse.json();
+    const text: string = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     if (!text) {
-      throw new Error('Grok returned an empty response.');
+      throw new Error('Gemini returned an empty response.');
     }
 
     const analysis = validateAnalysis(extractJson(text));
 
-    res.status(200).json({ analysis, model: MODEL });
+    res.status(200).json({ analysis, model: GEMINI_MODEL });
   } catch (error: any) {
     res.status(500).json({
       error: error?.message || 'Could not analyze the report card. Please try again.',
