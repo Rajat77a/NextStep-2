@@ -29,7 +29,20 @@ Update the relevant notes in `C:\Users\rajat\OneDrive\ドキュメント\MyBrain
 
 ## Critical Code Patterns (Never Break These)
 
-### Logout — Navigate BEFORE SignOut
-In `logout()` functions, `window.location.href` MUST run BEFORE `apiLogout()`.
-Wrong: `await apiLogout(); window.location.href = '/login'` — causes landing page flash.
-Right: `window.location.href = '/login'; await apiLogout()` — navigates immediately, Supabase SIGNED_OUT event has no visible effect.
+### Logout — Set loggingOut FIRST, THEN SignOut, THEN Navigate
+Wrong: `window.location.href` before `apiLogout()` — page reloads before signout completes, Supabase session persists in storage, `/login` page restores session and redirects back to portal.
+Wrong: `await apiLogout(); window.location.href = '/login'` — causes landing page flash (ProtectedRoute redirects to `/` before navigation).
+
+Correct pattern:
+```ts
+setLoggingOut(true);          // ProtectedRoute shows spinner instead of redirecting to /
+await apiLogout();            // Supabase clears session, onAuthStateChange fires SIGNED_OUT
+setUser(null);                // React state catches up — but ProtectedRoute sees loggingOut=true → spinner
+window.location.href = '/login';  // Full page reload to login page with clean session
+```
+
+ProtectedRoute must check `loggingOut`:
+```tsx
+const { user, loading, loggingOut } = useAuth();
+if (loading || loggingOut) return <Spinner />;
+```

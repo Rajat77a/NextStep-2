@@ -48,8 +48,8 @@ function PortalLayout({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-cream flex items-center justify-center"><div className="w-8 h-8 border-2 border-coral border-t-transparent rounded-full animate-spin" /></div>;
+  const { user, loading, loggingOut } = useAuth();
+  if (loading || loggingOut) return <div className="min-h-screen bg-cream flex items-center justify-center"><div className="w-8 h-8 border-2 border-coral border-t-transparent rounded-full animate-spin" /></div>;
   if (!user) return <Navigate to="/" replace />;
   if (!allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
   return <PortalLayout>{children}</PortalLayout>;
