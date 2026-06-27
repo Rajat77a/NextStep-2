@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
 import { supabase } from '@/lib/supabase';
 import {
   signInWithGoogle as apiSignInWithGoogle,
@@ -26,12 +25,10 @@ function buildUserFromSession(session: import('@supabase/supabase-js').Session):
 }
 
 export function useAuth() {
-  const navigate = useNavigate();
   const [user, setUser] = useState<Omit<import('@/types').User, 'passwordHash'> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -114,11 +111,9 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(async () => {
-    setLoggingOut(true);
     await apiLogout();
     setUser(null);
-    navigate('/login', { replace: true });
-  }, [navigate]);
+  }, []);
 
   const updateUser = useCallback(async (data: {
     fullName?: string;
@@ -138,5 +133,5 @@ export function useAuth() {
     }
   }, []);
 
-  return { user, loading, error, sessionExpired, loggingOut, signInWithGoogle, sendOtp, verifyOtp, logout, updateUser };
+  return { user, loading, error, sessionExpired, signInWithGoogle, sendOtp, verifyOtp, logout, updateUser };
 }
