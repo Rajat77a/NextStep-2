@@ -54,6 +54,22 @@ export default function LoginPage() {
     }
   };
 
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '');
+    if (pasted.length !== 6) return;
+    e.preventDefault();
+    const newOtp = pasted.split('');
+    setOtp(newOtp);
+    inputRefs.current[5]?.focus();
+    if (newOtp.every(d => d)) {
+      setLoading(true);
+      verifyOtp(email, pasted)
+        .then(user => navigate(`/${user.role}`))
+        .catch(() => setError('Invalid or expired code. Please try again.'))
+        .finally(() => setLoading(false));
+    }
+  };
+
   const handleVerifyOtp = async () => {
     const code = otp.join('');
     if (code.length !== 6) {
@@ -158,6 +174,7 @@ export default function LoginPage() {
                     value={digit}
                     onChange={e => handleOtpChange(i, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(i, e)}
+                    onPaste={handleOtpPaste}
                     className="w-11 h-12 text-center rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-lg font-semibold text-charcoal focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
                   />
                 ))}
