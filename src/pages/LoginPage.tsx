@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Mail, Chrome } from 'lucide-react';
@@ -38,12 +38,34 @@ export default function LoginPage() {
     }
   };
 
+  const fillOtp = useCallback((code: string) => {
+    const digits = code.replace(/\D/g, '').split('');
+    if (digits.length !== 6) return;
+    setOtp(digits);
+    inputRefs.current[5]?.focus();
+    setLoading(true);
+    verifyOtp(email, digits.join(''))
+      .then(user => navigate(`/${user.role}`))
+      .catch(() => setError('Invalid or expired code. Please try again.'))
+      .finally(() => setLoading(false));
+  }, [email, navigate, verifyOtp]);
+
   const handleOtpChange = (index: number, value: string) => {
-    if (value && !/^\d$/.test(value)) return;
+    if (!value) {
+      const newOtp = [...otp];
+      newOtp[index] = '';
+      setOtp(newOtp);
+      return;
+    }
+    if (value.length > 1) {
+      fillOtp(value);
+      return;
+    }
+    if (!/^\d$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    if (value && index < 5) {
+    if (index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -51,22 +73,6 @@ export default function LoginPage() {
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '');
-    if (pasted.length !== 6) return;
-    e.preventDefault();
-    const newOtp = pasted.split('');
-    setOtp(newOtp);
-    inputRefs.current[5]?.focus();
-    if (newOtp.every(d => d)) {
-      setLoading(true);
-      verifyOtp(email, pasted)
-        .then(user => navigate(`/${user.role}`))
-        .catch(() => setError('Invalid or expired code. Please try again.'))
-        .finally(() => setLoading(false));
     }
   };
 
@@ -170,11 +176,10 @@ export default function LoginPage() {
                     ref={el => { inputRefs.current[i] = el; }}
                     type="text"
                     inputMode="numeric"
-                    maxLength={1}
+                    maxLength={i === 0 ? 6 : 1}
                     value={digit}
                     onChange={e => handleOtpChange(i, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(i, e)}
-                    onPaste={handleOtpPaste}
                     className="w-11 h-12 text-center rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-lg font-semibold text-charcoal focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
                   />
                 ))}
