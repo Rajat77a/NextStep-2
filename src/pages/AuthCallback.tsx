@@ -17,21 +17,23 @@ function parseHashParams(): Record<string, string> | null {
 export default function AuthCallback() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const processed = useRef(false);
+  const redirected = useRef(false);
+  const hashHandled = useRef(false);
 
   useEffect(() => {
-    if (processed.current) return;
+    if (redirected.current) return;
+
     if (loading) return;
 
     if (user) {
-      processed.current = true;
+      redirected.current = true;
       navigate(`/${user.role}`, { replace: true });
       return;
     }
 
     const tokens = parseHashParams();
-    if (tokens) {
-      processed.current = true;
+    if (tokens && !hashHandled.current) {
+      hashHandled.current = true;
       supabase.auth.setSession({
         access_token: tokens.access_token!,
         refresh_token: tokens.refresh_token!,
@@ -41,7 +43,10 @@ export default function AuthCallback() {
       return;
     }
 
-    navigate('/login', { replace: true });
+    if (!tokens) {
+      redirected.current = true;
+      navigate('/login', { replace: true });
+    }
   }, [user, loading, navigate]);
 
   return (
