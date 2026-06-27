@@ -28,22 +28,33 @@ export function useAuth() {
   const [user, setUser] = useState<Omit<import('@/types').User, 'passwordHash'> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const timeout = setTimeout(() => {
-      if (mounted) setLoading(false);
-    }, 4000);
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (session) {
+        setUser(buildUserFromSession(session));
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    }
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         if (!mounted) return;
-        clearTimeout(timeout);
-
         if (session) {
           setUser(buildUserFromSession(session));
+          setSessionExpired(false);
         } else {
+          if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+            setSessionExpired(true);
+          }
           setUser(null);
         }
         setLoading(false);
@@ -52,7 +63,6 @@ export function useAuth() {
 
     return () => {
       mounted = false;
-      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -118,5 +128,5 @@ export function useAuth() {
     }
   }, []);
 
-  return { user, loading, error, signInWithGoogle, sendOtp, verifyOtp, logout, updateUser };
+  return { user, loading, error, sessionExpired, signInWithGoogle, sendOtp, verifyOtp, logout, updateUser };
 }
