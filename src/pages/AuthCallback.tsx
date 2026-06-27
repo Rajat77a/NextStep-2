@@ -1,46 +1,19 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
-  const handled = useRef(false);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (handled.current) return;
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (handled.current) return;
-      if (session?.user) {
-        handled.current = true;
-        const role = session.user.user_metadata?.role ?? 'parent';
-        navigate(`/${role}`, { replace: true });
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (handled.current) return;
-      if (session?.user) {
-        handled.current = true;
-        subscription.unsubscribe();
-        const role = session.user.user_metadata?.role ?? 'parent';
-        navigate(`/${role}`, { replace: true });
-      }
-    });
-
-    const timeout = setTimeout(() => {
-      if (!handled.current) {
-        handled.current = true;
-        subscription.unsubscribe();
-        navigate('/login', { replace: true });
-      }
-    }, 10000);
-
-    return () => {
-      clearTimeout(timeout);
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
+    if (loading) return;
+    if (user) {
+      navigate(`/${user.role}`, { replace: true });
+    } else {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center">

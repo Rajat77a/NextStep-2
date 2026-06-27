@@ -34,14 +34,20 @@ export function useAuth() {
     let mounted = true;
 
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-      if (session) {
-        setUser(buildUserFromSession(session));
-      } else {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (session) {
+          setUser(buildUserFromSession(session));
+        } else {
+          setUser(null);
+        }
+      } catch {
+        if (!mounted) return;
         setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
     }
     init();
 
