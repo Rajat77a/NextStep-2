@@ -107,7 +107,7 @@ export function useAuth() {
   const logout = useCallback(async () => {
     await apiLogout();
     setUser(null);
-    window.location.href = '/';
+    window.location.href = '/login';
   }, []);
 
   const updateUser = useCallback(async (data: {
