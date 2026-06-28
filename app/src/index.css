@@ -164,6 +164,46 @@
   }
 }
 
+@keyframes drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(12px, -18px, 0) scale(1.04);
+  }
+  50% {
+    transform: translate3d(-8px, -10px, 0) scale(0.96);
+  }
+  75% {
+    transform: translate3d(8px, -22px, 0) scale(1.02);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) rotate(25deg);
+  }
+  100% {
+    transform: translateX(200%) rotate(25deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+.drift-1 { animation: drift 12s ease-in-out infinite; }
+.drift-2 { animation: drift 16s ease-in-out infinite reverse; }
+.drift-3 { animation: drift 14s ease-in-out infinite; animation-delay: -5s; }
+.shimmer { animation: shimmer 4s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

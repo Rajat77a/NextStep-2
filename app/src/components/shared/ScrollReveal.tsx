@@ -8,6 +8,7 @@ interface ScrollRevealProps {
   direction?: 'up' | 'down' | 'left' | 'right';
   distance?: number;
   duration?: number;
+  scale?: number;
 }
 
 export default function ScrollReveal({
@@ -17,6 +18,7 @@ export default function ScrollReveal({
   direction = 'up',
   distance = 30,
   duration = 0.6,
+  scale,
 }: ScrollRevealProps) {
   const shouldReduceMotion = useReducedMotion();
   const directions = {
@@ -29,10 +31,10 @@ export default function ScrollReveal({
   return (
     <motion.div
       className={className}
-      initial={shouldReduceMotion ? false : { opacity: 0, ...directions[direction] }}
-      whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0, x: 0 }}
+      initial={shouldReduceMotion ? false : { opacity: 0, ...directions[direction], ...(scale ? { scale } : {}) }}
+      whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0, x: 0, scale: 1 }}
       viewport={{ once: true, margin: '-50px' }}
-      transition={shouldReduceMotion ? undefined : { duration, delay, ease: 'easeOut' }}
+      transition={shouldReduceMotion ? undefined : { duration, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>

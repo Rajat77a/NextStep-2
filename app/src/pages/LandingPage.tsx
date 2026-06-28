@@ -102,12 +102,14 @@ function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 }
 
-function TiltCard({ children, className = '' }: { children: ReactNode; className?: string }) {
+function GlowGlowTiltCard({ children, className = '' }: { children: ReactNode; className?: string }) {
   const shouldReduceMotion = useReducedMotion();
+  const [glow, setGlow] = useState({ x: 50, y: 50 });
+  const [isHovered, setIsHovered] = useState(false);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], [6, -6]);
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-6, 6]);
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], [7, -7]);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-7, 7]);
 
   function handleMove(event: MouseEvent<HTMLDivElement>) {
     if (shouldReduceMotion) return;
@@ -116,20 +118,67 @@ function TiltCard({ children, className = '' }: { children: ReactNode; className
     const y = (event.clientY - rect.top) / rect.height - 0.5;
     mouseX.set(x);
     mouseY.set(y);
+    setGlow({
+      x: ((event.clientX - rect.left) / rect.width) * 100,
+      y: ((event.clientY - rect.top) / rect.height) * 100,
+    });
   }
 
   function handleLeave() {
     mouseX.set(0);
     mouseY.set(0);
+    setGlow({ x: 50, y: 50 });
+    setIsHovered(false);
+  }
+
+  return (
+    <motion.div
+      onMouseMove={handleMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleLeave}
+      style={shouldReduceMotion ? undefined : { rotateX, rotateY, transformPerspective: 1200 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className={`relative will-change-transform group ${className}`}
+    >
+      {!shouldReduceMotion && (
+        <motion.div
+          aria-hidden="true"
+          className="absolute inset-0 rounded-2xl pointer-events-none z-10"
+          animate={{ opacity: isHovered ? 1 : 0 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(232, 93, 62, 0.12), transparent 60%)`,
+          }}
+        />
+      )}
+      {children}
+    </motion.div>
+  );
+}
+
+function MagneticWrap({ children, className = '' }: { children: ReactNode; className?: string }) {
+  const shouldReduceMotion = useReducedMotion();
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+
+  function handleMove(event: MouseEvent<HTMLDivElement>) {
+    if (shouldReduceMotion) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left - rect.width / 2) * 0.12;
+    const y = (event.clientY - rect.top - rect.height / 2) * 0.12;
+    setPos({ x, y });
+  }
+
+  function handleLeave() {
+    setPos({ x: 0, y: 0 });
   }
 
   return (
     <motion.div
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      style={shouldReduceMotion ? undefined : { rotateX, rotateY, transformPerspective: 1000 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className={`will-change-transform ${className}`}
+      animate={shouldReduceMotion ? {} : { x: pos.x, y: pos.y }}
+      transition={{ type: 'spring', stiffness: 180, damping: 18 }}
+      className={className}
     >
       {children}
     </motion.div>
@@ -183,7 +232,7 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <TiltCard>
+    <GlowTiltCard>
       <motion.div
         initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
         whileInView={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
@@ -197,7 +246,7 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
           {children}
         </div>
       </motion.div>
-    </TiltCard>
+    </GlowTiltCard>
   );
 }
 
@@ -326,7 +375,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-cream">
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-cream/95 backdrop-blur-md border-b border-light-gray' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-cream/90 backdrop-blur-xl border-b border-light-gray shadow-subtle' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
           <Link to="/" className="flex items-baseline gap-0.5">
             <span className="font-display text-xl md:text-2xl font-semibold text-charcoal tracking-tight">NextStep</span>
@@ -342,7 +391,9 @@ export default function LandingPage() {
 
           <div className="hidden lg:flex items-center gap-3">
             <Link to="/login" className="btn-text px-5 py-2.5 rounded-lg text-charcoal hover:bg-white/60 transition-colors">Log In</Link>
-            <Link to="/signup" className="btn-text px-5 py-2.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">Get Started</Link>
+            <MagneticWrap>
+              <Link to="/signup" className="btn-text px-5 py-2.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">Get Started</Link>
+            </MagneticWrap>
           </div>
 
           <button onClick={() => setMobileMenu(!mobileMenu)} className="lg:hidden p-2">
@@ -389,6 +440,35 @@ export default function LandingPage() {
                 background: heroGlowBackground,
               }}
             />
+            {[
+              { size: 280, top: '15%', left: '5%', delay: 0, duration: 12 },
+              { size: 180, top: '60%', left: '75%', delay: 2, duration: 16 },
+              { size: 220, top: '75%', left: '20%', delay: 4, duration: 14 },
+            ].map((orb) => (
+              <motion.div
+                key={orb.delay}
+                aria-hidden="true"
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  width: orb.size,
+                  height: orb.size,
+                  top: orb.top,
+                  left: orb.left,
+                  background: `radial-gradient(circle, rgba(232, 93, 62, 0.06), transparent 65%)`,
+                }}
+                animate={{
+                  y: [0, -28, 8, -18, 0],
+                  x: [0, 16, -12, 8, 0],
+                  scale: [1, 1.06, 0.94, 1.02, 1],
+                }}
+                transition={{
+                  duration: orb.duration,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: orb.delay,
+                }}
+              />
+            ))}
           </>
         )}
         <div className="max-w-7xl mx-auto px-5 md:px-12 w-full">
@@ -428,12 +508,16 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.7 }}
                 className="flex flex-wrap gap-4 mb-8"
               >
-                <Link to="/signup" className="btn-text px-7 py-3.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2">
-                  Upload a Report Card <ArrowRight size={16} />
-                </Link>
-                <a href="#how-it-works" className="btn-text px-7 py-3.5 rounded-[10px] border-[1.5px] border-charcoal text-charcoal hover:bg-charcoal hover:text-cream transition-all duration-250">
-                  See How It Works
-                </a>
+                <MagneticWrap>
+                  <Link to="/signup" className="btn-text px-7 py-3.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2">
+                    Upload a Report Card <ArrowRight size={16} />
+                  </Link>
+                </MagneticWrap>
+                <MagneticWrap>
+                  <a href="#how-it-works" className="btn-text px-7 py-3.5 rounded-[10px] border-[1.5px] border-charcoal text-charcoal hover:bg-charcoal hover:text-cream transition-all duration-250">
+                    See How It Works
+                  </a>
+                </MagneticWrap>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
@@ -454,7 +538,11 @@ export default function LandingPage() {
               initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.4 }}
               className="relative"
             >
-              <div className="rounded-2xl overflow-hidden shadow-card bg-gradient-to-br from-[#E8DDD0] to-[#D4C4B0] aspect-[4/3] flex items-center justify-center">
+              <motion.div
+                animate={shouldReduceMotion ? undefined : { y: [0, -8, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                className="rounded-2xl overflow-hidden shadow-card bg-gradient-to-br from-[#E8DDD0] to-[#D4C4B0] aspect-[4/3] flex items-center justify-center"
+              >
                 <div className="text-center p-8">
                   <div className="w-20 h-20 rounded-full bg-coral/15 flex items-center justify-center mx-auto mb-4">
                     <Heart size={32} className="text-coral" />
@@ -462,7 +550,7 @@ export default function LandingPage() {
                   <p className="font-display text-2xl text-charcoal mb-2">Every report card tells a story</p>
                   <p className="font-body text-charcoal/60">We help you read between the grades</p>
                 </div>
-              </div>
+              </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
                 className="absolute -bottom-6 -left-6 md:-left-10 bg-white rounded-xl shadow-card-hover p-4 w-[200px]"
@@ -491,11 +579,24 @@ export default function LandingPage() {
               { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} className="text-coral" /> },
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} className="text-coral" /> },
             ].map((step, i) => (
-              <ScrollReveal key={step.num} delay={i * 0.2}>
-                <div className="text-center md:text-left">
-                  <span className="font-display text-[88px] md:text-[104px] font-semibold text-coral/80 leading-none drop-shadow-[0_10px_24px_rgba(232,93,62,0.20)]">{step.num}</span>
+              <ScrollReveal key={step.num} delay={i * 0.2} scale={0.9}>
+                <div className="text-center md:text-left group">
+                  <motion.span
+                    className="font-display text-[88px] md:text-[104px] font-semibold leading-none inline-block transition-all duration-500 group-hover:scale-105 group-hover:text-coral"
+                    style={{ color: 'rgba(232, 93, 62, 0.75)', textShadow: '0 10px 24px rgba(232,93,62,0.20)' }}
+                    whileInView={shouldReduceMotion ? undefined : { scale: [0.5, 1.05, 1], opacity: [0, 1] }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {step.num}
+                  </motion.span>
                   <div className="flex items-center gap-3 mt-2 mb-3">
-                    {step.icon}
+                    <motion.span
+                      whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                    >
+                      {step.icon}
+                    </motion.span>
                     <h3 className="font-display text-2xl font-medium text-charcoal">{step.title}</h3>
                   </div>
                   <p className="font-body text-charcoal/70 leading-relaxed">{step.desc}</p>
@@ -552,7 +653,7 @@ export default function LandingPage() {
                 ) : feature.label === '30-DAY PLAN' ? (
                   <DayPlanMock />
                 ) : (
-                  <TiltCard>
+                  <GlowTiltCard>
                     <div className={`rounded-2xl overflow-hidden shadow-card aspect-[16/10] flex items-center justify-center ${feature.bg === 'cream' ? 'bg-white' : 'bg-card-surface-alt'}`}>
                       <div className="text-center p-8">
                         <div className="w-16 h-16 rounded-full bg-coral/10 flex items-center justify-center mx-auto mb-3">
@@ -561,7 +662,7 @@ export default function LandingPage() {
                         <p className="font-display text-lg text-charcoal/80">{feature.title.split(' ').slice(0, 3).join(' ')}...</p>
                       </div>
                     </div>
-                  </TiltCard>
+                  </GlowTiltCard>
                 )}
               </div>
             </ScrollReveal>
@@ -578,28 +679,43 @@ export default function LandingPage() {
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {portalCards.map((role, i) => (
-              <ScrollReveal key={role.title} delay={i * 0.12}>
-                <TiltCard className="h-full">
-                  <Link id={role.id} to={role.link} className="flex h-full min-h-[360px] flex-col bg-dark-surface border border-white/[0.08] rounded-2xl p-8 hover:border-white/[0.15] transition-all duration-300 group scroll-mt-28">
+              <ScrollReveal key={role.title} delay={i * 0.12} scale={0.95}>
+                <GlowTiltCard className="h-full">
+                  <Link id={role.id} to={role.link} className="flex h-full min-h-[360px] flex-col bg-dark-surface border border-white/[0.08] rounded-2xl p-8 transition-all duration-500 group scroll-mt-28 hover:border-coral/30 hover:shadow-[0_0_40px_rgba(232,93,62,0.08)]">
                     <div className="mb-5 flex items-center justify-between">
-                      {role.icon}
+                      <motion.div
+                        whileHover={shouldReduceMotion ? undefined : { rotate: -6, scale: 1.12 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                      >
+                        {role.icon}
+                      </motion.div>
                       <span className="font-body text-xs font-semibold tracking-[0.22em] text-white/20">0{i + 1}</span>
                     </div>
                     <h3 className="font-display text-2xl font-medium text-white mb-3">{role.title}</h3>
                     <p className="font-body text-white/60 leading-relaxed min-h-[84px]">{role.desc}</p>
                     <div className="my-6 grid gap-2">
-                      {role.points.map((point) => (
-                        <div key={point} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                      {role.points.map((point, pi) => (
+                        <motion.div
+                          key={point}
+                          initial={shouldReduceMotion ? false : { opacity: 0, x: -12 }}
+                          whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.35, delay: i * 0.08 + pi * 0.06, ease: 'easeOut' }}
+                          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                        >
                           <Check size={14} className="text-sage flex-shrink-0" />
                           <span className="font-body text-sm text-white/70">{point}</span>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
-                    <span className="mt-auto font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-3 transition-all">
+                    <motion.span
+                      className="mt-auto font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-4 transition-all duration-300"
+                      whileHover={shouldReduceMotion ? undefined : { x: 4 }}
+                    >
                       {role.cta} <ArrowRight size={14} />
-                    </span>
+                    </motion.span>
                   </Link>
-                </TiltCard>
+                </GlowTiltCard>
               </ScrollReveal>
             ))}
           </div>
@@ -626,13 +742,15 @@ export default function LandingPage() {
                   {[0, 1].map((offset) => {
                     const t = testimonials[(testimonialIdx + offset) % testimonials.length];
                     return (
-                      <div key={`${testimonialIdx}-${t.name}`} className="bg-white rounded-2xl shadow-card p-8 h-full">
-                        <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6">"{t.text}"</p>
-                        <div>
-                          <p className="font-body font-medium text-charcoal">{t.name}</p>
-                          <p className="font-body text-sm text-medium-gray">{t.role}</p>
+                      <GlowTiltCard key={`${testimonialIdx}-${t.name}`} className="h-full">
+                        <div className="bg-white rounded-2xl shadow-card p-8 h-full">
+                          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6">"{t.text}"</p>
+                          <div>
+                            <p className="font-body font-medium text-charcoal">{t.name}</p>
+                            <p className="font-body text-sm text-medium-gray">{t.role}</p>
+                          </div>
                         </div>
-                      </div>
+                      </GlowTiltCard>
                     );
                   })}
                 </motion.div>
@@ -649,9 +767,12 @@ export default function LandingPage() {
                 <motion.button
                   key={i}
                   onClick={() => changeTestimonial(i)}
-                  animate={{ scale: i === testimonialIdx ? 1.3 : 1, opacity: i === testimonialIdx ? 1 : 0.55 }}
-                  transition={{ duration: 0.35, ease: 'easeOut' }}
-                  className={`w-2 h-2 rounded-full transition-colors ${i === testimonialIdx ? 'bg-coral' : 'bg-light-gray'}`}
+                  animate={{
+                    scale: i === testimonialIdx ? 1.4 : 1,
+                    opacity: i === testimonialIdx ? 1 : 0.45,
+                  }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${i === testimonialIdx ? 'bg-coral shadow-[0_0_8px_rgba(232,93,62,0.4)]' : 'bg-light-gray'}`}
                 />
               ))}
               <button
@@ -675,14 +796,23 @@ export default function LandingPage() {
             {faqs.map((faq, i) => (
               <ScrollReveal key={i} delay={i * 0.05}>
                 <div className="border-b border-light-gray">
-                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full py-5 flex items-center justify-between text-left">
-                    <span className="font-display text-lg md:text-xl font-medium text-charcoal pr-4">{faq.q}</span>
-                    <span className="text-coral text-xl flex-shrink-0">{openFaq === i ? '×' : '+'}</span>
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full py-5 flex items-center justify-between text-left group"
+                  >
+                    <span className="font-display text-lg md:text-xl font-medium text-charcoal pr-4 group-hover:text-coral transition-colors duration-300">{faq.q}</span>
+                    <motion.span
+                      animate={{ rotate: openFaq === i ? 45 : 0 }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="text-coral text-xl flex-shrink-0 w-6 h-6 flex items-center justify-center"
+                    >
+                      +
+                    </motion.span>
                   </button>
                   <motion.div
                     initial={false}
                     animate={{ height: openFaq === i ? 'auto' : 0, opacity: openFaq === i ? 1 : 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                     className="overflow-hidden"
                   >
                     <p className="font-body text-charcoal/70 pb-5 leading-relaxed max-w-xl">{faq.a}</p>
