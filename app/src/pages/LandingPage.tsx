@@ -106,18 +106,10 @@ function GlowTiltCard({ children, className = '' }: { children: ReactNode; class
   const shouldReduceMotion = useReducedMotion();
   const [glow, setGlow] = useState({ x: 50, y: 50 });
   const [isHovered, setIsHovered] = useState(false);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], [7, -7]);
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-7, 7]);
 
   function handleMove(event: MouseEvent<HTMLDivElement>) {
     if (shouldReduceMotion) return;
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width - 0.5;
-    const y = (event.clientY - rect.top) / rect.height - 0.5;
-    mouseX.set(x);
-    mouseY.set(y);
     setGlow({
       x: ((event.clientX - rect.left) / rect.width) * 100,
       y: ((event.clientY - rect.top) / rect.height) * 100,
@@ -125,34 +117,29 @@ function GlowTiltCard({ children, className = '' }: { children: ReactNode; class
   }
 
   function handleLeave() {
-    mouseX.set(0);
-    mouseY.set(0);
     setGlow({ x: 50, y: 50 });
     setIsHovered(false);
   }
 
   return (
-    <motion.div
+    <div
       onMouseMove={handleMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleLeave}
-      style={shouldReduceMotion ? undefined : { rotateX, rotateY, transformPerspective: 1200 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative will-change-transform group ${className}`}
+      className={`relative group ${className}`}
     >
       {!shouldReduceMotion && (
-        <motion.div
+        <div
           aria-hidden="true"
-          className="absolute inset-0 rounded-2xl pointer-events-none z-10"
-          animate={{ opacity: isHovered ? 1 : 0 }}
-          transition={{ duration: 0.4 }}
+          className="absolute inset-0 rounded-2xl pointer-events-none z-10 transition-opacity duration-500"
           style={{
+            opacity: isHovered ? 1 : 0,
             background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(232, 93, 62, 0.12), transparent 60%)`,
           }}
         />
       )}
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -539,19 +526,27 @@ export default function LandingPage() {
               initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.4 }}
               className="relative"
             >
-              <motion.div
-                animate={shouldReduceMotion ? undefined : { y: [0, -8, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                className="rounded-2xl overflow-hidden shadow-card bg-gradient-to-br from-[#E8DDD0] to-[#D4C4B0] aspect-[4/3] flex items-center justify-center"
-              >
-                <div className="text-center p-8">
-                  <div className="w-20 h-20 rounded-full bg-coral/15 flex items-center justify-center mx-auto mb-4">
-                    <Heart size={32} className="text-coral" />
+              <GlowTiltCard>
+                <div className="rounded-2xl overflow-hidden shadow-card bg-gradient-to-br from-[#E8DDD0] to-[#D4C4B0] aspect-[4/3] flex items-center justify-center relative">
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-coral/[0.03] to-transparent" />
+                  <div className="text-center p-8 relative">
+                    <motion.div
+                      animate={shouldReduceMotion ? undefined : { scale: [1, 1.06, 1] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                      className="w-20 h-20 rounded-full bg-coral/15 flex items-center justify-center mx-auto mb-4"
+                    >
+                      <motion.span
+                        animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        <Heart size={32} className="text-coral" />
+                      </motion.span>
+                    </motion.div>
+                    <p className="font-display text-2xl text-charcoal mb-2">Every report card tells a story</p>
+                    <p className="font-body text-charcoal/60">We help you read between the grades</p>
                   </div>
-                  <p className="font-display text-2xl text-charcoal mb-2">Every report card tells a story</p>
-                  <p className="font-body text-charcoal/60">We help you read between the grades</p>
                 </div>
-              </motion.div>
+              </GlowTiltCard>
               <motion.div
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
                 className="absolute -bottom-6 -left-6 md:-left-10 bg-white rounded-xl shadow-card-hover p-4 w-[200px]"
