@@ -102,7 +102,7 @@ function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 }
 
-function GlowGlowTiltCard({ children, className = '' }: { children: ReactNode; className?: string }) {
+function GlowTiltCard({ children, className = '' }: { children: ReactNode; className?: string }) {
   const shouldReduceMotion = useReducedMotion();
   const [glow, setGlow] = useState({ x: 50, y: 50 });
   const [isHovered, setIsHovered] = useState(false);
