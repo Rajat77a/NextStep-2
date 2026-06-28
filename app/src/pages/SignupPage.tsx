@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Mail, User, Chrome, Heart, Users, Building } from 'lucide-react';
+import { ArrowRight, Mail, User, Chrome, Heart, Users, Building, Home } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserRole } from '@/types';
 
@@ -81,7 +81,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-5">
+    <div className="min-h-screen bg-cream flex items-center justify-center px-5 relative">
+      <Link
+        to="/"
+        className="absolute top-5 left-5 w-9 h-9 rounded-full border-[1.5px] border-light-gray bg-white flex items-center justify-center text-medium-gray hover:text-charcoal hover:border-charcoal/30 hover:shadow-card transition-all duration-200"
+      >
+        <Home size={16} />
+      </Link>
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
