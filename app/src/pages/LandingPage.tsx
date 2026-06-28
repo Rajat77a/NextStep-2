@@ -8,12 +8,14 @@ import {
 import ScrollReveal from '@/components/shared/ScrollReveal';
 
 const testimonials = [
-  { name: 'Meera Krishnan', role: 'Parent of Grade 5 student', text: 'The AI analysis helped me understand what my daughter\'s teacher was really trying to say. The conversation guide made our talk so much more productive.' },
-  { name: 'Ravi Nair', role: 'Parent of Grade 7 student', text: 'I used to dread report card day. Now I feel prepared. The 30-day plan gave us small, doable steps instead of overwhelming advice.' },
-  { name: 'Anita Desai', role: 'Parent of twins in Grade 4', text: 'Being able to compare terms and see what actually worked was eye-opening. We could see the improvement from following the plan.' },
-  { name: 'Suresh Patel', role: 'Parent of Grade 6 student', text: 'The questions for the teacher were spot-on. Our parent-teacher meeting was the most productive one we\'ve had.' },
-  { name: 'Lakshmi Menon', role: 'Parent of Grade 8 student', text: 'I love that it doesn\'t make predictions about my son\'s future. It just gives clear, gentle guidance on what to do next.' },
+  { name: 'Meera Krishnan', role: 'Parent of Grade 5 student', text: 'The AI analysis helped me understand what my daughter\'s teacher was really trying to say. The conversation guide made our talk so much more productive.', stars: 5 },
+  { name: 'Ravi Nair', role: 'Parent of Grade 7 student', text: 'I used to dread report card day. Now I feel prepared. The 30-day plan gave us small, doable steps instead of overwhelming advice.', stars: 5 },
+  { name: 'Anita Desai', role: 'Parent of twins in Grade 4', text: 'Being able to compare terms and see what actually worked was eye-opening. We could see the improvement from following the plan.', stars: 4 },
+  { name: 'Suresh Patel', role: 'Parent of Grade 6 student', text: 'The questions for the teacher were spot-on. Our parent-teacher meeting was the most productive one we\'ve had.', stars: 5 },
+  { name: 'Lakshmi Menon', role: 'Parent of Grade 8 student', text: 'I love that it doesn\'t make predictions about my son\'s future. It just gives clear, gentle guidance on what to do next.', stars: 4 },
 ];
+
+const avatarColors = ['bg-coral/20 text-coral', 'bg-sage/20 text-sage', 'bg-amber/20 text-amber', 'bg-coral/20 text-coral', 'bg-sage/20 text-sage'];
 
 const faqs = [
   { q: 'Is my child\'s data secure?', a: 'Absolutely. All report cards and analysis are stored with encryption. Your child\'s information is never shared with third parties. Teachers and admins cannot see your Clarity Check or conversation guides — only aggregate, anonymized data.' },
@@ -303,12 +305,18 @@ function DayPlanMock() {
   );
 }
 
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('');
+}
+
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
   const [testimonialPaused, setTestimonialPaused] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [valuePropIdx, setValuePropIdx] = useState(0);
+  const valueProps = ['next move', 'clarity', 'confidence', 'connection'];
   const testimonialResumeTimer = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const heroRef = useRef<HTMLElement | null>(null);
@@ -323,6 +331,9 @@ export default function LandingPage() {
     [heroGlowX, heroGlowY],
     ([x, y]) => `radial-gradient(circle at ${x} ${y}, rgba(232, 93, 62, 0.08), transparent 36%)`
   );
+  const parallaxShape1 = useTransform(scrollYProgress, [0, 1], ['0px', '-80px']);
+  const parallaxShape2 = useTransform(scrollYProgress, [0, 1], ['0px', '120px']);
+  const parallaxShape3 = useTransform(scrollYProgress, [0, 1], ['0px', '-40px']);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 50);
@@ -344,6 +355,14 @@ export default function LandingPage() {
       if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const timer = window.setInterval(() => {
+      setValuePropIdx(i => (i + 1) % valueProps.length);
+    }, 3200);
+    return () => window.clearInterval(timer);
+  }, [shouldReduceMotion, valueProps.length]);
 
   const pauseTestimonials = () => {
     if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
@@ -413,6 +432,40 @@ export default function LandingPage() {
           <>
             <motion.div
               aria-hidden="true"
+              className="absolute w-[340px] h-[340px] rounded-full pointer-events-none opacity-30"
+              style={{
+                y: parallaxShape1,
+                top: '10%',
+                right: '8%',
+                background: 'radial-gradient(circle, rgba(167, 189, 165, 0.25), transparent 65%)',
+                willChange: 'transform',
+              }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="absolute w-[200px] h-[200px] rounded-full pointer-events-none opacity-20"
+              style={{
+                y: parallaxShape2,
+                bottom: '5%',
+                left: '3%',
+                background: 'radial-gradient(circle, rgba(232, 93, 62, 0.12), transparent 65%)',
+                willChange: 'transform',
+              }}
+            />
+            <motion.div
+              aria-hidden="true"
+              className="absolute w-[120px] h-[120px] pointer-events-none opacity-10"
+              style={{
+                y: parallaxShape3,
+                top: '30%',
+                left: '55%',
+                border: '2px solid rgba(232,93,62,0.15)',
+                borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%',
+                willChange: 'transform',
+              }}
+            />
+            <motion.div
+              aria-hidden="true"
               className="absolute inset-0 pointer-events-none"
               style={{
                 y: heroBgY,
@@ -472,18 +525,23 @@ export default function LandingPage() {
                 className="font-display text-[40px] md:text-[72px] font-medium text-charcoal leading-[1.0] tracking-tight mb-6"
               >
                 Turn your child's report card into your{' '}
-                <motion.span
-                  initial={shouldReduceMotion ? false : { backgroundPosition: '100% 0' }}
-                  animate={{ backgroundPosition: '0% 0' }}
-                  transition={{ duration: 0.95, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                  className="inline-block font-semibold text-transparent bg-clip-text"
-                  style={{
-                    backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, var(--charcoal) 50% 100%)',
-                    backgroundSize: '200% 100%',
-                  }}
-                >
-                  next move
-                </motion.span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={valueProps[valuePropIdx]}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className="inline-block font-semibold text-transparent bg-clip-text"
+                    style={{
+                      backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, var(--charcoal) 50% 100%)',
+                      backgroundSize: '200% 100%',
+                      backgroundPosition: '0% 0',
+                    }}
+                  >
+                    {valueProps[valuePropIdx]}
+                  </motion.span>
+                </AnimatePresence>
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.55 }}
@@ -496,7 +554,8 @@ export default function LandingPage() {
                 className="flex flex-wrap gap-4 mb-8"
               >
                 <MagneticWrap>
-                  <Link to="/signup" className="btn-text px-7 py-3.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2">
+                  <Link to="/signup" className="relative btn-text px-7 py-3.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2 overflow-hidden group">
+                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
                     Upload a Report Card <ArrowRight size={16} />
                   </Link>
                 </MagneticWrap>
@@ -563,10 +622,11 @@ export default function LandingPage() {
       </motion.section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 md:py-28 bg-white">
+      <section id="how-it-works" className="py-20 md:py-28 bg-white relative">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
           <ScrollReveal>
-            <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-16">Three steps to clarity</h2>
+            <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-4">Three steps to clarity</h2>
+            <p className="font-body text-medium-gray text-center mb-16 max-w-xl mx-auto">From upload to actionable plan — in minutes, not hours.</p>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
             {[
@@ -575,7 +635,7 @@ export default function LandingPage() {
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} className="text-coral" /> },
             ].map((step, i) => (
               <ScrollReveal key={step.num} delay={i * 0.2} scale={0.9}>
-                <div className="text-center md:text-left group">
+                <div className="text-center md:text-left group relative">
                   <motion.span
                     className="font-display text-[88px] md:text-[104px] font-semibold leading-none inline-block transition-all duration-500 group-hover:scale-105 group-hover:text-coral"
                     style={{ color: 'rgba(232, 93, 62, 0.75)', textShadow: '0 10px 24px rgba(232,93,62,0.20)' }}
@@ -738,11 +798,30 @@ export default function LandingPage() {
                     const t = testimonials[(testimonialIdx + offset) % testimonials.length];
                     return (
                       <GlowTiltCard key={`${testimonialIdx}-${t.name}`} className="h-full">
-                        <div className="bg-white rounded-2xl shadow-card p-8 h-full">
-                          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6">"{t.text}"</p>
-                          <div>
-                            <p className="font-body font-medium text-charcoal">{t.name}</p>
-                            <p className="font-body text-sm text-medium-gray">{t.role}</p>
+                        <div className="bg-white rounded-2xl shadow-card p-8 h-full flex flex-col">
+                          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6 flex-1">"{t.text}"</p>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-display font-semibold shrink-0 ${avatarColors[testimonials.indexOf(t) % avatarColors.length]}`}>
+                              {getInitials(t.name)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-body font-medium text-charcoal truncate">{t.name}</p>
+                              <p className="font-body text-sm text-medium-gray truncate">{t.role}</p>
+                            </div>
+                            <div className="ml-auto flex gap-0.5 shrink-0">
+                              {Array.from({ length: 5 }).map((_, si) => (
+                                <motion.span
+                                  key={si}
+                                  initial={shouldReduceMotion ? undefined : { scale: 0, opacity: 0 }}
+                                  whileInView={shouldReduceMotion ? undefined : { scale: 1, opacity: 1 }}
+                                  viewport={{ once: true }}
+                                  transition={{ delay: si * 0.08 + 0.1, type: 'spring', stiffness: 400, damping: 12 }}
+                                  className={`text-sm ${si < t.stars ? 'text-amber' : 'text-light-gray'}`}
+                                >
+                                  ★
+                                </motion.span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </GlowTiltCard>

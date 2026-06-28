@@ -199,6 +199,17 @@
   }
 }
 
+@keyframes gradient-rotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes star-fill {
+  0% { width: 0; }
+  100% { width: var(--star-width); }
+}
+
 .drift-1 { animation: drift 12s ease-in-out infinite; }
 .drift-2 { animation: drift 16s ease-in-out infinite reverse; }
 .drift-3 { animation: drift 14s ease-in-out infinite; animation-delay: -5s; }
