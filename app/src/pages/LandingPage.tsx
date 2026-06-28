@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useInView, useMotionValue, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight, Upload, Brain, FileText, Heart,
-  Users, Building, ChevronLeft, ChevronRight, Menu, X, Check, Calendar
+  Users, Building, ChevronLeft, ChevronRight, Menu, X, Check, Star, Calendar
 } from 'lucide-react';
 import ScrollReveal from '@/components/shared/ScrollReveal';
 
@@ -316,7 +316,7 @@ export default function LandingPage() {
   const [testimonialPaused, setTestimonialPaused] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [valuePropIdx, setValuePropIdx] = useState(0);
-  const valueProps = ['next move', 'clarity', 'confidence', 'connection'];
+  const valueProps = ['next move', 'insight', 'confidence', 'connection'];
   const testimonialResumeTimer = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const heroRef = useRef<HTMLElement | null>(null);
@@ -346,7 +346,7 @@ export default function LandingPage() {
     const timer = window.setInterval(() => {
       if (testimonialPaused) return;
       setTestimonialIdx((current) => (current + 1) % testimonials.length);
-    }, 5000);
+    }, 3000);
     return () => window.clearInterval(timer);
   }, [testimonialPaused, shouldReduceMotion]);
 
@@ -695,7 +695,9 @@ export default function LandingPage() {
                         transition={{ duration: 0.35, ease: 'easeOut' }}
                         className="flex items-center gap-3"
                       >
-                        <Check size={16} className="text-sage flex-shrink-0" />
+                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber to-coral flex items-center justify-center flex-shrink-0 shadow-sm">
+                          <Star size={10} className="text-white" fill="white" />
+                        </span>
                         <span className="font-body text-charcoal/80">{b}</span>
                       </motion.li>
                     ))}
@@ -758,7 +760,9 @@ export default function LandingPage() {
                           transition={{ duration: 0.35, delay: i * 0.08 + pi * 0.06, ease: 'easeOut' }}
                           className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
                         >
-                          <Check size={14} className="text-sage flex-shrink-0" />
+                          <span className="w-5 h-5 rounded-full bg-gradient-to-br from-sage to-sage/70 flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <Star size={9} className="text-white" fill="white" />
+                          </span>
                           <span className="font-body text-sm text-white/70">{point}</span>
                         </motion.div>
                       ))}
