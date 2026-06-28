@@ -86,7 +86,7 @@ export default function SignupPage() {
         initial={{ opacity: 0, y: -8, scale: 0.92 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute top-6 right-6 z-10"
+        className="absolute top-6 left-6 z-10"
       >
         <Link
           to="/"
