@@ -532,7 +532,7 @@ export default function LandingPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -16 }}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    className="inline-block font-semibold text-transparent bg-clip-text"
+                    className="inline-block font-semibold text-transparent bg-clip-text leading-[1.2]"
                     style={{
                       backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, var(--charcoal) 50% 100%)',
                       backgroundSize: '200% 100%',
