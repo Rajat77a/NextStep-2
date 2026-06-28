@@ -179,6 +179,7 @@ function MagneticWrap({ children, className = '' }: { children: ReactNode; class
       animate={shouldReduceMotion ? {} : { x: pos.x, y: pos.y }}
       transition={{ type: 'spring', stiffness: 180, damping: 18 }}
       className={className}
+      style={{ display: 'inline-flex' }}
     >
       {children}
     </motion.div>
