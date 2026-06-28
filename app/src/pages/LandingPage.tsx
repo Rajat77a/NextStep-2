@@ -117,7 +117,6 @@ function GlowTiltCard({ children, className = '' }: { children: ReactNode; class
   }
 
   function handleLeave() {
-    setGlow({ x: 50, y: 50 });
     setIsHovered(false);
   }
 
