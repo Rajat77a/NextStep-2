@@ -82,13 +82,22 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-5 relative">
-      <Link
-        to="/"
-        className="absolute top-5 right-5 flex items-center gap-2 py-2 px-4 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark hover:scale-[1.02] active:scale-[0.98] shadow-md transition-all duration-200"
+      <motion.div
+        initial={{ opacity: 0, y: -8, scale: 0.92 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute top-6 right-6 z-10"
       >
-        <Home size={16} />
-        Home
-      </Link>
+        <Link
+          to="/"
+          className="group flex items-center gap-2.5 py-2 pl-2.5 pr-4 rounded-full bg-white/95 border border-light-gray/70 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+        >
+          <span className="w-7 h-7 rounded-full bg-coral/10 flex items-center justify-center group-hover:bg-coral/15 transition-colors duration-300">
+            <Home size={14} className="text-coral" />
+          </span>
+          <span className="font-body text-sm font-semibold text-charcoal/80 group-hover:text-charcoal transition-colors duration-300">Home</span>
+        </Link>
+      </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
