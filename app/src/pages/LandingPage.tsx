@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useInView, useMotionValue, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight, Upload, Brain, FileText, Heart,
-  Users, Building, ChevronLeft, ChevronRight, Menu, X, Check, Star, Calendar
+  Users, Building, ChevronLeft, ChevronRight, ChevronUp, Menu, X, Check, Star, Calendar,
 } from 'lucide-react';
 import ScrollReveal from '@/components/shared/ScrollReveal';
 
@@ -316,6 +316,7 @@ export default function LandingPage() {
   const [testimonialPaused, setTestimonialPaused] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [valuePropIdx, setValuePropIdx] = useState(0);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const valueProps = ['next move', 'insight', 'confidence', 'connection'];
   const testimonialResumeTimer = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -324,6 +325,7 @@ export default function LandingPage() {
     target: heroRef,
     offset: ['start start', 'end start'],
   });
+  const { scrollYProgress: pageProgress } = useScroll();
   const heroBgY = useTransform(scrollYProgress, [0, 1], ['0px', '110px']);
   const heroGlowX = useTransform(scrollYProgress, [0, 1], ['12%', '28%']);
   const heroGlowY = useTransform(scrollYProgress, [0, 1], ['18%', '38%']);
@@ -336,9 +338,26 @@ export default function LandingPage() {
   const parallaxShape3 = useTransform(scrollYProgress, [0, 1], ['0px', '-40px']);
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handler);
+    const handler = () => {
+      const y = window.scrollY;
+      setScrolled(y > 50);
+      setShowBackToTop(y > 600);
+    };
+    window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  const testimonialIdxRef = useRef(testimonialIdx);
+  testimonialIdxRef.current = testimonialIdx;
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMobileMenu(false);
+      if (e.key === 'ArrowLeft') changeTestimonial(testimonialIdxRef.current - 1);
+      if (e.key === 'ArrowRight') changeTestimonial(testimonialIdxRef.current + 1);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -408,20 +427,34 @@ export default function LandingPage() {
         </div>
       </nav>
 
+      {/* Scroll Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 z-[60] h-[3px] bg-gradient-to-r from-coral to-coral-dark origin-left"
+        style={{ scaleX: pageProgress }}
+      />
+
       {/* Mobile Menu */}
-      {mobileMenu && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-40 bg-charcoal pt-20 px-6 lg:hidden">
-          <div className="flex flex-col gap-4">
-            <a href="#how-it-works" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">How It Works</a>
-            <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">Clarity Check</a>
-            <a href="#stories" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body">Parent Stories</a>
-            <div className="border-t border-white/10 pt-4 mt-4 flex flex-col gap-3">
-              <Link to="/login" onClick={() => setMobileMenu(false)} className="text-white text-lg font-body">Log In</Link>
-              <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3 rounded-[10px] bg-coral text-white text-center">Get Started</Link>
+      <AnimatePresence>
+        {mobileMenu && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+            className="fixed inset-y-0 right-0 z-40 bg-charcoal w-full max-w-sm pt-24 px-8 lg:hidden shadow-2xl"
+          >
+            <div className="flex flex-col gap-6">
+              <a href="#how-it-works" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body hover:text-white transition-colors">How It Works</a>
+              <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body hover:text-white transition-colors">Clarity Check</a>
+              <a href="#stories" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body hover:text-white transition-colors">Parent Stories</a>
+              <div className="border-t border-white/10 pt-6 mt-2 flex flex-col gap-4">
+                <Link to="/login" onClick={() => setMobileMenu(false)} className="text-white text-lg font-body hover:text-coral transition-colors">Log In</Link>
+                <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3.5 rounded-[10px] bg-coral text-white text-center hover:bg-coral-dark transition-colors">Get Started</Link>
+              </div>
             </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hero Section */}
       <motion.section
@@ -629,6 +662,15 @@ export default function LandingPage() {
             <p className="font-body text-medium-gray text-center mb-16 max-w-xl mx-auto">From upload to actionable plan — in minutes, not hours.</p>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
+            {/* Connecting line between steps — desktop only */}
+            <svg
+              className="hidden md:block absolute top-14 left-[calc(16.66%+40px)] right-[calc(16.66%+40px)] h-[2px] pointer-events-none z-0"
+              viewBox="0 0 100 2"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <line x1="0" y1="1" x2="100" y2="1" stroke="#E85D3E" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.25" />
+            </svg>
             {[
               { num: '01', title: 'Upload', desc: "Snap or upload your child's report card. We support all major school boards and formats.", icon: <Upload size={28} className="text-coral" /> },
               { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} className="text-coral" /> },
@@ -802,8 +844,9 @@ export default function LandingPage() {
                     const t = testimonials[(testimonialIdx + offset) % testimonials.length];
                     return (
                       <GlowTiltCard key={`${testimonialIdx}-${t.name}`} className="h-full">
-                        <div className="bg-white rounded-2xl shadow-card p-8 h-full flex flex-col">
-                          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6 flex-1">"{t.text}"</p>
+                        <div className="bg-white rounded-2xl shadow-card p-8 h-full flex flex-col relative">
+                          <span aria-hidden="true" className="absolute top-4 left-6 text-5xl font-display text-coral/10 leading-none select-none">"</span>
+                          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6 flex-1 relative z-[1]">"{t.text}"</p>
                           <div className="flex items-center gap-3">
                             <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-display font-semibold shrink-0 ${avatarColors[testimonials.indexOf(t) % avatarColors.length]}`}>
                               {getInitials(t.name)}
@@ -902,17 +945,38 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Back to Top */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-8 right-8 z-50 w-11 h-11 rounded-full bg-coral text-white shadow-modal flex items-center justify-center hover:bg-coral-dark transition-colors"
+            aria-label="Back to top"
+          >
+            <ChevronUp size={18} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* Footer */}
-      <footer className="bg-charcoal pt-16 pb-8">
+      <footer className="bg-charcoal pt-16 pb-10">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <div className="grid md:grid-cols-[1fr_1fr_1fr_1fr] gap-10 mb-12">
-            <div className="md:col-span-1">
+          <div className="grid md:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr] gap-8 mb-12">
+            <div>
               <span className="font-display text-2xl font-semibold text-white tracking-tight">NextStep<span className="text-coral">.AI</span></span>
-              <p className="font-body text-sm text-white/50 mt-3 leading-relaxed">Turn your child's report card into your next move.</p>
+              <p className="font-body text-sm text-white/50 mt-3 leading-relaxed max-w-[220px]">Turn your child's report card into your next move.</p>
+              <div className="flex items-center gap-3 mt-5">
+                <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral transition-all cursor-default" aria-label="Twitter/X"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"/><path d="M4 20l6.768 -6.768m2.46 -2.46L20 4"/></svg></span>
+                <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral transition-all cursor-default" aria-label="LinkedIn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg></span>
+                <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral transition-all cursor-default" aria-label="Email"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+              </div>
             </div>
             <div>
               <p className="label-text text-white/40 mb-4">Product</p>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">For Parents</span></li>
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">For Teachers</span></li>
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">For Schools</span></li>
@@ -920,7 +984,7 @@ export default function LandingPage() {
             </div>
             <div>
               <p className="label-text text-white/40 mb-4">Company</p>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">About</span></li>
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Blog</span></li>
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Support</span></li>
@@ -928,11 +992,26 @@ export default function LandingPage() {
             </div>
             <div>
               <p className="label-text text-white/40 mb-4">Legal</p>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Privacy</span></li>
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Terms</span></li>
                 <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Data Security</span></li>
               </ul>
+            </div>
+            <div>
+              <p className="label-text text-white/40 mb-4">Stay updated</p>
+              <p className="font-body text-xs text-white/40 mb-3 leading-relaxed">Get tips and feature updates.</p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="you@email.com"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 font-body text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-coral/50 transition-colors"
+                  aria-label="Email for newsletter"
+                />
+                <button className="shrink-0 bg-coral hover:bg-coral-dark text-white rounded-lg px-3 py-2 transition-colors" aria-label="Subscribe">
+                  <ArrowRight size={14} />
+                </button>
+              </div>
             </div>
           </div>
           <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
