@@ -180,6 +180,8 @@ function AnimatedClarityCheck() {
   const [revealed, setRevealed] = useState(0);
   const [paused, setPaused] = useState(false);
   const timers = useRef<number[]>([]);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { margin: '-80px' });
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -187,7 +189,15 @@ function AnimatedClarityCheck() {
   }
 
   useEffect(() => {
-    if (shouldReduceMotion || paused) return;
+    if (!isInView) {
+      clearTimers();
+      setPhase('start');
+      setRevealed(0);
+    }
+  }, [isInView]);
+
+  useEffect(() => {
+    if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'start') {
       timers.current.push(window.setTimeout(() => setPhase('loading'), 600));
@@ -204,9 +214,10 @@ function AnimatedClarityCheck() {
       }, 2500));
     }
     return clearTimers;
-  }, [phase, revealed, shouldReduceMotion, paused]);
+  }, [phase, revealed, shouldReduceMotion, paused, isInView]);
 
   return (
+    <div ref={ref}>
     <FloatingMockCard>
       <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
         <div className="flex items-center justify-between mb-5">
@@ -274,8 +285,8 @@ function AnimatedClarityCheck() {
                 {subjectRows.map((row, i) => (
                   <motion.div
                     key={row.subject}
-                    initial={shouldReduceMotion ? false : { opacity: 0, x: -12, height: 0 }}
-                    animate={revealed > i ? { opacity: 1, x: 0, height: 'auto' } : { opacity: 0, x: -12, height: 0 }}
+                    initial={shouldReduceMotion ? false : { opacity: 0, x: -12 }}
+                    animate={revealed > i ? { opacity: 1, x: 0 } : { opacity: 0, x: -12 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
                   >
                     <motion.div
@@ -319,6 +330,7 @@ function AnimatedClarityCheck() {
         </div>
       </div>
     </FloatingMockCard>
+    </div>
   );
 }
 
@@ -350,6 +362,8 @@ function AnimatedConversation() {
   const [typed, setTyped] = useState('');
   const [paused, setPaused] = useState(false);
   const timers = useRef<number[]>([]);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { margin: '-80px' });
 
   const insteadText = 'How did you get a C in Science?';
   const tryText = 'Which subject felt hardest this term, and why?';
@@ -360,15 +374,23 @@ function AnimatedConversation() {
   }
 
   useEffect(() => {
-    if (shouldReduceMotion || paused) return;
+    if (!isInView) {
+      clearTimers();
+      setPhase('idle');
+      setTyped('');
+    }
+  }, [isInView]);
+
+  useEffect(() => {
+    if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
       setTyped('');
       timers.current.push(window.setTimeout(() => setPhase('typing'), 500));
     } else if (phase === 'typing' && typed.length < insteadText.length) {
       timers.current.push(window.setTimeout(() => {
-        setTyped(insteadText.slice(0, typed.length + 1));
-      }, 35));
+        setTyped(prev => insteadText.slice(0, prev.length + 1));
+      }, 40));
     } else if (phase === 'typing' && typed.length >= insteadText.length) {
       timers.current.push(window.setTimeout(() => setPhase('show1'), 800));
     } else if (phase === 'show1') {
@@ -379,9 +401,10 @@ function AnimatedConversation() {
       timers.current.push(window.setTimeout(() => setPhase('idle'), 1500));
     }
     return clearTimers;
-  }, [phase, typed, shouldReduceMotion, paused]);
+  }, [phase, typed, shouldReduceMotion, paused, isInView]);
 
   return (
+    <div ref={ref}>
     <FloatingMockCard>
       <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
         <p className="label-text text-coral mb-1">Tonight's Script</p>
@@ -481,6 +504,7 @@ function AnimatedConversation() {
         </div>
       </div>
     </FloatingMockCard>
+    </div>
   );
 }
 
@@ -489,6 +513,8 @@ function AnimatedDayPlan() {
   const [phase, setPhase] = useState<'idle' | 'building' | 'week1' | 'week2' | 'week3' | 'week4' | 'done'>('idle');
   const [paused, setPaused] = useState(false);
   const timers = useRef<number[]>([]);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { margin: '-80px' });
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -496,7 +522,14 @@ function AnimatedDayPlan() {
   }
 
   useEffect(() => {
-    if (shouldReduceMotion || paused) return;
+    if (!isInView) {
+      clearTimers();
+      setPhase('idle');
+    }
+  }, [isInView]);
+
+  useEffect(() => {
+    if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
       timers.current.push(window.setTimeout(() => setPhase('building'), 500));
@@ -514,11 +547,12 @@ function AnimatedDayPlan() {
       timers.current.push(window.setTimeout(() => setPhase('idle'), 2500));
     }
     return clearTimers;
-  }, [phase, shouldReduceMotion, paused]);
+  }, [phase, shouldReduceMotion, paused, isInView]);
 
   const weekPhases = ['week1', 'week2', 'week3', 'week4'] as const;
 
   return (
+    <div ref={ref}>
     <FloatingMockCard>
       <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
         <p className="label-text text-coral mb-1">Your 30-Day Plan</p>
@@ -583,8 +617,8 @@ function AnimatedDayPlan() {
                   return (
                     <motion.div
                       key={row.week}
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 20, height: 0 }}
-                      animate={isVisible ? { opacity: 1, y: 0, height: 'auto' } : { opacity: 0, y: 20, height: 0 }}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                      animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     >
                       <motion.div
@@ -624,6 +658,7 @@ function AnimatedDayPlan() {
         </div>
       </div>
     </FloatingMockCard>
+    </div>
   );
 }
 
