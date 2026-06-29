@@ -7,7 +7,6 @@ import { getTeacherDashboard, getStudents, getTeacherNotes, addTeacherNote } fro
 import { storage } from '@/api/storage';
 import FlagBadge from '@/components/shared/FlagBadge';
 import CountUp from '@/components/shared/CountUp';
-import TiltCard from '@/components/shared/TiltCard';
 import SparkleBurst from '@/components/shared/SparkleBurst';
 import type { Student, SubjectGrade, TeacherNote } from '@/types';
 
@@ -166,12 +165,14 @@ export default function TeacherDashboard() {
             A school admin has invited you to join their teacher portal. Accept the request to become available for class assignment.
           </p>
 
-          <button
+          <motion.button
             onClick={acceptInvite}
-            className="btn-text px-5 py-2.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all"
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            className="btn-text px-5 py-2.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark hover:shadow-lg transition-all"
           >
             Accept Request
-          </button>
+          </motion.button>
         </motion.div>
       )}
 
@@ -202,7 +203,15 @@ export default function TeacherDashboard() {
                 { icon: <AlertTriangle size={18} />, label: 'Flagged Students', value: stats.flaggedCount },
                 { icon: <BarChart3 size={18} />, label: 'Classes', value: user ? 1 : 0 },
               ].map((stat, index) => (
-                <TiltCard key={index} className="bg-white rounded-2xl shadow-card p-5">
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: 0.12 + index * 0.04 }}
+                  whileHover={{ y: -3, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}
+                  whileTap={{ scale: 0.97 }}
+                  className="bg-white rounded-2xl shadow-card p-5 transition-shadow duration-300"
+                >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-coral relative">
                       {stat.icon}
@@ -213,33 +222,32 @@ export default function TeacherDashboard() {
                   <p className="font-display text-3xl text-charcoal">
                     <CountUp value={stat.value} />
                   </p>
-                </TiltCard>
+                </motion.div>
               ))}
             </div>
           </motion.div>
 
           <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.14 }}>
-              <TiltCard className="bg-white rounded-2xl shadow-card p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-display text-xl text-charcoal">Students</h3>
-                    <div className="gradient-divider w-12" />
-                  </div>
-                  <div className="relative w-full sm:w-56">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-medium-gray" />
-                    <input
-                      type="text"
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Search students..."
-                      className="w-full pl-9 pr-4 py-2 rounded-lg border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none"
-                    />
-                  </div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.14 }} className="bg-white rounded-2xl shadow-card p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-display text-xl text-charcoal">Students</h3>
+                  <div className="gradient-divider w-12" />
                 </div>
+                <div className="relative w-full sm:w-56">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-medium-gray" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search students..."
+                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none"
+                  />
+                </div>
+              </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+              <div className="overflow-x-auto">
+                <table className="w-full">
                   <thead>
                     <tr className="border-b border-light-gray">
                       <th className="text-left py-3 px-4 label-text text-medium-gray">Name</th>
@@ -254,10 +262,11 @@ export default function TeacherDashboard() {
                       const flag = getStudentFlag(student.id);
 
                       return (
-                        <tr
+                        <motion.tr
                           key={student.id}
                           onClick={() => openStudentPanel(student)}
-                          className={`border-b border-light-gray/50 cursor-pointer hover:bg-cream/50 transition-colors ${
+                          whileTap={{ scale: 0.99 }}
+                          className={`border-b border-light-gray/50 cursor-pointer hover:bg-cream/50 hover:shadow-sm transition-all duration-200 ${
                             flag === 'red' ? 'bg-coral/[0.02]' : ''
                           }`}
                         >
@@ -284,26 +293,26 @@ export default function TeacherDashboard() {
                           <td className="py-3 px-4">
                             <FlagBadge flag={flag} size="sm" />
                           </td>
-                        </tr>
+                        </motion.tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
-            </TiltCard></motion.div>
+            </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: springEasing, delay: 0.2 }}
+              className="bg-white rounded-2xl shadow-card p-6"
             >
-              <TiltCard className="bg-white rounded-2xl shadow-card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <h3 className="font-display text-xl text-charcoal">
-                    Students to Watch
-                  </h3>
-                  <div className="gradient-divider flex-1" />
-                </div>
+              <div className="flex items-center gap-3 mb-4">
+                <h3 className="font-display text-xl text-charcoal">
+                  Students to Watch
+                </h3>
+                <div className="gradient-divider flex-1" />
+              </div>
 
               <div className="space-y-3">
                 {watchList.map((student) => {
@@ -316,7 +325,8 @@ export default function TeacherDashboard() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3 }}
                       onClick={() => openStudentPanel(student)}
-                      className="flex items-center justify-between p-3 rounded-xl hover:bg-cream/50 cursor-pointer transition-colors"
+                      whileTap={{ scale: 0.98 }}
+                      className="flex items-center justify-between p-3 rounded-xl hover:bg-cream/50 hover:shadow-sm cursor-pointer transition-all duration-200"
                     >
                       <div>
                         <p className="font-body font-medium text-sm text-charcoal">
@@ -343,13 +353,15 @@ export default function TeacherDashboard() {
                 })}
               </div>
 
-              <Link
-                to="/teacher/patterns"
-                className="inline-flex items-center gap-1 text-coral font-body text-sm font-semibold mt-4 hover:underline group"
-              >
-                View class patterns <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </TiltCard></motion.div>
+              <motion.div whileTap={{ scale: 0.96 }}>
+                <Link
+                  to="/teacher/patterns"
+                  className="inline-flex items-center gap-1.5 text-coral font-body text-sm font-semibold mt-4 px-3 py-1.5 rounded-lg hover:bg-coral/10 transition-colors group"
+                >
+                  View class patterns <ArrowRight size={14} className="group-hover:translate-x-1.5 transition-transform duration-300" />
+                </Link>
+              </motion.div>
+            </motion.div>
           </div>
 
           {showPanel && selectedStudent && (
@@ -380,12 +392,13 @@ export default function TeacherDashboard() {
                       </p>
                     </div>
 
-                    <button
+                    <motion.button
                       onClick={() => setShowPanel(false)}
-                      className="w-8 h-8 rounded-full bg-cream flex items-center justify-center hover:bg-light-gray transition-colors"
+                      whileTap={{ scale: 0.9 }}
+                      className="w-8 h-8 rounded-full bg-cream flex items-center justify-center hover:bg-light-gray transition-colors text-lg"
                     >
                       ×
-                    </button>
+                    </motion.button>
                   </div>
 
                   <div className="space-y-3 mb-6">
@@ -431,12 +444,13 @@ export default function TeacherDashboard() {
                         onKeyDown={(event) => event.key === 'Enter' && handleAddNote()}
                       />
 
-                      <button
+                      <motion.button
                         onClick={handleAddNote}
+                        whileTap={{ scale: 0.95 }}
                         className="px-4 py-2 rounded-lg bg-coral text-white font-body text-sm hover:bg-coral-dark transition-all"
                       >
                         Add
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
 

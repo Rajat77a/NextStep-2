@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { getAdminDashboard, getClasses, getUserById } from '@/api/data';
 import { storage } from '@/api/storage';
 import CountUp from '@/components/shared/CountUp';
-import TiltCard from '@/components/shared/TiltCard';
 import SparkleBurst from '@/components/shared/SparkleBurst';
 import type { DashboardSummary, Class } from '@/types';
 
@@ -77,7 +76,15 @@ export default function AdminDashboard() {
           { icon: <FileText size={16} />, label: 'Report Cards', value: summary?.reportCardsThisTerm || 0 },
           { icon: <AlertTriangle size={16} />, label: 'Flagged', value: summary?.flaggedStudents || 0 },
         ].map((s, i) => (
-          <TiltCard key={i} className="bg-white rounded-2xl shadow-card p-5">
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.12 + i * 0.04 }}
+            whileHover={{ y: -3, boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}
+            whileTap={{ scale: 0.97 }}
+            className="bg-white rounded-2xl shadow-card p-5 transition-shadow duration-300"
+          >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-coral relative">
                 {s.icon}
@@ -88,18 +95,17 @@ export default function AdminDashboard() {
             <p className="font-display text-3xl text-charcoal">
                 <CountUp value={s.value} />
               </p>
-          </TiltCard>
+          </motion.div>
         ))}
       </motion.div>
 
       <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
         {/* Flag Distribution */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.12 }}>
-          <TiltCard className="bg-white rounded-2xl shadow-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <h3 className="font-display text-xl text-charcoal">Flag Distribution</h3>
-              <div className="gradient-divider flex-1" />
-            </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.12 }} className="bg-white rounded-2xl shadow-card p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <h3 className="font-display text-xl text-charcoal">Flag Distribution</h3>
+            <div className="gradient-divider flex-1" />
+          </div>
           <div className="flex items-center gap-8">
             <div className="relative w-40 h-40 flex-shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -151,34 +157,36 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
-          </TiltCard>
         </motion.div>
 
         {/* Quick Actions */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.16 }} className="space-y-4">
-          <TiltCard className="bg-white rounded-2xl shadow-card p-6">
+          <div className="bg-white rounded-2xl shadow-card p-6">
             <h3 className="font-display text-lg text-charcoal mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <Link to="/admin/students" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover transition-all duration-300 group">
-                <Plus size={16} className="text-coral group-hover:scale-110 transition-transform duration-300" />
-                <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Add Students</span>
-              </Link>
-              <Link to="/admin/teachers" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover transition-all duration-300 group">
-                <UserPlus size={16} className="text-coral group-hover:scale-110 transition-transform duration-300" />
-                <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Invite Teacher</span>
-              </Link>
+              <motion.div whileTap={{ scale: 0.97 }}>
+                <Link to="/admin/students" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 group">
+                  <Plus size={16} className="text-coral group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
+                  <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Add Students</span>
+                </Link>
+              </motion.div>
+              <motion.div whileTap={{ scale: 0.97 }}>
+                <Link to="/admin/teachers" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 group">
+                  <UserPlus size={16} className="text-coral group-hover:scale-110 transition-transform duration-300" />
+                  <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Invite Teacher</span>
+                </Link>
+              </motion.div>
             </div>
-          </TiltCard>
+          </div>
         </motion.div>
       </div>
 
       {/* Classes Table */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.2 }} className="mt-6">
-        <TiltCard className="bg-white rounded-2xl shadow-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <h3 className="font-display text-xl text-charcoal">Classes</h3>
-            <div className="gradient-divider flex-1" />
-          </div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.2 }} className="bg-white rounded-2xl shadow-card p-6 mt-6">
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className="font-display text-xl text-charcoal">Classes</h3>
+          <div className="gradient-divider flex-1" />
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -199,8 +207,9 @@ export default function AdminDashboard() {
                     key={cls.id}
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
+                    whileTap={{ scale: 0.99 }}
                     transition={{ duration: 0.35, ease: springEasing, delay: 0.3 + ci * 0.04 }}
-                    className="border-b border-light-gray/50 hover:border-coral/20 transition-colors"
+                    className="border-b border-light-gray/50 hover:bg-cream/50 hover:shadow-sm transition-all duration-200"
                   >
                     <td className="py-3 px-4 font-body text-sm text-charcoal">Grade {cls.grade}-{cls.section}</td>
                     <td className="py-3 px-4 font-body text-sm text-medium-gray">{teacher?.fullName || 'Not assigned'}</td>
@@ -220,7 +229,6 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
-        </TiltCard>
       </motion.div>
     </div>
   );
