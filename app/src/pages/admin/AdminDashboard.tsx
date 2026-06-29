@@ -5,7 +5,18 @@ import { Users, UserCheck, BookOpen, FileText, AlertTriangle, Plus, UserPlus } f
 import { useAuth } from '@/hooks/useAuth';
 import { getAdminDashboard, getClasses, getUserById } from '@/api/data';
 import { storage } from '@/api/storage';
+import CountUp from '@/components/shared/CountUp';
 import type { DashboardSummary, Class } from '@/types';
+
+const springEasing = [0.22, 1, 0.36, 1] as const;
+
+function Shimmer({ className }: { className: string }) {
+  return (
+    <div className={`relative overflow-hidden bg-cream rounded ${className}`}>
+      <div className="absolute inset-0 shimmer" />
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -30,19 +41,32 @@ export default function AdminDashboard() {
   ] : [];
 
   const total = donutData.reduce((a, d) => a + d.value, 0);
-  let cumulativeAngle = 0;
+
+  if (!summary) {
+    return (
+      <div className="max-w-7xl mx-auto px-5 md:px-12 py-8">
+        <div className="space-y-4">
+          <Shimmer className="h-8 w-1/3" />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[1, 2, 3, 4, 5].map(i => <Shimmer key={i} className="h-24 rounded-2xl" />)}
+          </div>
+          <Shimmer className="h-64 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing }}>
         <h2 className="font-display text-2xl md:text-4xl text-charcoal mb-1">School Dashboard</h2>
         <p className="font-body text-medium-gray mb-6">{user?.schoolId ? 'Greenfield Academy — CBSE' : 'No school configured'}</p>
       </motion.div>
 
       {/* Metrics */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.08 }} className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         {[
-          { icon: <Users size={16} />, label: 'Students', value: summary?.totalStudents || 0 },
+          { icon: <Users size={16} />, label: 'Students', value: summary.totalStudents },
           { icon: <UserCheck size={16} />, label: 'Teachers', value: summary?.totalTeachers || 0 },
           { icon: <BookOpen size={16} />, label: 'Classes', value: summary?.totalClasses || 0 },
           { icon: <FileText size={16} />, label: 'Report Cards', value: summary?.reportCardsThisTerm || 0 },
@@ -53,67 +77,79 @@ export default function AdminDashboard() {
               <span className="text-coral">{s.icon}</span>
               <span className="label-text text-medium-gray">{s.label}</span>
             </div>
-            <p className="font-display text-3xl text-charcoal">{s.value}</p>
+            <p className="font-display text-3xl text-charcoal">
+                <CountUp value={s.value} />
+              </p>
           </div>
         ))}
       </motion.div>
 
       <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
         {/* Flag Distribution */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-2xl shadow-card p-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.12 }} className="bg-white rounded-2xl shadow-card p-6">
           <h3 className="font-display text-xl text-charcoal mb-4">Flag Distribution</h3>
           <div className="flex items-center gap-8">
             <div className="relative w-40 h-40 flex-shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                {total > 0 ? donutData.map((d, i) => {
-                  const angle = (d.value / total) * 360;
-                  const startAngle = cumulativeAngle;
-                  cumulativeAngle += angle;
-                  const x1 = 50 + 40 * Math.cos((startAngle * Math.PI) / 180);
-                  const y1 = 50 + 40 * Math.sin((startAngle * Math.PI) / 180);
-                  const x2 = 50 + 40 * Math.cos(((startAngle + angle) * Math.PI) / 180);
-                  const y2 = 50 + 40 * Math.sin(((startAngle + angle) * Math.PI) / 180);
-                  const largeArc = angle > 180 ? 1 : 0;
-                  return (
-                    <path
-                      key={i}
-                      d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                      fill={d.color}
-                    />
-                  );
-                }) : <circle cx="50" cy="50" r="40" fill="#E8E3DE" />}
+                <motion.g initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.2 }}>
+                {total > 0 ? (() => {
+                  let cumulativeAngle = 0;
+                  return donutData.map((d, i) => {
+                    const angle = (d.value / total) * 360;
+                    const startAngle = cumulativeAngle;
+                    cumulativeAngle += angle;
+                    const x1 = 50 + 40 * Math.cos((startAngle * Math.PI) / 180);
+                    const y1 = 50 + 40 * Math.sin((startAngle * Math.PI) / 180);
+                    const x2 = 50 + 40 * Math.cos(((startAngle + angle) * Math.PI) / 180);
+                    const y2 = 50 + 40 * Math.sin(((startAngle + angle) * Math.PI) / 180);
+                    const largeArc = angle > 180 ? 1 : 0;
+                    return (
+                      <motion.path
+                        key={i}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4, delay: 0.25 + i * 0.1 }}
+                        d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                        fill={d.color}
+                      />
+                    );
+                  });
+                })() : <circle cx="50" cy="50" r="40" fill="#E8E3DE" />}
+                </motion.g>
                 <circle cx="50" cy="50" r="28" fill="white" />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <p className="font-display text-xl text-charcoal">{total > 0 ? Math.round((summary!.flagDistribution.green / total) * 100) : 0}%</p>
+                  <p className="font-display text-xl text-charcoal">{total > 0 ? Math.round((summary.flagDistribution.green / total) * 100) : 0}%</p>
                   <p className="font-body text-[10px] text-medium-gray">On Track</p>
                 </div>
               </div>
             </div>
             <div className="space-y-3">
-              {donutData.map(d => (
-                <div key={d.label} className="flex items-center gap-3">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
-                  <span className="font-body text-sm text-charcoal">{d.label}</span>
-                  <span className="font-body text-sm font-semibold text-charcoal ml-auto">{d.value}</span>
-                </div>
+              {donutData.map((d, di) => (
+                <motion.div key={d.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.3 + di * 0.06 }}>
+                  <div className="flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
+                    <span className="font-body text-sm text-charcoal">{d.label}</span>
+                    <span className="font-body text-sm font-semibold text-charcoal ml-auto">{d.value}</span>
+                  </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </motion.div>
 
         {/* Quick Actions */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.16 }} className="space-y-4">
           <div className="bg-white rounded-2xl shadow-card p-6">
             <h3 className="font-display text-lg text-charcoal mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <Link to="/admin/students" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 transition-colors group">
-                <Plus size={16} className="text-coral" />
+              <Link to="/admin/students" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover transition-all duration-300 group">
+                <Plus size={16} className="text-coral group-hover:scale-110 transition-transform duration-300" />
                 <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Add Students</span>
               </Link>
-              <Link to="/admin/teachers" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 transition-colors group">
-                <UserPlus size={16} className="text-coral" />
+              <Link to="/admin/teachers" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover transition-all duration-300 group">
+                <UserPlus size={16} className="text-coral group-hover:scale-110 transition-transform duration-300" />
                 <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Invite Teacher</span>
               </Link>
             </div>
@@ -122,7 +158,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Classes Table */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-white rounded-2xl shadow-card p-6 mt-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.2 }} className="bg-white rounded-2xl shadow-card p-6 mt-6">
         <h3 className="font-display text-xl text-charcoal mb-4">Classes</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -135,23 +171,31 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {classes.map(cls => {
+              {classes.map((cls, ci) => {
                 const students = storage.getStudents().filter(s => s.classId === cls.id);
                 const teacher = getUserById(cls.teacherId);
+                const flags = students.filter(s => s.status === 'red' || s.status === 'yellow');
                 return (
-                  <tr key={cls.id} className="border-b border-light-gray/50">
+                  <motion.tr
+                    key={cls.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, ease: springEasing, delay: 0.3 + ci * 0.04 }}
+                    className="border-b border-light-gray/50 hover:border-coral/20 transition-colors"
+                  >
                     <td className="py-3 px-4 font-body text-sm text-charcoal">Grade {cls.grade}-{cls.section}</td>
                     <td className="py-3 px-4 font-body text-sm text-medium-gray">{teacher?.fullName || 'Not assigned'}</td>
                     <td className="py-3 px-4 font-body text-sm text-charcoal">{students.length}</td>
                     <td className="py-3 px-4">
                       <div className="flex gap-1">
-                        {[0, 1, 2].map(i => {
-                          const colors = ['bg-sage', 'bg-amber', 'bg-coral'];
-                          return <span key={i} className={`w-2 h-2 rounded-full ${colors[i]}`} />;
-                        })}
+                        {flags.length > 0
+                          ? flags.slice(0, 3).map(s => (
+                              <span key={s.id} className={`w-2 h-2 rounded-full ${s.status === 'red' ? 'bg-coral' : 'bg-amber'}`} />
+                            ))
+                          : <span className="w-2 h-2 rounded-full bg-sage" />}
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>

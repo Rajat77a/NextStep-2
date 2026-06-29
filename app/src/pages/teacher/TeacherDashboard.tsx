@@ -6,7 +6,18 @@ import { useAuth } from '@/hooks/useAuth';
 import { getTeacherDashboard, getStudents, getTeacherNotes, addTeacherNote } from '@/api/data';
 import { storage } from '@/api/storage';
 import FlagBadge from '@/components/shared/FlagBadge';
+import CountUp from '@/components/shared/CountUp';
 import type { Student, SubjectGrade, TeacherNote } from '@/types';
+
+const springEasing = [0.22, 1, 0.36, 1] as const;
+
+function Shimmer({ className }: { className: string }) {
+  return (
+    <div className={`relative overflow-hidden bg-cream rounded ${className}`}>
+      <div className="absolute inset-0 shimmer" />
+    </div>
+  );
+}
 
 type InviteStatus = 'none' | 'pending' | 'accepted';
 
@@ -172,7 +183,7 @@ export default function TeacherDashboard() {
 
       {inviteStatus === 'accepted' && (
         <>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing }}>
             <h2 className="font-display text-2xl md:text-4xl text-charcoal mb-1">
               My Classes
             </h2>
@@ -182,9 +193,9 @@ export default function TeacherDashboard() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ duration: 0.5, ease: springEasing, delay: 0.08 }}
             className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
           >
             {[
@@ -193,13 +204,15 @@ export default function TeacherDashboard() {
               { icon: <AlertTriangle size={18} />, label: 'Flagged Students', value: stats.flaggedCount },
               { icon: <BarChart3 size={18} />, label: 'Classes', value: user ? 1 : 0 },
             ].map((stat, index) => (
-              <div key={index} className="bg-white rounded-2xl shadow-card p-5">
+              <motion.div key={index} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.12 + index * 0.04 }} className="bg-white rounded-2xl shadow-card p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-coral">{stat.icon}</span>
                   <span className="label-text text-medium-gray">{stat.label}</span>
                 </div>
-                <p className="font-display text-3xl text-charcoal">{stat.value}</p>
-              </div>
+                <p className="font-display text-3xl text-charcoal">
+                  <CountUp value={stat.value} />
+                </p>
+              </motion.div>
             ))}
           </motion.div>
 
@@ -207,7 +220,7 @@ export default function TeacherDashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ duration: 0.5, ease: springEasing, delay: 0.14 }}
               className="bg-white rounded-2xl shadow-card p-6"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
@@ -282,7 +295,7 @@ export default function TeacherDashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ duration: 0.5, ease: springEasing, delay: 0.2 }}
               className="bg-white rounded-2xl shadow-card p-6"
             >
               <h3 className="font-display text-xl text-charcoal mb-4">
@@ -294,8 +307,11 @@ export default function TeacherDashboard() {
                   const flag = getStudentFlag(student.id);
 
                   return (
-                    <div
+                    <motion.div
                       key={student.id}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3 }}
                       onClick={() => openStudentPanel(student)}
                       className="flex items-center justify-between p-3 rounded-xl hover:bg-cream/50 cursor-pointer transition-colors"
                     >
@@ -308,17 +324,26 @@ export default function TeacherDashboard() {
                         </p>
                       </div>
 
-                      <FlagBadge flag={flag} size="sm" />
-                    </div>
+                      {flag === 'red' ? (
+                        <motion.span
+                          animate={{ opacity: [1, 0.5, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          <FlagBadge flag={flag} size="sm" />
+                        </motion.span>
+                      ) : (
+                        <FlagBadge flag={flag} size="sm" />
+                      )}
+                    </motion.div>
                   );
                 })}
               </div>
 
               <Link
                 to="/teacher/patterns"
-                className="flex items-center gap-1 text-coral font-body text-sm font-semibold mt-4 hover:underline"
+                className="inline-flex items-center gap-1 text-coral font-body text-sm font-semibold mt-4 hover:underline group"
               >
-                View class patterns <ArrowRight size={14} />
+                View class patterns <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             </motion.div>
           </div>
