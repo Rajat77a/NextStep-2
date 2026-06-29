@@ -208,7 +208,7 @@ function AnimatedClarityCheck() {
 
   return (
     <FloatingMockCard>
-      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="h-full">
+      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
         <div className="flex items-center justify-between mb-5">
           <div>
             <p className="label-text text-coral mb-1">Clarity Check</p>
@@ -217,104 +217,106 @@ function AnimatedClarityCheck() {
           <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
         </div>
 
-        <AnimatePresence mode="wait">
-          {phase === 'start' && (
-            <motion.div
-              key="start"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-8 gap-3"
-            >
+        <div className="min-h-[320px]">
+          <AnimatePresence mode="wait">
+            {phase === 'start' && (
               <motion.div
-                animate={shouldReduceMotion ? undefined : { scale: [1, 1.04, 1] }}
-                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-14 h-14 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+                key="start"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-10 gap-3"
               >
-                <FileText size={24} className="text-coral/60" />
-              </motion.div>
-              <p className="font-body text-sm text-charcoal/50">Report card received</p>
-            </motion.div>
-          )}
-
-          {phase === 'loading' && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-8 gap-3"
-            >
-              <motion.div
-                animate={shouldReduceMotion ? undefined : { rotate: 360 }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                className="w-6 h-6 rounded-full border-2 border-coral/20 border-t-coral"
-              />
-              <p className="font-body text-sm text-charcoal/50">
-                Analyzing
-                <motion.span
-                  animate={{ opacity: [0, 1, 0] }}
+                <motion.div
+                  animate={shouldReduceMotion ? undefined : { scale: [1, 1.04, 1] }}
                   transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                > ...</motion.span>
-              </p>
-              <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
-                <motion.div
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 1.2, ease: 'easeInOut' }}
-                  className="h-full rounded-full bg-coral"
-                />
-              </div>
-            </motion.div>
-          )}
-
-          {(phase === 'reveal' || phase === 'done') && (
-            <motion.div
-              key="results"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="space-y-2.5"
-            >
-              {subjectRows.map((row, i) => (
-                <motion.div
-                  key={row.subject}
-                  initial={shouldReduceMotion ? false : { opacity: 0, x: -12, height: 0 }}
-                  animate={revealed > i ? { opacity: 1, x: 0, height: 'auto' } : { opacity: 0, x: -12, height: 0 }}
-                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                  className="w-14 h-14 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
                 >
-                  <motion.div
-                    className={`flex items-center justify-between rounded-xl border border-light-gray px-4 py-3 ${revealed > i ? 'bg-card-surface-alt' : ''}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={revealed > i ? { scale: 1 } : { scale: 0 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 12, delay: 0.15 }}
-                        className={`w-2.5 h-2.5 rounded-full ${row.color}`}
-                      />
-                      <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
-                    </div>
-                    <motion.span
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={revealed > i ? { opacity: 1, y: 0 } : {}}
-                      transition={{ duration: 0.25, delay: 0.25 }}
-                      className={`font-body text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        row.status === 'On Track' ? 'bg-sage/15 text-sage' :
-                        row.status === 'Watch' ? 'bg-amber/15 text-amber' :
-                        'bg-coral/15 text-coral'
-                      }`}
-                    >
-                      {row.status}
-                    </motion.span>
-                  </motion.div>
+                  <FileText size={24} className="text-coral/60" />
                 </motion.div>
-              ))}
-              {phase === 'done' && (
-                <motion.p
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="font-body text-xs text-coral text-center pt-2"
-                >
-                  ✓ Clarity check complete
-                </motion.p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <p className="font-body text-sm text-charcoal/50">Report card received</p>
+              </motion.div>
+            )}
+
+            {phase === 'loading' && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-10 gap-3"
+              >
+                <motion.div
+                  animate={shouldReduceMotion ? undefined : { rotate: 360 }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                  className="w-6 h-6 rounded-full border-2 border-coral/20 border-t-coral"
+                />
+                <p className="font-body text-sm text-charcoal/50">
+                  Analyzing
+                  <motion.span
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                  > ...</motion.span>
+                </p>
+                <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
+                  <motion.div
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 1.2, ease: 'easeInOut' }}
+                    className="h-full rounded-full bg-coral"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {(phase === 'reveal' || phase === 'done') && (
+              <motion.div
+                key="results"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="space-y-2.5"
+              >
+                {subjectRows.map((row, i) => (
+                  <motion.div
+                    key={row.subject}
+                    initial={shouldReduceMotion ? false : { opacity: 0, x: -12, height: 0 }}
+                    animate={revealed > i ? { opacity: 1, x: 0, height: 'auto' } : { opacity: 0, x: -12, height: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                  >
+                    <motion.div
+                      className={`flex items-center justify-between rounded-xl border border-light-gray px-4 py-3 ${revealed > i ? 'bg-card-surface-alt' : ''}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={revealed > i ? { scale: 1 } : { scale: 0 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 12, delay: 0.15 }}
+                          className={`w-2.5 h-2.5 rounded-full ${row.color}`}
+                        />
+                        <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
+                      </div>
+                      <motion.span
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={revealed > i ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.25, delay: 0.25 }}
+                        className={`font-body text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          row.status === 'On Track' ? 'bg-sage/15 text-sage' :
+                          row.status === 'Watch' ? 'bg-amber/15 text-amber' :
+                          'bg-coral/15 text-coral'
+                        }`}
+                      >
+                        {row.status}
+                      </motion.span>
+                    </motion.div>
+                  </motion.div>
+                ))}
+                {phase === 'done' && (
+                  <motion.p
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="font-body text-xs text-coral text-center pt-2"
+                  >
+                    ✓ Clarity check complete
+                  </motion.p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </FloatingMockCard>
   );
@@ -381,100 +383,102 @@ function AnimatedConversation() {
 
   return (
     <FloatingMockCard>
-      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="h-full">
+      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
         <p className="label-text text-coral mb-1">Tonight's Script</p>
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
 
-        <AnimatePresence mode="wait">
-          {(phase === 'idle' || phase === 'typing') && (
-            <motion.div
-              key="typing"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="rounded-2xl bg-card-surface-alt px-4 py-4"
-            >
-              <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
-              <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
-                {typed}
-                {phase === 'typing' && typed.length < insteadText.length && (
-                  <motion.span
-                    animate={{ opacity: [1, 0] }}
-                    transition={{ duration: 0.6, repeat: Infinity }}
-                    className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
-                  />
-                )}
-              </p>
-            </motion.div>
-          )}
-
-          {phase === 'show1' && (
-            <motion.div
-              key="show1"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="space-y-3"
-            >
+        <div className="min-h-[330px]">
+          <AnimatePresence mode="wait">
+            {(phase === 'idle' || phase === 'typing') && (
               <motion.div
-                initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4 }}
-                className="rounded-2xl bg-card-surface-alt px-4 py-3"
+                key="typing"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="rounded-2xl bg-card-surface-alt px-4 py-4"
               >
                 <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
-                <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText}</p>
+                <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
+                  {typed}
+                  {phase === 'typing' && typed.length < insteadText.length && (
+                    <motion.span
+                      animate={{ opacity: [1, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity }}
+                      className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
+                    />
+                  )}
+                </p>
               </motion.div>
+            )}
+
+            {phase === 'show1' && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-                className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
+                key="show1"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="space-y-3"
               >
-                <span className="font-body text-xs font-semibold text-coral">Try:</span>
-                <p className="font-body text-sm text-charcoal/80 mt-1">{tryText}</p>
+                <motion.div
+                  initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="rounded-2xl bg-card-surface-alt px-4 py-3"
+                >
+                  <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                  <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText}</p>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 }}
+                  className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
+                >
+                  <span className="font-body text-xs font-semibold text-coral">Try:</span>
+                  <p className="font-body text-sm text-charcoal/80 mt-1">{tryText}</p>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
+            )}
 
-          {phase === 'show2' && (
-            <motion.div
-              key="show2"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="space-y-3"
-            >
-              {scriptRows.map((row, index) => (
-                <motion.div
-                  key={`${row.label}-${row.text}`}
-                  initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: index * 0.2 }}
-                  className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4 border border-coral/10'}`}
-                >
-                  <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
-                  <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-
-          {phase === 'done' && (
-            <motion.div
-              key="done"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="space-y-3"
-            >
-              {scriptRows.map((row, index) => (
-                <motion.div
-                  key={`${row.label}-${row.text}`}
-                  className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4 border border-coral/10'}`}
-                >
-                  <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
-                  <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
-                </motion.div>
-              ))}
-              <motion.p
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="font-body text-xs text-coral text-center pt-1"
+            {phase === 'show2' && (
+              <motion.div
+                key="show2"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="space-y-3"
               >
-                ✓ Script ready for tonight
-              </motion.p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {scriptRows.map((row, index) => (
+                  <motion.div
+                    key={`${row.label}-${row.text}`}
+                    initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: index * 0.2 }}
+                    className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4 border border-coral/10'}`}
+                  >
+                    <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
+                    <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+
+            {phase === 'done' && (
+              <motion.div
+                key="done"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="space-y-3"
+              >
+                {scriptRows.map((row, index) => (
+                  <motion.div
+                    key={`${row.label}-${row.text}`}
+                    className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4 border border-coral/10'}`}
+                  >
+                    <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
+                    <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                  </motion.div>
+                ))}
+                <motion.p
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="font-body text-xs text-coral text-center pt-1"
+                >
+                  ✓ Script ready for tonight
+                </motion.p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </FloatingMockCard>
   );
@@ -516,106 +520,108 @@ function AnimatedDayPlan() {
 
   return (
     <FloatingMockCard>
-      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="h-full">
+      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
         <p className="label-text text-coral mb-1">Your 30-Day Plan</p>
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
 
-        <AnimatePresence mode="wait">
-          {phase === 'idle' && (
-            <motion.div
-              key="idle"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-6 gap-3"
-            >
+        <div className="min-h-[350px]">
+          <AnimatePresence mode="wait">
+            {phase === 'idle' && (
               <motion.div
-                animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-12 h-12 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+                key="idle"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-8 gap-3"
               >
-                <Calendar size={22} className="text-coral/60" />
-              </motion.div>
-              <p className="font-body text-sm text-charcoal/50">Ready to build your plan</p>
-            </motion.div>
-          )}
-
-          {phase === 'building' && (
-            <motion.div
-              key="building"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-6 gap-3"
-            >
-              <div className="flex gap-1.5">
-                {[0, 1, 2].map(i => (
-                  <motion.div
-                    key={i}
-                    animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
-                    transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.15 }}
-                    className="w-2 h-2 rounded-full bg-coral/60"
-                  />
-                ))}
-              </div>
-              <p className="font-body text-sm text-charcoal/50">Building weekly steps...</p>
-              <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
                 <motion.div
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 1, ease: 'easeInOut' }}
-                  className="h-full rounded-full bg-coral"
-                />
-              </div>
-            </motion.div>
-          )}
-
-          {(phase !== 'idle' && phase !== 'building') && (
-            <motion.div
-              key="weeks"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="space-y-2.5"
-            >
-              {planRows.map((row, i) => {
-                const weekPhase = weekPhases[i];
-                const isVisible = weekPhases.indexOf(weekPhase as typeof weekPhases[number]) <= weekPhases.indexOf(phase as typeof weekPhases[number]) || phase === 'done';
-                return (
-                  <motion.div
-                    key={row.week}
-                    initial={shouldReduceMotion ? false : { opacity: 0, y: 20, height: 0 }}
-                    animate={isVisible ? { opacity: 1, y: 0, height: 'auto' } : { opacity: 0, y: 20, height: 0 }}
-                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <motion.div
-                      className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
-                      whileHover={shouldReduceMotion ? undefined : { scale: 1.01, borderColor: 'rgba(232,93,62,0.2)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-body text-xs font-bold text-coral">{row.week}</span>
-                        {isVisible && phase !== 'idle' && (
-                          <motion.span
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 12 }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          </motion.span>
-                        )}
-                      </div>
-                      <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
-                    </motion.div>
-                  </motion.div>
-                );
-              })}
-              {phase === 'done' && (
-                <motion.p
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="font-body text-xs text-coral text-center pt-2"
+                  animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-12 h-12 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
                 >
-                  ✓ 4-week plan ready
-                </motion.p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  <Calendar size={22} className="text-coral/60" />
+                </motion.div>
+                <p className="font-body text-sm text-charcoal/50">Ready to build your plan</p>
+              </motion.div>
+            )}
+
+            {phase === 'building' && (
+              <motion.div
+                key="building"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-8 gap-3"
+              >
+                <div className="flex gap-1.5">
+                  {[0, 1, 2].map(i => (
+                    <motion.div
+                      key={i}
+                      animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
+                      transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.15 }}
+                      className="w-2 h-2 rounded-full bg-coral/60"
+                    />
+                  ))}
+                </div>
+                <p className="font-body text-sm text-charcoal/50">Building weekly steps...</p>
+                <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
+                  <motion.div
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 1, ease: 'easeInOut' }}
+                    className="h-full rounded-full bg-coral"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {(phase !== 'idle' && phase !== 'building') && (
+              <motion.div
+                key="weeks"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="space-y-2.5"
+              >
+                {planRows.map((row, i) => {
+                  const weekPhase = weekPhases[i];
+                  const isVisible = weekPhases.indexOf(weekPhase as typeof weekPhases[number]) <= weekPhases.indexOf(phase as typeof weekPhases[number]) || phase === 'done';
+                  return (
+                    <motion.div
+                      key={row.week}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 20, height: 0 }}
+                      animate={isVisible ? { opacity: 1, y: 0, height: 'auto' } : { opacity: 0, y: 20, height: 0 }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <motion.div
+                        className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
+                        whileHover={shouldReduceMotion ? undefined : { scale: 1.01, borderColor: 'rgba(232,93,62,0.2)' }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-body text-xs font-bold text-coral">{row.week}</span>
+                          {isVisible && phase !== 'idle' && (
+                            <motion.span
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: 'spring', stiffness: 300, damping: 12 }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </motion.span>
+                          )}
+                        </div>
+                        <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                      </motion.div>
+                    </motion.div>
+                  );
+                })}
+                {phase === 'done' && (
+                  <motion.p
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="font-body text-xs text-coral text-center pt-2"
+                  >
+                    ✓ 4-week plan ready
+                  </motion.p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </FloatingMockCard>
   );
