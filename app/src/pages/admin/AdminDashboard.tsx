@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { getAdminDashboard, getClasses, getUserById } from '@/api/data';
 import { storage } from '@/api/storage';
 import CountUp from '@/components/shared/CountUp';
+import TiltCard from '@/components/shared/TiltCard';
+import SparkleBurst from '@/components/shared/SparkleBurst';
 import type { DashboardSummary, Class } from '@/types';
 
 const springEasing = [0.22, 1, 0.36, 1] as const;
@@ -59,7 +61,10 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing }}>
-        <h2 className="font-display text-2xl md:text-4xl text-charcoal mb-1">School Dashboard</h2>
+        <div className="flex items-center gap-3 mb-1">
+          <h2 className="font-display text-2xl md:text-4xl text-charcoal">School Dashboard</h2>
+          <div className="gradient-divider flex-1" />
+        </div>
         <p className="font-body text-medium-gray mb-6">{user?.schoolId ? 'Greenfield Academy — CBSE' : 'No school configured'}</p>
       </motion.div>
 
@@ -72,22 +77,29 @@ export default function AdminDashboard() {
           { icon: <FileText size={16} />, label: 'Report Cards', value: summary?.reportCardsThisTerm || 0 },
           { icon: <AlertTriangle size={16} />, label: 'Flagged', value: summary?.flaggedStudents || 0 },
         ].map((s, i) => (
-          <div key={i} className="bg-white rounded-2xl shadow-card p-5">
+          <TiltCard key={i} className="bg-white rounded-2xl shadow-card p-5">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-coral">{s.icon}</span>
+              <span className="text-coral relative">
+                {s.icon}
+                {s.value > 0 && <SparkleBurst delay={600 + i * 100} count={3} />}
+              </span>
               <span className="label-text text-medium-gray">{s.label}</span>
             </div>
             <p className="font-display text-3xl text-charcoal">
                 <CountUp value={s.value} />
               </p>
-          </div>
+          </TiltCard>
         ))}
       </motion.div>
 
       <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
         {/* Flag Distribution */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.12 }} className="bg-white rounded-2xl shadow-card p-6">
-          <h3 className="font-display text-xl text-charcoal mb-4">Flag Distribution</h3>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.12 }}>
+          <TiltCard className="bg-white rounded-2xl shadow-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <h3 className="font-display text-xl text-charcoal">Flag Distribution</h3>
+              <div className="gradient-divider flex-1" />
+            </div>
           <div className="flex items-center gap-8">
             <div className="relative w-40 h-40 flex-shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -108,9 +120,11 @@ export default function AdminDashboard() {
                         key={i}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
+                        whileHover={{ scale: 1.06 }}
                         transition={{ duration: 0.4, delay: 0.25 + i * 0.1 }}
                         d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
                         fill={d.color}
+                        style={{ transformOrigin: '50px 50px' }}
                       />
                     );
                   });
@@ -137,11 +151,12 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
+          </TiltCard>
         </motion.div>
 
         {/* Quick Actions */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.16 }} className="space-y-4">
-          <div className="bg-white rounded-2xl shadow-card p-6">
+          <TiltCard className="bg-white rounded-2xl shadow-card p-6">
             <h3 className="font-display text-lg text-charcoal mb-4">Quick Actions</h3>
             <div className="space-y-2">
               <Link to="/admin/students" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover transition-all duration-300 group">
@@ -153,13 +168,17 @@ export default function AdminDashboard() {
                 <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Invite Teacher</span>
               </Link>
             </div>
-          </div>
+          </TiltCard>
         </motion.div>
       </div>
 
       {/* Classes Table */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.2 }} className="bg-white rounded-2xl shadow-card p-6 mt-6">
-        <h3 className="font-display text-xl text-charcoal mb-4">Classes</h3>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.2 }} className="mt-6">
+        <TiltCard className="bg-white rounded-2xl shadow-card p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <h3 className="font-display text-xl text-charcoal">Classes</h3>
+            <div className="gradient-divider flex-1" />
+          </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -201,6 +220,7 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
+        </TiltCard>
       </motion.div>
     </div>
   );

@@ -146,6 +146,13 @@
     will-change: transform;
     backface-visibility: hidden;
   }
+
+  .gradient-divider {
+    height: 2px;
+    background: linear-gradient(90deg, #E85D3E, #7A9B8A, #E85D3E);
+    background-size: 200% 100%;
+    animation: gradient-divider 3s ease-in-out infinite;
+  }
 }
 
 @layer utilities {
