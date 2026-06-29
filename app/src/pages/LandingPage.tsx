@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight, Upload, Brain, FileText, Heart,
-  Users, Building, ChevronLeft, ChevronRight, ChevronUp, Menu, X, Check, Star, Calendar,
+  Users, Building, ChevronLeft, ChevronRight, ChevronUp, Menu, X, Check, Star, Calendar, MessageCircle,
 } from 'lucide-react';
 import ScrollReveal from '@/components/shared/ScrollReveal';
 
@@ -228,7 +228,7 @@ function AnimatedClarityCheck() {
           <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
         </div>
 
-        <div className="h-[320px] overflow-hidden">
+        <div className="h-[320px] overflow-hidden bg-white rounded-2xl">
           <AnimatePresence mode="wait">
             {phase === 'start' && (
               <motion.div
@@ -358,15 +358,17 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
 
 function AnimatedConversation() {
   const shouldReduceMotion = useReducedMotion();
-  const [phase, setPhase] = useState<'idle' | 'typing' | 'show1' | 'show2' | 'done'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'typing1' | 'response1' | 'typing2' | 'response2' | 'done'>('idle');
   const [typed, setTyped] = useState('');
   const [paused, setPaused] = useState(false);
   const timers = useRef<number[]>([]);
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
 
-  const insteadText = 'How did you get a C in Science?';
-  const tryText = 'Which subject felt hardest this term, and why?';
+  const parentMsg1 = 'How did you get a C in Science?';
+  const aiResponse1 = 'Which subject felt hardest this term, and why?';
+  const parentMsg2 = 'You need to study more.';
+  const aiResponse2 = 'What would make it easier to focus at home?';
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -386,22 +388,37 @@ function AnimatedConversation() {
     clearTimers();
     if (phase === 'idle') {
       setTyped('');
-      timers.current.push(window.setTimeout(() => setPhase('typing'), 500));
-    } else if (phase === 'typing' && typed.length < insteadText.length) {
+      timers.current.push(window.setTimeout(() => setPhase('typing1'), 500));
+    } else if (phase === 'typing1' && typed.length < parentMsg1.length) {
       timers.current.push(window.setTimeout(() => {
-        setTyped(prev => insteadText.slice(0, prev.length + 1));
+        setTyped(prev => parentMsg1.slice(0, prev.length + 1));
       }, 40));
-    } else if (phase === 'typing' && typed.length >= insteadText.length) {
-      timers.current.push(window.setTimeout(() => setPhase('show1'), 800));
-    } else if (phase === 'show1') {
-      timers.current.push(window.setTimeout(() => setPhase('show2'), 1200));
-    } else if (phase === 'show2') {
-      timers.current.push(window.setTimeout(() => setPhase('done'), 2000));
+    } else if (phase === 'typing1' && typed.length >= parentMsg1.length) {
+      timers.current.push(window.setTimeout(() => setPhase('response1'), 600));
+    } else if (phase === 'response1') {
+      setTyped('');
+      timers.current.push(window.setTimeout(() => setPhase('typing2'), 1000));
+    } else if (phase === 'typing2' && typed.length < parentMsg2.length) {
+      timers.current.push(window.setTimeout(() => {
+        setTyped(prev => parentMsg2.slice(0, prev.length + 1));
+      }, 40));
+    } else if (phase === 'typing2' && typed.length >= parentMsg2.length) {
+      timers.current.push(window.setTimeout(() => setPhase('response2'), 600));
+    } else if (phase === 'response2') {
+      timers.current.push(window.setTimeout(() => setPhase('done'), 2500));
     } else if (phase === 'done') {
-      timers.current.push(window.setTimeout(() => setPhase('idle'), 1500));
+      timers.current.push(window.setTimeout(() => {
+        setPhase('idle');
+        setTyped('');
+      }, 2000));
     }
     return clearTimers;
   }, [phase, typed, shouldReduceMotion, paused, isInView]);
+
+  const showParent1 = !!(phase === 'typing1' || phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done');
+  const showAI1 = !!(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done');
+  const showParent2 = !!(phase === 'typing2' || phase === 'response2' || phase === 'done');
+  const showAI2 = !!(phase === 'response2' || phase === 'done');
 
   return (
     <div ref={ref}>
@@ -410,94 +427,127 @@ function AnimatedConversation() {
         <p className="label-text text-coral mb-1">Tonight's Script</p>
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
 
-        <div className="h-[330px] overflow-hidden">
+        <div className="h-[330px] overflow-hidden bg-white rounded-2xl">
           <AnimatePresence mode="wait">
-            {(phase === 'idle' || phase === 'typing') && (
+            {phase === 'idle' && (
               <motion.div
-                key="typing"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="rounded-2xl bg-card-surface-alt px-4 py-4"
-              >
-                <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
-                <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
-                  {typed}
-                  {phase === 'typing' && typed.length < insteadText.length && (
-                    <motion.span
-                      animate={{ opacity: [1, 0] }}
-                      transition={{ duration: 0.6, repeat: Infinity }}
-                      className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
-                    />
-                  )}
-                </p>
-              </motion.div>
-            )}
-
-            {phase === 'show1' && (
-              <motion.div
-                key="show1"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="space-y-3"
+                key="idle"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                className="flex flex-col items-center justify-center py-8 gap-3"
               >
                 <motion.div
-                  initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="rounded-2xl bg-card-surface-alt px-4 py-3"
+                  animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-12 h-12 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
                 >
-                  <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
-                  <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText}</p>
+                  <MessageCircle size={22} className="text-coral/60" />
                 </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.3 }}
-                  className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
-                >
-                  <span className="font-body text-xs font-semibold text-coral">Try:</span>
-                  <p className="font-body text-sm text-charcoal/80 mt-1">{tryText}</p>
-                </motion.div>
+                <p className="font-body text-sm text-charcoal/50">Ready to reframe</p>
               </motion.div>
             )}
 
-            {phase === 'show2' && (
+            {phase !== 'idle' && (
               <motion.div
-                key="show2"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                key="conversation"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.1 } }}
                 className="space-y-3"
               >
-                {scriptRows.map((row, index) => (
+                {showParent1 && (
                   <motion.div
-                    key={`${row.label}-${row.text}`}
-                    initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: index * 0.2 }}
-                    className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4 border border-coral/10'}`}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35 }}
+                    className="flex flex-col items-end"
                   >
-                    <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
-                    <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                    <div className="flex items-center gap-1.5 mb-1 mr-1">
+                      <span className="font-body text-xs font-semibold text-coral">You</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E85D3E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div className="rounded-2xl bg-coral/10 px-4 py-3 border border-coral/10 max-w-[85%]">
+                      <p className="font-body text-sm text-charcoal/80">
+                        {phase === 'typing1' ? typed : parentMsg1}
+                        {phase === 'typing1' && typed.length < parentMsg1.length && (
+                          <motion.span
+                            animate={{ opacity: [1, 0] }}
+                            transition={{ duration: 0.6, repeat: Infinity }}
+                            className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
+                          />
+                        )}
+                      </p>
+                    </div>
                   </motion.div>
-                ))}
-              </motion.div>
-            )}
+                )}
 
-            {phase === 'done' && (
-              <motion.div
-                key="done"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="space-y-3"
-              >
-                {scriptRows.map((row, index) => (
+                {showAI1 && (
                   <motion.div
-                    key={`${row.label}-${row.text}`}
-                    className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4 border border-coral/10'}`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, delay: 0.15 }}
+                    className="flex flex-col items-start"
                   >
-                    <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
-                    <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                    <div className="flex items-center gap-1.5 mb-1 ml-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <span className="font-body text-xs font-semibold text-sage">AI</span>
+                    </div>
+                    <div className="rounded-2xl bg-card-surface-alt px-4 py-3 border border-light-gray max-w-[85%]">
+                      <p className="font-body text-sm text-charcoal/80">{aiResponse1}</p>
+                    </div>
                   </motion.div>
-                ))}
-                <motion.p
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="font-body text-xs text-coral text-center pt-1"
-                >
-                  ✓ Script ready for tonight
-                </motion.p>
+                )}
+
+                {showParent2 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35 }}
+                    className="flex flex-col items-end"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1 mr-1">
+                      <span className="font-body text-xs font-semibold text-coral">You</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E85D3E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div className="rounded-2xl bg-coral/10 px-4 py-3 border border-coral/10 max-w-[85%]">
+                      <p className="font-body text-sm text-charcoal/80">
+                        {phase === 'typing2' ? typed : parentMsg2}
+                        {phase === 'typing2' && typed.length < parentMsg2.length && (
+                          <motion.span
+                            animate={{ opacity: [1, 0] }}
+                            transition={{ duration: 0.6, repeat: Infinity }}
+                            className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
+                          />
+                        )}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {showAI2 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.35, delay: 0.15 }}
+                    className="flex flex-col items-start"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1 ml-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <span className="font-body text-xs font-semibold text-sage">AI</span>
+                    </div>
+                    <div className="rounded-2xl bg-card-surface-alt px-4 py-3 border border-light-gray max-w-[85%]">
+                      <p className="font-body text-sm text-charcoal/80">{aiResponse2}</p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {phase === 'done' && (
+                  <motion.p
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="font-body text-xs text-coral text-center pt-1"
+                  >
+                    ✓ Script ready for tonight
+                  </motion.p>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -558,7 +608,7 @@ function AnimatedDayPlan() {
         <p className="label-text text-coral mb-1">Your 30-Day Plan</p>
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
 
-        <div className="h-[350px] overflow-hidden">
+        <div className="h-[350px] overflow-hidden bg-white rounded-2xl">
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
