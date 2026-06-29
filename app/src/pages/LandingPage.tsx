@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence, motion, useInView, useMotionValue, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight, Upload, Brain, FileText, Heart,
   Users, Building, ChevronLeft, ChevronRight, ChevronUp, Menu, X, Check, Star, Calendar,
@@ -174,45 +174,148 @@ function MagneticWrap({ children, className = '' }: { children: ReactNode; class
   );
 }
 
-function ClarityCheckMock() {
+function AnimatedClarityCheck() {
   const shouldReduceMotion = useReducedMotion();
+  const [phase, setPhase] = useState<'start' | 'loading' | 'reveal' | 'done'>('start');
+  const [revealed, setRevealed] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const timers = useRef<number[]>([]);
+
+  function clearTimers() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  }
+
+  useEffect(() => {
+    if (shouldReduceMotion || paused) return;
+    clearTimers();
+    if (phase === 'start') {
+      timers.current.push(window.setTimeout(() => setPhase('loading'), 600));
+    } else if (phase === 'loading') {
+      timers.current.push(window.setTimeout(() => setPhase('reveal'), 1400));
+    } else if (phase === 'reveal' && revealed < subjectRows.length) {
+      timers.current.push(window.setTimeout(() => setRevealed(r => r + 1), 350));
+    } else if (phase === 'reveal' && revealed >= subjectRows.length) {
+      timers.current.push(window.setTimeout(() => setPhase('done'), 500));
+    } else if (phase === 'done') {
+      timers.current.push(window.setTimeout(() => {
+        setPhase('start');
+        setRevealed(0);
+      }, 2500));
+    }
+    return clearTimers;
+  }, [phase, revealed, shouldReduceMotion, paused]);
 
   return (
     <FloatingMockCard>
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <p className="label-text text-coral mb-1">Clarity Check</p>
-          <h4 className="font-display text-2xl font-medium text-charcoal">Term 2</h4>
+      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="h-full">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="label-text text-coral mb-1">Clarity Check</p>
+            <h4 className="font-display text-2xl font-medium text-charcoal">Term 2</h4>
+          </div>
+          <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
         </div>
-        <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
+
+        <AnimatePresence mode="wait">
+          {phase === 'start' && (
+            <motion.div
+              key="start"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-8 gap-3"
+            >
+              <motion.div
+                animate={shouldReduceMotion ? undefined : { scale: [1, 1.04, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                className="w-14 h-14 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+              >
+                <FileText size={24} className="text-coral/60" />
+              </motion.div>
+              <p className="font-body text-sm text-charcoal/50">Report card received</p>
+            </motion.div>
+          )}
+
+          {phase === 'loading' && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-8 gap-3"
+            >
+              <motion.div
+                animate={shouldReduceMotion ? undefined : { rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                className="w-6 h-6 rounded-full border-2 border-coral/20 border-t-coral"
+              />
+              <p className="font-body text-sm text-charcoal/50">
+                Analyzing
+                <motion.span
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                > ...</motion.span>
+              </p>
+              <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
+                <motion.div
+                  initial={{ width: '0%' }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 1.2, ease: 'easeInOut' }}
+                  className="h-full rounded-full bg-coral"
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {(phase === 'reveal' || phase === 'done') && (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="space-y-2.5"
+            >
+              {subjectRows.map((row, i) => (
+                <motion.div
+                  key={row.subject}
+                  initial={shouldReduceMotion ? false : { opacity: 0, x: -12, height: 0 }}
+                  animate={revealed > i ? { opacity: 1, x: 0, height: 'auto' } : { opacity: 0, x: -12, height: 0 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                >
+                  <motion.div
+                    className={`flex items-center justify-between rounded-xl border border-light-gray px-4 py-3 ${revealed > i ? 'bg-card-surface-alt' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={revealed > i ? { scale: 1 } : { scale: 0 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 12, delay: 0.15 }}
+                        className={`w-2.5 h-2.5 rounded-full ${row.color}`}
+                      />
+                      <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
+                    </div>
+                    <motion.span
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={revealed > i ? { opacity: 1, y: 0 } : {}}
+                      transition={{ duration: 0.25, delay: 0.25 }}
+                      className={`font-body text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        row.status === 'On Track' ? 'bg-sage/15 text-sage' :
+                        row.status === 'Watch' ? 'bg-amber/15 text-amber' :
+                        'bg-coral/15 text-coral'
+                      }`}
+                    >
+                      {row.status}
+                    </motion.span>
+                  </motion.div>
+                </motion.div>
+              ))}
+              {phase === 'done' && (
+                <motion.p
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="font-body text-xs text-coral text-center pt-2"
+                >
+                  ✓ Clarity check complete
+                </motion.p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      <motion.div
-        className="space-y-3"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-80px' }}
-        variants={{
-          visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } },
-        }}
-      >
-        {subjectRows.map((row) => (
-          <motion.div
-            key={row.subject}
-            variants={shouldReduceMotion ? undefined : {
-              hidden: { opacity: 0, x: 18 },
-              visible: { opacity: 1, x: 0 },
-            }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="flex items-center justify-between rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
-          >
-            <div className="flex items-center gap-3">
-              <span className={`w-2.5 h-2.5 rounded-full ${row.color}`} />
-              <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
-            </div>
-            <span className="font-body text-xs font-semibold text-charcoal/60">{row.status}</span>
-          </motion.div>
-        ))}
-      </motion.div>
     </FloatingMockCard>
   );
 }
@@ -239,68 +342,281 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
   );
 }
 
-function TonightScriptMock() {
+function AnimatedConversation() {
   const shouldReduceMotion = useReducedMotion();
+  const [phase, setPhase] = useState<'idle' | 'typing' | 'show1' | 'show2' | 'done'>('idle');
+  const [typed, setTyped] = useState('');
+  const [paused, setPaused] = useState(false);
+  const timers = useRef<number[]>([]);
+
+  const insteadText = 'How did you get a C in Science?';
+  const tryText = 'Which subject felt hardest this term, and why?';
+
+  function clearTimers() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  }
+
+  useEffect(() => {
+    if (shouldReduceMotion || paused) return;
+    clearTimers();
+    if (phase === 'idle') {
+      setTyped('');
+      timers.current.push(window.setTimeout(() => setPhase('typing'), 500));
+    } else if (phase === 'typing' && typed.length < insteadText.length) {
+      timers.current.push(window.setTimeout(() => {
+        setTyped(insteadText.slice(0, typed.length + 1));
+      }, 35));
+    } else if (phase === 'typing' && typed.length >= insteadText.length) {
+      timers.current.push(window.setTimeout(() => setPhase('show1'), 800));
+    } else if (phase === 'show1') {
+      timers.current.push(window.setTimeout(() => setPhase('show2'), 1200));
+    } else if (phase === 'show2') {
+      timers.current.push(window.setTimeout(() => setPhase('done'), 2000));
+    } else if (phase === 'done') {
+      timers.current.push(window.setTimeout(() => setPhase('idle'), 1500));
+    }
+    return clearTimers;
+  }, [phase, typed, shouldReduceMotion, paused]);
 
   return (
     <FloatingMockCard>
-      <p className="label-text text-coral mb-1">Tonight's Script</p>
-      <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
-      <motion.div
-        className="space-y-3"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-80px' }}
-        variants={{ visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.15 } } }}
-      >
-        {scriptRows.map((row, index) => (
-          <motion.div
-            key={`${row.label}-${row.text}`}
-            variants={shouldReduceMotion ? undefined : {
-              hidden: { opacity: 0, y: 18 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4'}`}
-          >
-            <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
-            <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
-          </motion.div>
-        ))}
-      </motion.div>
+      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="h-full">
+        <p className="label-text text-coral mb-1">Tonight's Script</p>
+        <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
+
+        <AnimatePresence mode="wait">
+          {(phase === 'idle' || phase === 'typing') && (
+            <motion.div
+              key="typing"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="rounded-2xl bg-card-surface-alt px-4 py-4"
+            >
+              <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+              <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
+                {typed}
+                {phase === 'typing' && typed.length < insteadText.length && (
+                  <motion.span
+                    animate={{ opacity: [1, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity }}
+                    className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
+                  />
+                )}
+              </p>
+            </motion.div>
+          )}
+
+          {phase === 'show1' && (
+            <motion.div
+              key="show1"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="space-y-3"
+            >
+              <motion.div
+                initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
+                className="rounded-2xl bg-card-surface-alt px-4 py-3"
+              >
+                <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText}</p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+                className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
+              >
+                <span className="font-body text-xs font-semibold text-coral">Try:</span>
+                <p className="font-body text-sm text-charcoal/80 mt-1">{tryText}</p>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {phase === 'show2' && (
+            <motion.div
+              key="show2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="space-y-3"
+            >
+              {scriptRows.map((row, index) => (
+                <motion.div
+                  key={`${row.label}-${row.text}`}
+                  initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: index * 0.2 }}
+                  className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4 border border-coral/10'}`}
+                >
+                  <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
+                  <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+
+          {phase === 'done' && (
+            <motion.div
+              key="done"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="space-y-3"
+            >
+              {scriptRows.map((row, index) => (
+                <motion.div
+                  key={`${row.label}-${row.text}`}
+                  className={`rounded-2xl px-4 py-3 ${index % 2 === 0 ? 'bg-card-surface-alt' : 'bg-coral/10 ml-4 border border-coral/10'}`}
+                >
+                  <span className="font-body text-xs font-semibold text-coral">{row.label}</span>
+                  <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                </motion.div>
+              ))}
+              <motion.p
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="font-body text-xs text-coral text-center pt-1"
+              >
+                ✓ Script ready for tonight
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </FloatingMockCard>
   );
 }
 
-function DayPlanMock() {
+function AnimatedDayPlan() {
   const shouldReduceMotion = useReducedMotion();
+  const [phase, setPhase] = useState<'idle' | 'building' | 'week1' | 'week2' | 'week3' | 'week4' | 'done'>('idle');
+  const [paused, setPaused] = useState(false);
+  const timers = useRef<number[]>([]);
+
+  function clearTimers() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  }
+
+  useEffect(() => {
+    if (shouldReduceMotion || paused) return;
+    clearTimers();
+    if (phase === 'idle') {
+      timers.current.push(window.setTimeout(() => setPhase('building'), 500));
+    } else if (phase === 'building') {
+      timers.current.push(window.setTimeout(() => setPhase('week1'), 1200));
+    } else if (phase === 'week1') {
+      timers.current.push(window.setTimeout(() => setPhase('week2'), 700));
+    } else if (phase === 'week2') {
+      timers.current.push(window.setTimeout(() => setPhase('week3'), 700));
+    } else if (phase === 'week3') {
+      timers.current.push(window.setTimeout(() => setPhase('week4'), 700));
+    } else if (phase === 'week4') {
+      timers.current.push(window.setTimeout(() => setPhase('done'), 700));
+    } else if (phase === 'done') {
+      timers.current.push(window.setTimeout(() => setPhase('idle'), 2500));
+    }
+    return clearTimers;
+  }, [phase, shouldReduceMotion, paused]);
+
+  const weekPhases = ['week1', 'week2', 'week3', 'week4'] as const;
 
   return (
     <FloatingMockCard>
-      <p className="label-text text-coral mb-1">Your 30-Day Plan</p>
-      <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
-      <motion.div
-        className="space-y-3"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-80px' }}
-        variants={{ visible: { transition: { staggerChildren: shouldReduceMotion ? 0 : 0.1 } } }}
-      >
-        {planRows.map((row) => (
-          <motion.div
-            key={row.week}
-            variants={shouldReduceMotion ? undefined : {
-              hidden: { opacity: 0, x: 18 },
-              visible: { opacity: 1, x: 0 },
-            }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
-          >
-            <span className="font-body text-xs font-bold text-coral">{row.week}</span>
-            <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
-          </motion.div>
-        ))}
-      </motion.div>
+      <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="h-full">
+        <p className="label-text text-coral mb-1">Your 30-Day Plan</p>
+        <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
+
+        <AnimatePresence mode="wait">
+          {phase === 'idle' && (
+            <motion.div
+              key="idle"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-6 gap-3"
+            >
+              <motion.div
+                animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                className="w-12 h-12 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+              >
+                <Calendar size={22} className="text-coral/60" />
+              </motion.div>
+              <p className="font-body text-sm text-charcoal/50">Ready to build your plan</p>
+            </motion.div>
+          )}
+
+          {phase === 'building' && (
+            <motion.div
+              key="building"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-6 gap-3"
+            >
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map(i => (
+                  <motion.div
+                    key={i}
+                    animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
+                    transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.15 }}
+                    className="w-2 h-2 rounded-full bg-coral/60"
+                  />
+                ))}
+              </div>
+              <p className="font-body text-sm text-charcoal/50">Building weekly steps...</p>
+              <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
+                <motion.div
+                  initial={{ width: '0%' }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 1, ease: 'easeInOut' }}
+                  className="h-full rounded-full bg-coral"
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {(phase !== 'idle' && phase !== 'building') && (
+            <motion.div
+              key="weeks"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="space-y-2.5"
+            >
+              {planRows.map((row, i) => {
+                const weekPhase = weekPhases[i];
+                const isVisible = weekPhases.indexOf(weekPhase as typeof weekPhases[number]) <= weekPhases.indexOf(phase as typeof weekPhases[number]) || phase === 'done';
+                return (
+                  <motion.div
+                    key={row.week}
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: 20, height: 0 }}
+                    animate={isVisible ? { opacity: 1, y: 0, height: 'auto' } : { opacity: 0, y: 20, height: 0 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <motion.div
+                      className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
+                      whileHover={shouldReduceMotion ? undefined : { scale: 1.01, borderColor: 'rgba(232,93,62,0.2)' }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-body text-xs font-bold text-coral">{row.week}</span>
+                        {isVisible && phase !== 'idle' && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 12 }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </motion.span>
+                        )}
+                      </div>
+                      <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                    </motion.div>
+                  </motion.div>
+                );
+              })}
+              {phase === 'done' && (
+                <motion.p
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="font-body text-xs text-coral text-center pt-2"
+                >
+                  ✓ 4-week plan ready
+                </motion.p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </FloatingMockCard>
   );
 }
@@ -746,11 +1062,11 @@ export default function LandingPage() {
                   </motion.ul>
                 </div>
                 {feature.label === 'CLARITY CHECK' ? (
-                  <ClarityCheckMock />
+                  <AnimatedClarityCheck />
                 ) : feature.label === "TONIGHT'S CONVERSATION" ? (
-                  <TonightScriptMock />
+                  <AnimatedConversation />
                 ) : feature.label === '30-DAY PLAN' ? (
-                  <DayPlanMock />
+                  <AnimatedDayPlan />
                 ) : (
                   <GlowTiltCard>
                     <div className={`rounded-2xl overflow-hidden shadow-card aspect-[16/10] flex items-center justify-center ${feature.bg === 'cream' ? 'bg-white' : 'bg-card-surface-alt'}`}>
@@ -969,8 +1285,6 @@ export default function LandingPage() {
               <span className="font-display text-2xl font-semibold text-white tracking-tight">NextStep<span className="text-coral">.AI</span></span>
               <p className="font-body text-sm text-white/50 mt-3 leading-relaxed max-w-[220px]">Turn your child's report card into your next move.</p>
               <div className="flex items-center gap-3 mt-5">
-                <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral transition-all cursor-default" aria-label="Twitter/X"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"/><path d="M4 20l6.768 -6.768m2.46 -2.46L20 4"/></svg></span>
-                <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral transition-all cursor-default" aria-label="LinkedIn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg></span>
                 <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral transition-all cursor-default" aria-label="Email"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
               </div>
             </div>
