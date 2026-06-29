@@ -365,10 +365,10 @@ function AnimatedConversation() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
 
-  const parentMsg1 = 'How did you get a C in Science?';
-  const aiResponse1 = 'Which subject felt hardest this term, and why?';
-  const parentMsg2 = 'You need to study more.';
-  const aiResponse2 = 'What would make it easier to focus at home?';
+  const insteadText1 = 'How did you get a C in Science?';
+  const tryText1 = 'Which subject felt hardest this term, and why?';
+  const insteadText2 = 'You need to study more.';
+  const tryText2 = 'What would make it easier to focus at home?';
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -389,21 +389,21 @@ function AnimatedConversation() {
     if (phase === 'idle') {
       setTyped('');
       timers.current.push(window.setTimeout(() => setPhase('typing1'), 500));
-    } else if (phase === 'typing1' && typed.length < parentMsg1.length) {
+    } else if (phase === 'typing1' && typed.length < insteadText1.length) {
       timers.current.push(window.setTimeout(() => {
-        setTyped(prev => parentMsg1.slice(0, prev.length + 1));
+        setTyped(prev => insteadText1.slice(0, prev.length + 1));
       }, 40));
-    } else if (phase === 'typing1' && typed.length >= parentMsg1.length) {
-      timers.current.push(window.setTimeout(() => setPhase('response1'), 600));
+    } else if (phase === 'typing1' && typed.length >= insteadText1.length) {
+      timers.current.push(window.setTimeout(() => setPhase('response1'), 800));
     } else if (phase === 'response1') {
       setTyped('');
-      timers.current.push(window.setTimeout(() => setPhase('typing2'), 1000));
-    } else if (phase === 'typing2' && typed.length < parentMsg2.length) {
+      timers.current.push(window.setTimeout(() => setPhase('typing2'), 1200));
+    } else if (phase === 'typing2' && typed.length < insteadText2.length) {
       timers.current.push(window.setTimeout(() => {
-        setTyped(prev => parentMsg2.slice(0, prev.length + 1));
+        setTyped(prev => insteadText2.slice(0, prev.length + 1));
       }, 40));
-    } else if (phase === 'typing2' && typed.length >= parentMsg2.length) {
-      timers.current.push(window.setTimeout(() => setPhase('response2'), 600));
+    } else if (phase === 'typing2' && typed.length >= insteadText2.length) {
+      timers.current.push(window.setTimeout(() => setPhase('response2'), 800));
     } else if (phase === 'response2') {
       timers.current.push(window.setTimeout(() => setPhase('done'), 2500));
     } else if (phase === 'done') {
@@ -414,11 +414,6 @@ function AnimatedConversation() {
     }
     return clearTimers;
   }, [phase, typed, shouldReduceMotion, paused, isInView]);
-
-  const showParent1 = !!(phase === 'typing1' || phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done');
-  const showAI1 = !!(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done');
-  const showParent2 = !!(phase === 'typing2' || phase === 'response2' || phase === 'done');
-  const showAI2 = !!(phase === 'response2' || phase === 'done');
 
   return (
     <div ref={ref}>
@@ -454,89 +449,81 @@ function AnimatedConversation() {
                 exit={{ opacity: 0, transition: { duration: 0.1 } }}
                 className="space-y-3"
               >
-                {showParent1 && (
+                {phase === 'typing1' && (
                   <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.35 }}
-                    className="flex flex-col items-end"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="rounded-2xl bg-card-surface-alt px-4 py-4"
                   >
-                    <div className="flex items-center gap-1.5 mb-1 mr-1">
-                      <span className="font-body text-xs font-semibold text-coral">You</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E85D3E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </div>
-                    <div className="rounded-2xl bg-coral/10 px-4 py-3 border border-coral/10 max-w-[85%]">
-                      <p className="font-body text-sm text-charcoal/80">
-                        {phase === 'typing1' ? typed : parentMsg1}
-                        {phase === 'typing1' && typed.length < parentMsg1.length && (
-                          <motion.span
-                            animate={{ opacity: [1, 0] }}
-                            transition={{ duration: 0.6, repeat: Infinity }}
-                            className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
-                          />
-                        )}
-                      </p>
-                    </div>
+                    <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                    <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
+                      {typed}
+                      <motion.span
+                        animate={{ opacity: [1, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity }}
+                        className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
+                      />
+                    </p>
                   </motion.div>
                 )}
 
-                {showAI1 && (
+                {(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done') && (
                   <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.35, delay: 0.15 }}
-                    className="flex flex-col items-start"
+                    initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="rounded-2xl bg-card-surface-alt px-4 py-3"
                   >
-                    <div className="flex items-center gap-1.5 mb-1 ml-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                      <span className="font-body text-xs font-semibold text-sage">AI</span>
-                    </div>
-                    <div className="rounded-2xl bg-card-surface-alt px-4 py-3 border border-light-gray max-w-[85%]">
-                      <p className="font-body text-sm text-charcoal/80">{aiResponse1}</p>
-                    </div>
+                    <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                    <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText1}</p>
                   </motion.div>
                 )}
 
-                {showParent2 && (
+                {(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done') && (
                   <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.35 }}
-                    className="flex flex-col items-end"
+                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                    className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
                   >
-                    <div className="flex items-center gap-1.5 mb-1 mr-1">
-                      <span className="font-body text-xs font-semibold text-coral">You</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E85D3E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </div>
-                    <div className="rounded-2xl bg-coral/10 px-4 py-3 border border-coral/10 max-w-[85%]">
-                      <p className="font-body text-sm text-charcoal/80">
-                        {phase === 'typing2' ? typed : parentMsg2}
-                        {phase === 'typing2' && typed.length < parentMsg2.length && (
-                          <motion.span
-                            animate={{ opacity: [1, 0] }}
-                            transition={{ duration: 0.6, repeat: Infinity }}
-                            className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
-                          />
-                        )}
-                      </p>
-                    </div>
+                    <span className="font-body text-xs font-semibold text-coral">Try:</span>
+                    <p className="font-body text-sm text-charcoal/80 mt-1">{tryText1}</p>
                   </motion.div>
                 )}
 
-                {showAI2 && (
+                {phase === 'typing2' && (
                   <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.35, delay: 0.15 }}
-                    className="flex flex-col items-start"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="rounded-2xl bg-card-surface-alt px-4 py-4"
                   >
-                    <div className="flex items-center gap-1.5 mb-1 ml-1">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                      <span className="font-body text-xs font-semibold text-sage">AI</span>
-                    </div>
-                    <div className="rounded-2xl bg-card-surface-alt px-4 py-3 border border-light-gray max-w-[85%]">
-                      <p className="font-body text-sm text-charcoal/80">{aiResponse2}</p>
-                    </div>
+                    <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                    <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
+                      {typed}
+                      <motion.span
+                        animate={{ opacity: [1, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity }}
+                        className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
+                      />
+                    </p>
+                  </motion.div>
+                )}
+
+                {(phase === 'response2' || phase === 'done') && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="rounded-2xl bg-card-surface-alt px-4 py-3"
+                  >
+                    <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                    <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText2}</p>
+                  </motion.div>
+                )}
+
+                {(phase === 'response2' || phase === 'done') && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                    className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
+                  >
+                    <span className="font-body text-xs font-semibold text-coral">Try:</span>
+                    <p className="font-body text-sm text-charcoal/80 mt-1">{tryText2}</p>
                   </motion.div>
                 )}
 
