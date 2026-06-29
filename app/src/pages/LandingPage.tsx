@@ -234,7 +234,7 @@ function AnimatedClarityCheck() {
               <motion.div
                 key="start"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center gap-3"
+                className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
                   animate={shouldReduceMotion ? undefined : { scale: [1, 1.04, 1] }}
@@ -251,7 +251,7 @@ function AnimatedClarityCheck() {
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center gap-3"
+                className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
                   animate={shouldReduceMotion ? undefined : { rotate: 360 }}
@@ -429,7 +429,7 @@ function AnimatedConversation() {
                 key="idle"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                className="flex flex-col items-center justify-center gap-3"
+                className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
                   animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
@@ -601,7 +601,7 @@ function AnimatedDayPlan() {
               <motion.div
                 key="idle"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center gap-3"
+                className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
                   animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
@@ -618,7 +618,7 @@ function AnimatedDayPlan() {
               <motion.div
                 key="building"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center gap-3"
+                className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <div className="flex gap-1.5">
                   {[0, 1, 2].map(i => (
