@@ -217,7 +217,7 @@ function AnimatedClarityCheck() {
           <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
         </div>
 
-        <div className="min-h-[320px]">
+        <div className="h-[320px] overflow-hidden">
           <AnimatePresence mode="wait">
             {phase === 'start' && (
               <motion.div
@@ -387,7 +387,7 @@ function AnimatedConversation() {
         <p className="label-text text-coral mb-1">Tonight's Script</p>
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
 
-        <div className="min-h-[330px]">
+        <div className="h-[330px] overflow-hidden">
           <AnimatePresence mode="wait">
             {(phase === 'idle' || phase === 'typing') && (
               <motion.div
@@ -524,7 +524,7 @@ function AnimatedDayPlan() {
         <p className="label-text text-coral mb-1">Your 30-Day Plan</p>
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
 
-        <div className="min-h-[350px]">
+        <div className="h-[350px] overflow-hidden">
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
