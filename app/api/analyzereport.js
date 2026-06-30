@@ -97,7 +97,8 @@ export default async function handler(req, res) {
     if (!aiText) return res.status(500).json({ error: 'AI returned an empty response.' });
 
     const analysis = extractJson(aiText);
-    return res.status(200).json({ success: true, analysis });
+
+    return res.status(200).json(analysis);
   } catch (error) {
     return res.status(500).json({ error: error?.message || 'Failed to analyze report' });
   }
