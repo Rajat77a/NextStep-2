@@ -22,6 +22,7 @@ import {
   mapAIAnalysisToSubjectGrades,
   mapAIAnalysisToClarityCheck,
 } from '@/api/analysis';
+import { extractReportText } from '@/lib/reportOcr';
 import type {
   AIReportAnalysis,
   SubjectGrade,
@@ -72,14 +73,27 @@ export default function UploadReport() {
   const [analysis, setAnalysis] = useState<AIReportAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [ocrStatus, setOcrStatus] = useState('');
 
   const handleFileSelect = async (selectedFile: File) => {
     setFile(selectedFile);
     setError('');
+    setRawText('');
+    setOcrStatus('');
 
     if (canReadTextDirectly(selectedFile)) {
       const text = await selectedFile.text();
       setRawText(text);
+    } else {
+      try {
+        const text = await extractReportText(selectedFile, (msg) => {
+          setOcrStatus(msg);
+        });
+        setRawText(text);
+        setOcrStatus('');
+      } catch (err: any) {
+        setError(err?.message || 'Could not read the file.');
+      }
     }
   };
 
@@ -149,11 +163,9 @@ export default function UploadReport() {
         boardType: 'Other',
         file: file || undefined,
         uploadMethod: 'parent',
-        // ── Save raw OCR text to ReportCard.raw_text ──
         raw_text: rawText || undefined,
       });
 
-      // ── Save the full structured Grok AI response to ReportCard.ai_response ──
       await updateReportCardAiResponse(card.id, analysis);
 
       await addSubjectGrades(card.id, grades);
@@ -250,12 +262,19 @@ export default function UploadReport() {
                 <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
                   <Check size={32} className="mx-auto text-sage mb-3" />
                   <p className="font-body font-medium text-charcoal">{file.name}</p>
+                  {ocrStatus && (
+                    <p className="font-body text-xs text-medium-gray mt-1">{ocrStatus}</p>
+                  )}
+                  {rawText && !ocrStatus && (
+                    <p className="font-body text-xs text-sage mt-1">Text extracted successfully</p>
+                  )}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setFile(null);
                       setRawText('');
+                      setOcrStatus('');
                     }}
                     className="font-body text-sm text-coral mt-2 hover:underline"
                   >
