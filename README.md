@@ -30,7 +30,7 @@ Teachers and school admins get their own portals with class-level pattern views.
 | Styling | Tailwind CSS v3 |
 | Animation | Framer Motion |
 | Icons | Lucide React |
-| AI / OCR | Claude API + Tesseract.js |
+| AI / OCR | Google Gemini + Tesseract.js |
 | Storage | LocalStorage (MVP) |
 | Deploy | Vercel |
 
