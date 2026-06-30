@@ -23,8 +23,8 @@ export default function AuthCallback() {
           return
         }
 
-        const accessToken = hashParams.get('access_token')
-        const refreshToken = hashParams.get('refresh_token')
+        const accessToken = hashParams.get('access_token') || params.get('access_token')
+        const refreshToken = hashParams.get('refresh_token') || params.get('refresh_token')
         if (accessToken && refreshToken) {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -58,12 +58,17 @@ export default function AuthCallback() {
     async function getRole(session: import('@supabase/supabase-js').Session): Promise<string> {
       const metaRole = session.user.user_metadata?.role as string | undefined
       if (metaRole === 'teacher' || metaRole === 'admin' || metaRole === 'parent') return metaRole
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .maybeSingle()
-      return profile?.role ?? 'parent'
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .maybeSingle()
+        if (profile?.role === 'teacher' || profile?.role === 'admin' || profile?.role === 'parent') return profile.role
+      } catch {
+        // profiles table may not exist or RLS may block — fall through to 'parent'
+      }
+      return 'parent'
     }
 
     completeSignIn()

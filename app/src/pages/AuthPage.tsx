@@ -444,18 +444,7 @@ export default function AuthPage({ initialMode = 'login' }: { initialMode?: Mode
                 </div>
               )}
 
-              {/* Bottom switch link */}
-              {!otpSent && (
-                <div className="mt-6 text-center">
-                  <p className="font-body text-sm text-medium-gray">
-                    {mode === 'login' ? (
-                      <>Don&apos;t have an account? <button type="button" onClick={() => switchMode('signup')} className="text-coral font-semibold hover:underline">Sign up</button></>
-                    ) : (
-                      <>Already have an account? <button type="button" onClick={() => switchMode('login')} className="text-coral font-semibold hover:underline">Log in</button></>
-                    )}
-                  </p>
-                </div>
-              )}
+
             </motion.div>
           </AnimatePresence>
         </div>
