@@ -1,5 +1,5 @@
 // Google Gemini API
-// Required env var: GEMINI_API_KEY (set your key in Vercel)
+// Required env var: NextStep (set your Gemini API key in Vercel)
 // Get a key from: https://aistudio.google.com/apikey
 
 const GEMINI_MODEL = 'gemini-2.5-flash';
@@ -106,11 +106,11 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const GEMINI_API_KEY = process.env.NextStep;
 
   if (!GEMINI_API_KEY) {
     return res.status(500).json({
-      error: 'Server configuration error: GEMINI_API_KEY is not set.',
+      error: 'Server configuration error: NextStep env var is not set.',
     });
   }
 
