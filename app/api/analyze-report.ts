@@ -1,192 +1,137 @@
-// Google Gemini API
-// Required env var: NextStep (set your Gemini API key in Vercel)
-// Get a key from: https://aistudio.google.com/apikey
-
+const GEMINI_API_KEY = process.env.NextStep;
 const GEMINI_MODEL = 'gemini-2.5-flash';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-const SYSTEM_PROMPT = `You analyze school report cards for parents.
+const SYSTEM_PROMPT = `
+You are an expert academic report card analyst.
 
-Return only valid JSON matching this exact shape — no markdown, no explanation, just the JSON object:
+Analyze the student's report card and return ONLY valid JSON.
+Do not include markdown, explanation, or code blocks.
 
+Return this structure:
 {
-  "overallSummary": {
-    "strengths": ["string"],
-    "areasForImprovement": ["string"],
-    "overallPerformance": "string"
-  },
+  "overallPerformance": "string",
+  "strengths": ["string"],
+  "weaknesses": ["string"],
   "subjectAnalysis": [
     {
       "subject": "string",
       "grade": "string",
-      "score": number,
-      "maxScore": number,
-      "teacherRemarks": "string",
-      "analysis": "string",
-      "suggestions": ["string"]
+      "marks": "string",
+      "performance": "string",
+      "suggestion": "string"
     }
   ],
-  "recommendedNextSteps": [
-    {
-      "focusArea": "string",
-      "actionItems": ["string"],
-      "resources": ["string"]
-    }
-  ],
-  "parentActionPlan": {
-    "weeklyPlan": [
-      {
-        "week": number,
-        "focus": "string",
-        "activities": ["string"]
-      }
-    ],
-    "conversationStarters": ["string"]
-  }
+  "recommendations": ["string"],
+  "parentGuidance": "string",
+  "nextSteps": ["string"]
 }
+`;
 
-Be accurate, encouraging, and specific to the report card data. If a field is missing in the input, infer a reasonable default or return null for that field.`;
+function extractJson(text: string) {
+  const cleaned = text
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
 
-type ReportCardAnalysis = {
-  overallSummary: {
-    strengths: string[];
-    areasForImprovement: string[];
-    overallPerformance: string;
-  };
-  subjectAnalysis: Array<{
-    subject: string;
-    grade?: string;
-    score?: number;
-    maxScore?: number;
-    teacherRemarks?: string;
-    analysis?: string;
-    suggestions?: string[];
-  }>;
-  recommendedNextSteps?: Array<{
-    focusArea: string;
-    actionItems: string[];
-    resources?: string[];
-  }>;
-  parentActionPlan?: {
-    weeklyPlan?: Array<{
-      week: number;
-      focus: string;
-      activities: string[];
-    }>;
-    conversationStarters?: string[];
-  };
-};
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
 
-function extractJson(text: string): any {
-  const firstBrace = text.indexOf('{');
-  const lastBrace = text.lastIndexOf('}');
-
-  if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-    throw new Error('Could not find a valid JSON object in Gemini response.');
+  if (firstBrace === -1 || lastBrace === -1) {
+    throw new Error('No JSON found in AI response');
   }
 
-  const jsonString = text.slice(firstBrace, lastBrace + 1);
-  return JSON.parse(jsonString);
-}
-
-function validateAnalysis(raw: any): ReportCardAnalysis {
-  if (!raw || typeof raw !== 'object') {
-    throw new Error('Analysis response is not a valid object.');
-  }
-
-  if (!raw.overallSummary || !Array.isArray(raw.subjectAnalysis)) {
-    throw new Error('Analysis response missing required fields.');
-  }
-
-  return raw as ReportCardAnalysis;
+  return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
 }
 
 export default async function handler(req: any, res: any) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
-  }
-
-  const GEMINI_API_KEY = process.env.NextStep;
-
-  if (!GEMINI_API_KEY) {
-    return res.status(500).json({
-      error: 'Server configuration error: NextStep env var is not set.',
-    });
-  }
-
-  const { reportCardText, mimeType, fileData } = req.body;
-
-  if (!reportCardText && !fileData) {
-    return res.status(400).json({
-      error: 'Please provide report card text or a file.',
+    res.setHeader('Allow', 'POST, OPTIONS');
+    return res.status(405).json({
+      error: 'Method not allowed. Use POST.',
     });
   }
 
   try {
-    const parts: any[] = [];
+    if (!GEMINI_API_KEY) {
+      return res.status(500).json({
+        error: 'Server configuration error: NextStep API key is not set.',
+      });
+    }
 
-    if (fileData) {
-      parts.push({
-        inlineData: {
-          mimeType: mimeType || 'application/pdf',
-          data: fileData,
+    const body = req.body || {};
+    const reportText = body.text || body.rawText || body.reportCardText || '';
+
+    if (!reportText || typeof reportText !== 'string' || !reportText.trim()) {
+      return res.status(400).json({
+        error: 'Please provide report card text or a file.',
+      });
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      });
-    }
-
-    if (reportCardText) {
-      parts.push({
-        text: `Analyze this report card and return the JSON described above:\n\n${reportCardText}`,
-      });
-    } else {
-      parts.push({
-        text: `Analyze the attached report card and return the JSON described above.`,
-      });
-    }
-
-    const response = await fetch(GEMINI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts,
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: `${SYSTEM_PROMPT}\n\nReport card text:\n${reportText}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 8192,
+            responseMimeType: 'application/json',
           },
-        ],
-        systemInstruction: {
-          role: 'system',
-          parts: [{ text: SYSTEM_PROMPT }],
-        },
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 8192,
-          responseMimeType: 'application/json',
-        },
-      }),
-    });
+        }),
+      }
+    );
+
+    const result = await response.json();
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+      console.error('Gemini API error:', result);
+      return res.status(response.status).json({
+        error: result?.error?.message || 'Failed to analyze report',
+      });
     }
 
-    const geminiData = await response.json();
+    const aiText =
+      result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    const text: string = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-
-    if (!text) {
-      throw new Error('Gemini returned an empty response.');
+    if (!aiText) {
+      console.error('Empty Gemini response:', result);
+      return res.status(500).json({
+        error: 'AI returned an empty response.',
+      });
     }
 
-    const analysis = validateAnalysis(extractJson(text));
+    const analysis = extractJson(aiText);
 
-    res.status(200).json({ analysis, model: GEMINI_MODEL });
+    return res.status(200).json({
+      success: true,
+      analysis,
+    });
   } catch (error: any) {
-    res.status(500).json({
-      error: error?.message || 'Could not analyze the report card. Please try again.',
+    console.error('Analyze report error:', error);
+
+    return res.status(500).json({
+      error: error?.message || 'Failed to analyze report',
     });
   }
 }
