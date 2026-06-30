@@ -1,5 +1,5 @@
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = 'mixtral-8x7b-32768';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 const SYSTEM_PROMPT = `
 You are an expert academic report card analyst.
