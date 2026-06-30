@@ -28,11 +28,16 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await sendOtp(email);
+      await sendOtp(email, { shouldCreateUser: false });
       setOtpSent(true);
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
     } catch (e: any) {
-      setError(e?.message || 'Failed to send OTP. Please try again.');
+      const msg = e?.message || '';
+      if (/not found|does not exist|may not exist/i.test(msg)) {
+        setError('no_account');
+      } else {
+        setError(msg || 'Failed to send OTP. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

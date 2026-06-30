@@ -7,8 +7,7 @@ import PortalNav from '@/components/shared/PortalNav';
 import LandingPage from '@/pages/LandingPage';
 
 // Auth
-import LoginPage from '@/pages/LoginPage';
-import SignupPage from '@/pages/SignupPage';
+import AuthPage from '@/pages/AuthPage';
 import AuthCallback from '@/pages/AuthCallback';
 
 // Parent Portal
@@ -63,9 +62,9 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <LoginPage />} />
+        <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <AuthPage initialMode="login" />} />
+        <Route path="/signup" element={user ? <Navigate to={`/${user.role}`} replace /> : <AuthPage initialMode="signup" />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/signup" element={user ? <Navigate to={`/${user.role}`} replace /> : <SignupPage />} />
 
         {/* Parent Portal */}
         <Route path="/parent" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />

@@ -51,12 +51,15 @@ export async function signInWithGoogle(): Promise<void> {
 
 // ─── Email OTP ────────────────────────────────────────────────────────────────
 
-export async function sendOtp(email: string, options?: { data?: Record<string, unknown> }): Promise<void> {
+export async function sendOtp(
+  email: string,
+  options?: { data?: Record<string, unknown>; shouldCreateUser?: boolean }
+): Promise<void> {
   const otpOptions: {
     shouldCreateUser: boolean;
     data?: Record<string, unknown>;
   } = {
-    shouldCreateUser: true,
+    shouldCreateUser: options?.shouldCreateUser ?? true,
   };
   if (options?.data) {
     otpOptions.data = options.data;

@@ -83,7 +83,7 @@ export function useAuth() {
     }
   }, []);
 
-  const sendOtp = useCallback(async (email: string, options?: { data?: Record<string, unknown> }) => {
+  const sendOtp = useCallback(async (email: string, options?: { data?: Record<string, unknown>; shouldCreateUser?: boolean }) => {
     setError(null);
     setLoading(true);
     try {
