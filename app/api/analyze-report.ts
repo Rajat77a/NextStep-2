@@ -16,120 +16,109 @@ Return this structure:
     {
       "subject": "string",
       "grade": "string",
-      "marks": "string",
-      "performance": "string",
-      "suggestion": "string"
+      "score": "number",
+      "normalizedScore": "number",
+      "teacherComment": "string",
+      "flag": "string",
+      "reasoning": "string"
     }
   ],
-  "recommendations": ["string"],
-  "parentGuidance": "string",
-  "nextSteps": ["string"]
+  "overallStatus": "string",
+  "summaryText": "string",
+  "conversationScript": "string",
+  "teacherQuestions": ["string"],
+  "thirtyDayPlan": ["string"]
 }
 `;
 
-function extractJson(text: string) {
+function extractJson(text: string): any {
   const cleaned = text
-    .replace(/```json/g, '')
-    .replace(/```/g, '')
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '')
     .trim();
-
-  const firstBrace = cleaned.indexOf('{');
-  const lastBrace = cleaned.lastIndexOf('}');
-
-  if (firstBrace === -1 || lastBrace === -1) {
-    throw new Error('No JSON found in AI response');
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+    throw new Error('AI did not return valid JSON.');
   }
-
-  return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
 }
 
 export default async function handler(req: any, res: any) {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST, OPTIONS');
-    return res.status(405).json({
-      error: 'Method not allowed. Use POST.',
+    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+  }
+
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({
+      error: 'Server configuration error: GEMINI_API_KEY (NextStep) is not set.',
     });
   }
 
   try {
-    if (!GEMINI_API_KEY) {
-      return res.status(500).json({
-        error: 'Server configuration error: NextStep API key is not set.',
-      });
+    const { text, studentName, boardType } = req.body || {};
+
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'Please provide report card text or a file.' });
     }
 
-    const body = req.body || {};
-    const reportText = body.text || body.rawText || body.reportCardText || '';
+    const userPrompt = `
+Student Name: ${studentName || 'Unknown'}
+Board: ${boardType || 'Unknown'}
 
-    if (!reportText || typeof reportText !== 'string' || !reportText.trim()) {
-      return res.status(400).json({
-        error: 'Please provide report card text or a file.',
-      });
-    }
+Report Card Content:
+${text}
+`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+    const geminiRes = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 8192,
+          responseMimeType: 'application/json',
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  text: `${SYSTEM_PROMPT}\n\nReport card text:\n${reportText}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 8192,
-            responseMimeType: 'application/json',
-          },
-        }),
-      }
-    );
+      }),
+    });
 
-    const result = await response.json();
+    const result: any = await geminiRes.json();
 
-    if (!response.ok) {
+    if (!geminiRes.ok) {
       console.error('Gemini API error:', result);
-      return res.status(response.status).json({
-        error: result?.error?.message || 'Failed to analyze report',
+      return res.status(geminiRes.status).json({
+        error: result?.error?.message || 'Gemini API request failed.',
       });
     }
 
-    const aiText =
+    const aiText: string | undefined =
       result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!aiText) {
       console.error('Empty Gemini response:', result);
-      return res.status(500).json({
-        error: 'AI returned an empty response.',
-      });
+      return res.status(500).json({ error: 'AI returned an empty response.' });
     }
 
     const analysis = extractJson(aiText);
 
-    return res.status(200).json({
-      success: true,
-      analysis,
-    });
+    return res.status(200).json({ success: true, analysis });
   } catch (error: any) {
     console.error('Analyze report error:', error);
-
     return res.status(500).json({
       error: error?.message || 'Failed to analyze report',
     });
