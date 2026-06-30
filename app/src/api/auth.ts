@@ -51,12 +51,20 @@ export async function signInWithGoogle(): Promise<void> {
 
 // ─── Email OTP ────────────────────────────────────────────────────────────────
 
-export async function sendOtp(email: string): Promise<void> {
+export async function sendOtp(email: string, options?: { data?: Record<string, unknown> }): Promise<void> {
+  const otpOptions: {
+    shouldCreateUser: boolean;
+    data?: Record<string, unknown>;
+  } = {
+    shouldCreateUser: true,
+  };
+  if (options?.data) {
+    otpOptions.data = options.data;
+  }
+
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: {
-      shouldCreateUser: true,
-    },
+    options: otpOptions,
   });
   if (error) throw createApiError(400, error.message);
 }

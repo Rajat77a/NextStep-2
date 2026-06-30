@@ -13,7 +13,7 @@ const roles: { id: UserRole; icon: React.ReactNode; title: string; desc: string 
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const { signInWithGoogle, sendOtp, verifyOtp, updateUser } = useAuth();
+  const { signInWithGoogle, sendOtp, verifyOtp, updateUser, error: authError } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('parent');
@@ -38,11 +38,11 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      await sendOtp(email);
+      await sendOtp(email, { data: { full_name: fullName, role } });
       setOtpSent(true);
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
-    } catch {
-      setError('Failed to send OTP. Please try again.');
+    } catch (e: any) {
+      setError(e?.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -70,11 +70,11 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      const user = await verifyOtp(email, code);
+      await verifyOtp(email, code);
       await updateUser({ fullName, role });
-      navigate(`/${user.role}`);
-    } catch {
-      setError('Invalid or expired code. Please try again.');
+      navigate(`/${role}`);
+    } catch (e: any) {
+      setError(e?.message || 'Invalid or expired code. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -118,9 +118,9 @@ export default function SignupPage() {
             {otpSent ? `We sent a code to ${email}` : 'Create your account'}
           </p>
 
-          {error && (
+          {(error || authError) && (
             <div className="mb-4 p-3 bg-coral/10 border border-coral/20 rounded-lg text-coral text-sm font-body">
-              {error}
+              {error || authError}
             </div>
           )}
 

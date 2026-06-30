@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { signInWithGoogle, sendOtp, verifyOtp } = useAuth();
+  const { signInWithGoogle, sendOtp, verifyOtp, error: authError } = useAuth();
   const [email, setEmail] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -31,8 +31,8 @@ export default function LoginPage() {
       await sendOtp(email);
       setOtpSent(true);
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
-    } catch {
-      setError('Failed to send OTP. Please try again.');
+    } catch (e: any) {
+      setError(e?.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export default function LoginPage() {
     setLoading(true);
     verifyOtp(email, digits.join(''))
       .then(user => navigate(`/${user.role}`))
-      .catch(() => setError('Invalid or expired code. Please try again.'))
+      .catch((e: any) => setError(e?.message || 'Invalid or expired code. Please try again.'))
       .finally(() => setLoading(false));
   }, [email, navigate, verifyOtp]);
 
@@ -87,8 +87,8 @@ export default function LoginPage() {
     try {
       const user = await verifyOtp(email, code);
       navigate(`/${user.role}`);
-    } catch {
-      setError('Invalid or expired code. Please try again.');
+    } catch (e: any) {
+      setError(e?.message || 'Invalid or expired code. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -132,9 +132,9 @@ export default function LoginPage() {
             {otpSent ? `We sent a code to ${email}` : 'Sign in to your portal'}
           </p>
 
-          {error && (
+          {(error || authError) && (
             <div className="mb-4 p-3 bg-coral/10 border border-coral/20 rounded-lg text-coral text-sm font-body">
-              {error}
+              {error || authError}
             </div>
           )}
 

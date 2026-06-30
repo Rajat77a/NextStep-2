@@ -35,7 +35,15 @@ export default function AuthCallback() {
         if (error) throw error
         if (!session) throw new Error('No session was created from the OAuth callback.')
 
-        const role = session.user.user_metadata?.role ?? 'parent'
+        let role = session.user.user_metadata?.role as string | undefined
+        if (!role) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle()
+          role = profile?.role ?? 'parent'
+        }
         const destination = role === 'teacher' || role === 'admin' ? `/${role}` : '/parent'
         if (!cancelled) navigate(destination, { replace: true })
       } catch (error) {

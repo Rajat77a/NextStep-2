@@ -29,6 +29,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -82,11 +83,11 @@ export function useAuth() {
     }
   }, []);
 
-  const sendOtp = useCallback(async (email: string) => {
+  const sendOtp = useCallback(async (email: string, options?: { data?: Record<string, unknown> }) => {
     setError(null);
     setLoading(true);
     try {
-      await apiSendOtp(email);
+      await apiSendOtp(email, options);
     } catch (e: any) {
       setError(e.message || 'Failed to send OTP');
       throw e;
@@ -111,8 +112,10 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(async () => {
+    setLoggingOut(true);
     await apiLogout();
     setUser(null);
+    window.location.href = '/login';
   }, []);
 
   const updateUser = useCallback(async (data: {
@@ -133,5 +136,5 @@ export function useAuth() {
     }
   }, []);
 
-  return { user, loading, error, sessionExpired, signInWithGoogle, sendOtp, verifyOtp, logout, updateUser };
+  return { user, loading, error, sessionExpired, loggingOut, signInWithGoogle, sendOtp, verifyOtp, logout, updateUser };
 }
