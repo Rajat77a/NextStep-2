@@ -5,7 +5,7 @@ export async function analyzeReportText(data: {
   studentName?: string;
   boardType?: BoardType;
 }): Promise<AIReportAnalysis> {
-  const response = await fetch('/api/analyzereport', {
+  const response = await fetch('/api/analyze-report', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -25,8 +25,8 @@ export async function analyzeReportText(data: {
 
 export function mapAIAnalysisToSubjectGrades(analysis: AIReportAnalysis) {
   return analysis.subjects.map((subject) => ({
-    subjectName: subject.name,
-    score: subject.score,
+    subjectName: subject.subject,
+    grade: subject.grade,
     normalizedScore: subject.normalizedScore,
     teacherComment: subject.teacherComment,
     flag: subject.flag,
