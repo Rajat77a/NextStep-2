@@ -64,7 +64,7 @@ function generateAINote(subject: string, score: number, prevScore: number | null
 }
 
 export async function seedDatabase() {
-  if (!storage.getUsers().length === false) return;
+  if (storage.getUsers().length > 0) return;
 
   const passwordHash = await hashPassword('demo123');
 

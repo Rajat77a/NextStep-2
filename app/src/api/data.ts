@@ -508,6 +508,7 @@ export async function updateReportCardAiResponse(
   id: string,
   ai_response: import('@/types').AIReportAnalysis
 ): Promise<ReportCard> {
+  await requireAuth();
   const { data, error } = await supabase
     .from('report_cards')
     .update({ ai_response, status: 'ready' })

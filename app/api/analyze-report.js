@@ -11,7 +11,7 @@ Return this structure:
 {
   "subjects": [
     {
-      "name": "string",
+      "subject": "string",
       "grade": "string",
       "score": "number",
       "normalizedScore": "number",

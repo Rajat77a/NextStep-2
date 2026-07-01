@@ -35,6 +35,18 @@ export default function AdminDashboard() {
     load();
   }, [user]);
 
+  const getStudentFlag = (studentId: string) => {
+    const cards = storage.getReportCards().filter(r => r.studentId === studentId);
+    if (!cards.length) return 'green' as const;
+    const latest = cards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    const grades = storage.getSubjectGrades().filter(g => g.reportCardId === latest.id);
+    if (grades.some(g => g.flag === 'red')) return 'red';
+    if (grades.some(g => g.flag === 'yellow')) return 'yellow';
+    return 'green';
+  };
+
+  const school = user?.schoolId ? storage.getSchools().find(s => s.id === user.schoolId) : null;
+
   const donutData = summary ? [
     { label: 'On Track', value: summary.flagDistribution.green, color: '#7A9B8A' },
     { label: 'Watch', value: summary.flagDistribution.yellow, color: '#D4A03A' },
@@ -64,7 +76,7 @@ export default function AdminDashboard() {
           <h2 className="font-display text-2xl md:text-4xl text-charcoal">School Dashboard</h2>
           <div className="gradient-divider flex-1" />
         </div>
-        <p className="font-body text-medium-gray mb-6">{user?.schoolId ? 'Greenfield Academy — CBSE' : 'No school configured'}</p>
+        <p className="font-body text-medium-gray mb-6">{school ? `${school.name} — ${school.boardType}` : 'No school configured'}</p>
       </motion.div>
 
       {/* Metrics */}
@@ -201,7 +213,7 @@ export default function AdminDashboard() {
               {classes.map((cls, ci) => {
                 const students = storage.getStudents().filter(s => s.classId === cls.id);
                 const teacher = getUserById(cls.teacherId);
-                const flags = students.filter(s => s.status === 'red' || s.status === 'yellow');
+                const flags = students.filter(s => getStudentFlag(s.id) === 'red' || getStudentFlag(s.id) === 'yellow');
                 return (
                   <motion.tr
                     key={cls.id}

@@ -23,7 +23,11 @@ function getItem<T>(key: string, defaultValue: T): T {
 }
 
 function setItem<T>(key: string, value: T): void {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    console.warn(`Failed to save ${key} to localStorage`);
+  }
 }
 
 export const storage = {
