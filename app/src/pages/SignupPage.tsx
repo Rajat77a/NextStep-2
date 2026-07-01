@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Mail, User, Chrome, Heart, Users, Building, Home } from 'lucide-react';
@@ -48,12 +48,34 @@ export default function SignupPage() {
     }
   };
 
+  const fillOtp = useCallback((code: string) => {
+    const digits = code.replace(/\D/g, '').split('');
+    if (digits.length !== 6) return;
+    setOtp(digits);
+    inputRefs.current[5]?.focus();
+    setLoading(true);
+    verifyOtp(email, digits.join(''))
+      .then(user => navigate(`/${user.role}`))
+      .catch((e: any) => setError(e?.message || 'Invalid or expired code. Please try again.'))
+      .finally(() => setLoading(false));
+  }, [email, navigate, verifyOtp]);
+
   const handleOtpChange = (index: number, value: string) => {
-    if (value && !/^\d$/.test(value)) return;
+    if (!value) {
+      const newOtp = [...otp];
+      newOtp[index] = '';
+      setOtp(newOtp);
+      return;
+    }
+    if (value.length > 1) {
+      fillOtp(value);
+      return;
+    }
+    if (!/^\d$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    if (value && index < 5) {
+    if (index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
