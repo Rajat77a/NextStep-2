@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Loader2,
   AlertCircle,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -16,6 +17,7 @@ import {
   saveClarityCheck,
   createPlanProgress,
   updateReportCardAiResponse,
+  getStudents,
 } from '@/api/data';
 import {
   analyzeReportText,
@@ -26,6 +28,7 @@ import { extractReportText } from '@/lib/reportOcr';
 import type {
   AIReportAnalysis,
   SubjectGrade,
+  Student,
 } from '@/types';
 
 function canReadTextDirectly(file: File) {
@@ -67,6 +70,8 @@ export default function UploadReport() {
   const { user } = useAuth();
 
   const [step, setStep] = useState(1);
+  const [children, setChildren] = useState<Student[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [rawText, setRawText] = useState('');
   const [grades, setGrades] = useState<SubjectGrade[]>([]);
@@ -74,6 +79,16 @@ export default function UploadReport() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [ocrStatus, setOcrStatus] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+    getStudents({ parentId: user.id }).then(kids => {
+      setChildren(kids);
+      if (kids.length > 0 && !selectedChildId) {
+        setSelectedChildId(kids[0].id);
+      }
+    }).catch(() => {});
+  }, [user]);
 
   const handleFileSelect = async (selectedFile: File) => {
     setFile(selectedFile);
@@ -150,6 +165,10 @@ export default function UploadReport() {
       setError('AI analysis is missing. Please analyze the report again.');
       return;
     }
+    if (!selectedChildId) {
+      setError('Please select a child for this report card.');
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -158,7 +177,7 @@ export default function UploadReport() {
       const clarityData = mapAIAnalysisToClarityCheck(analysis);
 
       const card = await uploadReportCard({
-        studentId: user.id,
+        studentId: selectedChildId,
         term: analysis.term || 'Current Term',
         boardType: 'Other',
         file: file || undefined,
@@ -237,6 +256,26 @@ export default function UploadReport() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
+            {/* Student selector */}
+            <div className="mb-5">
+              <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
+                Select Child
+              </label>
+              <div className="relative">
+                <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray pointer-events-none" />
+                <select
+                  value={selectedChildId}
+                  onChange={e => setSelectedChildId(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal appearance-none cursor-pointer focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
+                >
+                  {children.length === 0 && <option value="">No children added yet</option>}
+                  {children.map(child => (
+                    <option key={child.id} value={child.id}>{child.fullName}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <input
               ref={fileInputRef}
               type="file"
