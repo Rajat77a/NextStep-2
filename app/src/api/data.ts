@@ -451,9 +451,12 @@ export async function getReportCards(filters?: {
         .select('id')
         .eq('user_id', supaUserId);
 
-      const studentIds = (myStudents ?? []).map((s: any) => s.id);
-      if (studentIds.length === 0) return [];
-      query = query.in('student_id', studentIds);
+            const studentIds = (myStudents ?? []).map((s: any) => s.id);
+      if (studentIds.length > 0) {
+        query = query.in('student_id', studentIds);
+      } else {
+        query = query.eq('uploaded_by', supaUserId);
+      }
     }
 
     const { data, error } = await query;
