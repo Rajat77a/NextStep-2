@@ -59,7 +59,7 @@ export function useAuth() {
           setUser(buildUserFromSession(session));
           setSessionExpired(false);
         } else {
-          if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          if (event === 'SIGNED_OUT') {
             setSessionExpired(true);
           }
           setUser(null);
