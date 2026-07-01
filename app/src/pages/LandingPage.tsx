@@ -182,6 +182,7 @@ function AnimatedClarityCheck() {
   const timers = useRef<number[]>([]);
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
+  const [clickBurst, setClickBurst] = useState(false);
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -200,11 +201,11 @@ function AnimatedClarityCheck() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'start') {
-      timers.current.push(window.setTimeout(() => setPhase('loading'), 600));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('loading'); }, 800));
     } else if (phase === 'loading') {
-      timers.current.push(window.setTimeout(() => setPhase('reveal'), 1400));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('reveal'); }, 1600));
     } else if (phase === 'reveal' && revealed < subjectRows.length) {
-      timers.current.push(window.setTimeout(() => setRevealed(r => r + 1), 350));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setRevealed(r => r + 1); }, 420));
     } else if (phase === 'reveal' && revealed >= subjectRows.length) {
       timers.current.push(window.setTimeout(() => setPhase('done'), 500));
     } else if (phase === 'done') {
@@ -215,6 +216,12 @@ function AnimatedClarityCheck() {
     }
     return clearTimers;
   }, [phase, revealed, shouldReduceMotion, paused, isInView]);
+
+  useEffect(() => {
+    if (!clickBurst) return;
+    const t = window.setTimeout(() => setClickBurst(false), 300);
+    return () => window.clearTimeout(t);
+  }, [clickBurst]);
 
   return (
     <div ref={ref}>
@@ -228,12 +235,22 @@ function AnimatedClarityCheck() {
           <span className="font-body text-xs font-semibold text-charcoal/50">Grade 6</span>
         </div>
 
-        <div className="h-[320px] overflow-hidden bg-white rounded-2xl">
+        <div className="h-[320px] overflow-hidden bg-white rounded-2xl relative">
+          {clickBurst && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0.7 }}
+              animate={{ scale: 3, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
+            />
+          )}
           <AnimatePresence mode="wait">
             {phase === 'start' && (
               <motion.div
                 key="start"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.15 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
@@ -250,7 +267,9 @@ function AnimatedClarityCheck() {
             {phase === 'loading' && (
               <motion.div
                 key="loading"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.15 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
@@ -279,17 +298,22 @@ function AnimatedClarityCheck() {
             {(phase === 'reveal' || phase === 'done') && (
               <motion.div
                 key="results"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.15 } }}
                 className="space-y-2.5"
               >
                 {subjectRows.map((row, i) => (
                   <motion.div
                     key={row.subject}
+                    className="relative"
                     initial={shouldReduceMotion ? false : { opacity: 0, x: -12 }}
                     animate={revealed > i ? { opacity: 1, x: 0 } : { opacity: 0, x: -12 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
                   >
                     <motion.div
+                      animate={revealed > i && revealed - 1 === i ? { scale: [1, 1.02, 1] } : {}}
+                      transition={{ duration: 0.3 }}
                       className={`flex items-center justify-between rounded-xl border border-light-gray px-4 py-3 ${revealed > i ? 'bg-card-surface-alt' : ''}`}
                     >
                       <div className="flex items-center gap-3">
@@ -318,7 +342,9 @@ function AnimatedClarityCheck() {
                 ))}
                 {phase === 'done' && (
                   <motion.p
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
                     className="font-body text-xs text-coral text-center pt-2"
                   >
                     ✓ Clarity check complete
@@ -364,6 +390,8 @@ function AnimatedConversation() {
   const timers = useRef<number[]>([]);
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
+  const [clickBurst, setClickBurst] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const insteadText1 = 'How did you get a C in Science?';
   const tryText1 = 'Which subject felt hardest this term, and why?';
@@ -384,6 +412,12 @@ function AnimatedConversation() {
   }, [isInView]);
 
   useEffect(() => {
+    if (!clickBurst) return;
+    const t = window.setTimeout(() => setClickBurst(false), 300);
+    return () => window.clearTimeout(t);
+  }, [clickBurst]);
+
+  useEffect(() => {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
@@ -394,16 +428,16 @@ function AnimatedConversation() {
         setTyped(prev => insteadText1.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing1' && typed.length >= insteadText1.length) {
-      timers.current.push(window.setTimeout(() => setPhase('response1'), 800));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('response1'); }, 800));
     } else if (phase === 'response1') {
       setTyped('');
-      timers.current.push(window.setTimeout(() => setPhase('typing2'), 1200));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('typing2'); }, 1200));
     } else if (phase === 'typing2' && typed.length < insteadText2.length) {
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText2.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing2' && typed.length >= insteadText2.length) {
-      timers.current.push(window.setTimeout(() => setPhase('response2'), 800));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('response2'); }, 800));
     } else if (phase === 'response2') {
       timers.current.push(window.setTimeout(() => setPhase('done'), 2500));
     } else if (phase === 'done') {
@@ -422,13 +456,21 @@ function AnimatedConversation() {
         <p className="label-text text-coral mb-1">Tonight's Script</p>
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
 
-        <div className="h-[330px] overflow-hidden bg-white rounded-2xl">
+        <div className="h-[330px] overflow-hidden bg-white rounded-2xl relative">
+          {clickBurst && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0.7 }}
+              animate={{ scale: 3, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
+            />
+          )}
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
                 key="idle"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
@@ -445,13 +487,18 @@ function AnimatedConversation() {
             {phase !== 'idle' && (
               <motion.div
                 key="conversation"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
                 className="space-y-3"
+                ref={listRef}
               >
                 {phase === 'typing1' && (
                   <motion.div
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 18 }}
                     className="rounded-2xl bg-card-surface-alt px-4 py-4"
                   >
                     <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
@@ -468,8 +515,9 @@ function AnimatedConversation() {
 
                 {(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done') && (
                   <motion.div
-                    initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4 }}
+                    initial={{ opacity: 0, x: -12, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 16 }}
                     className="rounded-2xl bg-card-surface-alt px-4 py-3"
                   >
                     <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
@@ -479,8 +527,9 @@ function AnimatedConversation() {
 
                 {(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done') && (
                   <motion.div
-                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.3 }}
+                    initial={{ opacity: 0, x: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 16, delay: 0.2 }}
                     className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
                   >
                     <span className="font-body text-xs font-semibold text-coral">Try:</span>
@@ -490,7 +539,10 @@ function AnimatedConversation() {
 
                 {phase === 'typing2' && (
                   <motion.div
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 18 }}
                     className="rounded-2xl bg-card-surface-alt px-4 py-4"
                   >
                     <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
@@ -507,8 +559,9 @@ function AnimatedConversation() {
 
                 {(phase === 'response2' || phase === 'done') && (
                   <motion.div
-                    initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4 }}
+                    initial={{ opacity: 0, x: -12, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 16 }}
                     className="rounded-2xl bg-card-surface-alt px-4 py-3"
                   >
                     <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
@@ -518,8 +571,9 @@ function AnimatedConversation() {
 
                 {(phase === 'response2' || phase === 'done') && (
                   <motion.div
-                    initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.3 }}
+                    initial={{ opacity: 0, x: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 16, delay: 0.2 }}
                     className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
                   >
                     <span className="font-body text-xs font-semibold text-coral">Try:</span>
@@ -529,7 +583,9 @@ function AnimatedConversation() {
 
                 {phase === 'done' && (
                   <motion.p
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
                     className="font-body text-xs text-coral text-center pt-1"
                   >
                     ✓ Script ready for tonight
@@ -552,6 +608,7 @@ function AnimatedDayPlan() {
   const timers = useRef<number[]>([]);
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
+  const [clickBurst, setClickBurst] = useState(false);
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -566,18 +623,24 @@ function AnimatedDayPlan() {
   }, [isInView]);
 
   useEffect(() => {
+    if (!clickBurst) return;
+    const t = window.setTimeout(() => setClickBurst(false), 300);
+    return () => window.clearTimeout(t);
+  }, [clickBurst]);
+
+  useEffect(() => {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
       timers.current.push(window.setTimeout(() => setPhase('building'), 500));
     } else if (phase === 'building') {
-      timers.current.push(window.setTimeout(() => setPhase('week1'), 1200));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('week1'); }, 1400));
     } else if (phase === 'week1') {
-      timers.current.push(window.setTimeout(() => setPhase('week2'), 700));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('week2'); }, 700));
     } else if (phase === 'week2') {
-      timers.current.push(window.setTimeout(() => setPhase('week3'), 700));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('week3'); }, 700));
     } else if (phase === 'week3') {
-      timers.current.push(window.setTimeout(() => setPhase('week4'), 700));
+      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('week4'); }, 700));
     } else if (phase === 'week4') {
       timers.current.push(window.setTimeout(() => setPhase('done'), 700));
     } else if (phase === 'done') {
@@ -595,12 +658,21 @@ function AnimatedDayPlan() {
         <p className="label-text text-coral mb-1">Your 30-Day Plan</p>
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
 
-        <div className="h-[350px] overflow-hidden bg-white rounded-2xl">
+        <div className="h-[350px] overflow-hidden bg-white rounded-2xl relative">
+          {clickBurst && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0.7 }}
+              animate={{ scale: 3, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
+            />
+          )}
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
                 key="idle"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
@@ -617,7 +689,8 @@ function AnimatedDayPlan() {
             {phase === 'building' && (
               <motion.div
                 key="building"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <div className="flex gap-1.5">
@@ -645,7 +718,9 @@ function AnimatedDayPlan() {
             {(phase !== 'idle' && phase !== 'building') && (
               <motion.div
                 key="weeks"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
                 className="space-y-2.5"
               >
                 {planRows.map((row, i) => {
@@ -659,6 +734,8 @@ function AnimatedDayPlan() {
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     >
                       <motion.div
+                        animate={isVisible && weekPhases.indexOf(weekPhase) === weekPhases.indexOf(phase as typeof weekPhases[number]) ? { scale: [1, 1.02, 1] } : {}}
+                        transition={{ duration: 0.3 }}
                         className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
                         whileHover={shouldReduceMotion ? undefined : { scale: 1.01, borderColor: 'rgba(232,93,62,0.2)' }}
                       >
@@ -683,7 +760,9 @@ function AnimatedDayPlan() {
                 })}
                 {phase === 'done' && (
                   <motion.p
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
                     className="font-body text-xs text-coral text-center pt-2"
                   >
                     ✓ 4-week plan ready
