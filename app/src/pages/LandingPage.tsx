@@ -183,8 +183,8 @@ function AnimatedClarityCheck() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
+  const [burstId, setBurstId] = useState(0);
   const [cursorPos, setCursorPos] = useState({ x: 140, y: 160 });
-  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
 
   function clearTimers() {
@@ -192,16 +192,16 @@ function AnimatedClarityCheck() {
     timers.current = [];
   }
 
-  function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
+  function moveCursor(x: number, y: number) {
     setCursorPos({ x, y });
-    setZoom({ scale: zScale, x: zX, y: zY });
   }
 
   function triggerClick() {
     setCursorClicking(true);
     window.setTimeout(() => setCursorClicking(false), 200);
+    setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 350);
+    window.setTimeout(() => setClickBurst(false), 400);
   }
 
   useEffect(() => {
@@ -209,7 +209,7 @@ function AnimatedClarityCheck() {
       clearTimers();
       setPhase('start');
       setRevealed(0);
-      moveCursor(140, 160, 1, 0, 0);
+      moveCursor(140, 160);
     }
   }, [isInView]);
 
@@ -217,33 +217,32 @@ function AnimatedClarityCheck() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'start') {
-      moveCursor(140, 140, 1, 0, 0);
+      moveCursor(140, 140);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('loading');
       }, 900));
     } else if (phase === 'loading') {
-      const targetY = 195;
-      moveCursor(140, targetY, 1.04, 0, -(targetY - 160) * 1.04);
+      moveCursor(140, 190);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('reveal');
       }, 1600));
     } else if (phase === 'reveal' && revealed < subjectRows.length) {
       const rowCenter = 18 + revealed * 52 + 17;
-      moveCursor(60, rowCenter, 1.04, 0, -(rowCenter - 160) * 1.04);
+      moveCursor(60, rowCenter);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setRevealed(r => r + 1);
       }, 500));
     } else if (phase === 'reveal' && revealed >= subjectRows.length) {
-      moveCursor(140, 270, 1, 0, 0);
+      moveCursor(140, 270);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('done');
       }, 500));
     } else if (phase === 'done') {
-      moveCursor(140, 285, 1, 0, 0);
+      moveCursor(140, 285);
       timers.current.push(window.setTimeout(() => {
         setPhase('start');
         setRevealed(0);
@@ -268,24 +267,14 @@ function AnimatedClarityCheck() {
           {!shouldReduceMotion && (
             <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
-          {clickBurst && (
-            <motion.div
-              key={clickBurst ? 'burst-clarity' : 'none'}
-              initial={{ scale: 0, opacity: 0.6 }}
-              animate={{ scale: 4, opacity: 0 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="absolute w-14 h-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/10 pointer-events-none z-10"
-              style={{ left: cursorPos.x, top: cursorPos.y }}
-            />
-          )}
-          <ZoomArea zoom={zoom}>
+          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
           <AnimatePresence mode="wait">
             {phase === 'start' && (
               <motion.div
                 key="start"
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.12 } }}
+                exit={{ opacity: 0, scale: 1.06, transition: { duration: 0.15, ease: 'easeIn' } }}
                 className="flex flex-col items-center justify-center gap-4 h-full relative overflow-visible"
               >
                 <motion.div
@@ -410,7 +399,6 @@ function AnimatedClarityCheck() {
               </motion.div>
             )}
           </AnimatePresence>
-          </ZoomArea>
         </div>
       </div>
     </FloatingMockCard>
@@ -442,16 +430,26 @@ function SimulatedCursor({ x, y, clicking }: { x: number; y: number; clicking: b
   );
 }
 
-function ZoomArea({ zoom, children }: { zoom: { scale: number; x: number; y: number }; children: ReactNode }) {
+function ClickBurst({ x, y, id }: { x: number; y: number; id: number }) {
   return (
-    <motion.div
-      className="w-full h-full origin-center"
-      animate={{ scale: zoom.scale, x: zoom.x, y: zoom.y }}
-      transition={{ type: 'spring', stiffness: 180, damping: 22, mass: 0.6 }}
-      style={{ willChange: 'transform' }}
-    >
-      {children}
-    </motion.div>
+    <>
+      <motion.div
+        key={`ob-${id}`}
+        initial={{ scale: 0, opacity: 0.65 }}
+        animate={{ scale: 6, opacity: 0 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="absolute w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/8 pointer-events-none z-10"
+        style={{ left: x, top: y }}
+      />
+      <motion.div
+        key={`ib-${id}`}
+        initial={{ scale: 0, opacity: 0.5 }}
+        animate={{ scale: 3, opacity: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut', delay: 0.03 }}
+        className="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/50 pointer-events-none z-10"
+        style={{ left: x, top: y }}
+      />
+    </>
   );
 }
 
@@ -486,8 +484,8 @@ function AnimatedConversation() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
+  const [burstId, setBurstId] = useState(0);
   const [cursorPos, setCursorPos] = useState({ x: 140, y: 160 });
-  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -501,16 +499,16 @@ function AnimatedConversation() {
     timers.current = [];
   }
 
-  function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
+  function moveCursor(x: number, y: number) {
     setCursorPos({ x, y });
-    setZoom({ scale: zScale, x: zX, y: zY });
   }
 
   function triggerClick() {
     setCursorClicking(true);
     window.setTimeout(() => setCursorClicking(false), 200);
+    setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 350);
+    window.setTimeout(() => setClickBurst(false), 400);
   }
 
   useEffect(() => {
@@ -518,7 +516,7 @@ function AnimatedConversation() {
       clearTimers();
       setPhase('idle');
       setTyped('');
-      moveCursor(140, 160, 1, 0, 0);
+      moveCursor(140, 160);
     }
   }, [isInView]);
 
@@ -527,45 +525,45 @@ function AnimatedConversation() {
     clearTimers();
     if (phase === 'idle') {
       setTyped('');
-      moveCursor(140, 140, 1, 0, 0);
+      moveCursor(140, 140);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('typing1');
       }, 900));
     } else if (phase === 'typing1' && typed.length < insteadText1.length) {
-      moveCursor(50, 200, 1.04, 0, -(200 - 165) * 1.04);
+      moveCursor(50, 200);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText1.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing1' && typed.length >= insteadText1.length) {
-      moveCursor(120, 230, 1.04, 0, -(230 - 165) * 1.04);
+      moveCursor(120, 230);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('response1');
       }, 800));
     } else if (phase === 'response1') {
       setTyped('');
-      moveCursor(50, 200, 1, 0, 0);
+      moveCursor(50, 200);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('typing2');
       }, 1200));
     } else if (phase === 'typing2' && typed.length < insteadText2.length) {
-      moveCursor(50, 200, 1.04, 0, -(200 - 165) * 1.04);
+      moveCursor(50, 200);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText2.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing2' && typed.length >= insteadText2.length) {
-      moveCursor(120, 230, 1.04, 0, -(230 - 165) * 1.04);
+      moveCursor(120, 230);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('response2');
       }, 800));
     } else if (phase === 'response2') {
-      moveCursor(140, 310, 1, 0, 0);
+      moveCursor(140, 310);
       timers.current.push(window.setTimeout(() => setPhase('done'), 2500));
     } else if (phase === 'done') {
-      moveCursor(140, 310, 1, 0, 0);
+      moveCursor(140, 310);
       timers.current.push(window.setTimeout(() => {
         setPhase('idle');
         setTyped('');
@@ -585,22 +583,12 @@ function AnimatedConversation() {
           {!shouldReduceMotion && (
             <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
-          {clickBurst && (
-            <motion.div
-              key={clickBurst ? 'burst-convo' : 'none'}
-              initial={{ scale: 0, opacity: 0.6 }}
-              animate={{ scale: 4, opacity: 0 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="absolute w-14 h-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/10 pointer-events-none z-10"
-              style={{ left: cursorPos.x, top: cursorPos.y }}
-            />
-          )}
-          <ZoomArea zoom={zoom}>
+          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
                 key="idle"
-                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.1 } }}
                 className="flex flex-col items-center justify-center gap-4 h-full relative overflow-visible"
               >
@@ -739,7 +727,6 @@ function AnimatedConversation() {
               </motion.div>
             )}
           </AnimatePresence>
-          </ZoomArea>
         </div>
       </div>
     </FloatingMockCard>
@@ -755,36 +742,32 @@ function AnimatedDayPlan() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
+  const [burstId, setBurstId] = useState(0);
   const [cursorPos, setCursorPos] = useState({ x: 140, y: 175 });
-  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
-  const cursorTarget = useRef({ x: 140, y: 175, zScale: 1, zX: 0, zY: 0 });
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
   }
 
-  function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
-    const t = cursorTarget.current;
-    if (t.x === x && t.y === y && t.zScale === zScale && t.zX === zX && t.zY === zY) return;
-    cursorTarget.current = { x, y, zScale, zX, zY };
+  function moveCursor(x: number, y: number) {
     setCursorPos({ x, y });
-    setZoom({ scale: zScale, x: zX, y: zY });
   }
 
   function triggerClick() {
     setCursorClicking(true);
     window.setTimeout(() => setCursorClicking(false), 200);
+    setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 350);
+    window.setTimeout(() => setClickBurst(false), 400);
   }
 
   useEffect(() => {
     if (!isInView) {
       clearTimers();
       setPhase('idle');
-      moveCursor(140, 175, 1, 0, 0);
+      moveCursor(140, 175);
     }
   }, [isInView]);
 
@@ -792,48 +775,43 @@ function AnimatedDayPlan() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
-      moveCursor(140, 140, 1, 0, 0);
+      moveCursor(140, 140);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('building');
       }, 900));
     } else if (phase === 'building') {
-      const targetY = 220;
-      moveCursor(140, targetY, 1.04, 0, -(targetY - 175) * 1.04);
+      moveCursor(140, 220);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week1');
       }, 1400));
     } else if (phase === 'week1') {
-      const rowCenter = 35;
-      moveCursor(40, rowCenter, 1.04, 0, -(rowCenter - 175) * 1.04);
+      moveCursor(40, 35);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week2');
       }, 700));
     } else if (phase === 'week2') {
-      const rowCenter = 87;
-      moveCursor(40, rowCenter, 1.04, 0, -(rowCenter - 175) * 1.04);
+      moveCursor(40, 87);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week3');
       }, 700));
     } else if (phase === 'week3') {
-      const rowCenter = 139;
-      moveCursor(40, rowCenter, 1.04, 0, -(rowCenter - 175) * 1.04);
+      moveCursor(40, 139);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week4');
       }, 700));
     } else if (phase === 'week4') {
-      const rowCenter = 191;
-      moveCursor(40, rowCenter, 1.04, 0, -(rowCenter - 175) * 1.04);
+      moveCursor(40, 191);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('done');
       }, 700));
     } else if (phase === 'done') {
-      moveCursor(140, 315, 1, 0, 0);
+      moveCursor(140, 315);
       timers.current.push(window.setTimeout(() => setPhase('idle'), 3000));
     }
     return clearTimers;
@@ -852,17 +830,7 @@ function AnimatedDayPlan() {
           {!shouldReduceMotion && (
             <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
-          {clickBurst && (
-            <motion.div
-              key={clickBurst ? 'burst-dayplan' : 'none'}
-              initial={{ scale: 0, opacity: 0.6 }}
-              animate={{ scale: 4, opacity: 0 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="absolute w-14 h-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/10 pointer-events-none z-10"
-              style={{ left: cursorPos.x, top: cursorPos.y }}
-            />
-          )}
-          <ZoomArea zoom={zoom}>
+          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
@@ -981,7 +949,6 @@ function AnimatedDayPlan() {
               </motion.div>
             )}
           </AnimatePresence>
-          </ZoomArea>
         </div>
       </div>
     </FloatingMockCard>
