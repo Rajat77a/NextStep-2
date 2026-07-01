@@ -186,7 +186,6 @@ function AnimatedClarityCheck() {
   const [cursorPos, setCursorPos] = useState({ x: 140, y: 160 });
   const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
-  const cursorTarget = useRef({ x: 140, y: 160, zScale: 1, zX: 0, zY: 0 });
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -194,9 +193,6 @@ function AnimatedClarityCheck() {
   }
 
   function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
-    const t = cursorTarget.current;
-    if (t.x === x && t.y === y && t.zScale === zScale && t.zX === zX && t.zY === zY) return;
-    cursorTarget.current = { x, y, zScale, zX, zY };
     setCursorPos({ x, y });
     setZoom({ scale: zScale, x: zX, y: zY });
   }
@@ -221,25 +217,25 @@ function AnimatedClarityCheck() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'start') {
-      moveCursor(140, 115, 1, 0, 0);
+      moveCursor(140, 140, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('loading');
-      }, 800));
+      }, 900));
     } else if (phase === 'loading') {
       const targetY = 195;
-      moveCursor(140, targetY, 1.18, 0, -(targetY - 160) * 1.18);
+      moveCursor(140, targetY, 1.04, 0, -(targetY - 160) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('reveal');
       }, 1600));
     } else if (phase === 'reveal' && revealed < subjectRows.length) {
       const rowCenter = 18 + revealed * 52 + 17;
-      moveCursor(60, rowCenter, 1.18, 0, -(rowCenter - 160) * 1.18);
+      moveCursor(60, rowCenter, 1.04, 0, -(rowCenter - 160) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setRevealed(r => r + 1);
-      }, 420));
+      }, 500));
     } else if (phase === 'reveal' && revealed >= subjectRows.length) {
       moveCursor(140, 270, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
@@ -251,7 +247,7 @@ function AnimatedClarityCheck() {
       timers.current.push(window.setTimeout(() => {
         setPhase('start');
         setRevealed(0);
-      }, 2500));
+      }, 3000));
     }
     return clearTimers;
   }, [phase, revealed, shouldReduceMotion, paused, isInView]);
@@ -275,10 +271,10 @@ function AnimatedClarityCheck() {
           {clickBurst && (
             <motion.div
               key={clickBurst ? 'burst-clarity' : 'none'}
-              initial={{ scale: 0, opacity: 0.5 }}
-              animate={{ scale: 3.5, opacity: 0 }}
+              initial={{ scale: 0, opacity: 0.6 }}
+              animate={{ scale: 4, opacity: 0 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/12 pointer-events-none z-10"
+              className="absolute w-14 h-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/10 pointer-events-none z-10"
               style={{ left: cursorPos.x, top: cursorPos.y }}
             />
           )}
@@ -287,21 +283,32 @@ function AnimatedClarityCheck() {
             {phase === 'start' && (
               <motion.div
                 key="start"
-                initial={{ opacity: 0, scale: 0.85 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.12 } }}
-                className="flex flex-col items-center justify-center gap-4 h-full"
+                exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.12 } }}
+                className="flex flex-col items-center justify-center gap-4 h-full relative overflow-visible"
               >
                 <motion.div
-                  animate={shouldReduceMotion ? undefined : { y: [0, -3, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-24 h-24 rounded-2xl border-2 border-dashed border-coral/30 bg-coral/3 flex items-center justify-center"
+                  initial={{ y: -100, opacity: 0, rotate: -6 }}
+                  animate={{ y: 0, opacity: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 130, damping: 16, delay: 0.1 }}
+                  className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
+                  style={{ top: '26%' }}
+                >
+                  <FileText size={15} className="text-coral" />
+                  <span className="font-body text-xs font-semibold text-charcoal/70">Term2_Report.pdf</span>
+                </motion.div>
+                <motion.div
+                  initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
+                  animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
+                  transition={{ delay: 0.5, duration: 0.4 }}
+                  className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
                 >
                   <Upload size={32} className="text-coral/50" />
                 </motion.div>
-                <div className="text-center">
-                  <p className="font-body text-sm font-semibold text-charcoal/70">Upload report card</p>
-                  <p className="font-body text-xs text-charcoal/40 mt-0.5">Tap anywhere to begin</p>
+                <div className="text-center mt-14">
+                  <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
+                  <p className="font-body text-xs text-charcoal/40 mt-0.5">Analyzing performance...</p>
                 </div>
               </motion.div>
             )}
@@ -419,16 +426,17 @@ function SimulatedCursor({ x, y, clicking }: { x: number; y: number; clicking: b
     <motion.div
       className="absolute z-30 pointer-events-none"
       style={{ left: 0, top: 0 }}
+      initial={false}
       animate={{ x, y }}
-      transition={{ type: 'spring', stiffness: 100, damping: 16, mass: 0.7 }}
+      transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.4 }}
     >
       <motion.svg
         width="20" height="26" viewBox="0 0 20 26" fill="none"
-        animate={clicking ? { scaleY: 0.85, scaleX: 0.92, y: 3 } : { scaleY: 1, scaleX: 1, y: 0 }}
+        animate={clicking ? { scaleY: 0.75, scaleX: 0.88, y: 4 } : { scaleY: 1, scaleX: 1, y: 0 }}
         transition={{ duration: 0.1, ease: 'easeInOut' }}
         style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.25))' }}
       >
-        <path d="M2 2V21L6.5 16.5L10 23L13 21.5L9.5 15H16.5L2 2Z" fill="white" stroke="#555" strokeWidth="1.3" strokeLinejoin="round" />
+        <path d="M2 2V21L6.5 16.5L10 23L13 21.5L9.5 15H16.5L2 2Z" fill="white" stroke="#444" strokeWidth="1.3" strokeLinejoin="round" />
       </motion.svg>
     </motion.div>
   );
@@ -481,7 +489,6 @@ function AnimatedConversation() {
   const [cursorPos, setCursorPos] = useState({ x: 140, y: 160 });
   const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
-  const cursorTarget = useRef({ x: 140, y: 160, zScale: 1, zX: 0, zY: 0 });
   const listRef = useRef<HTMLDivElement>(null);
 
   const insteadText1 = 'How did you get a C in Science?';
@@ -495,9 +502,6 @@ function AnimatedConversation() {
   }
 
   function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
-    const t = cursorTarget.current;
-    if (t.x === x && t.y === y && t.zScale === zScale && t.zX === zX && t.zY === zY) return;
-    cursorTarget.current = { x, y, zScale, zX, zY };
     setCursorPos({ x, y });
     setZoom({ scale: zScale, x: zX, y: zY });
   }
@@ -523,18 +527,18 @@ function AnimatedConversation() {
     clearTimers();
     if (phase === 'idle') {
       setTyped('');
-      moveCursor(140, 125, 1, 0, 0);
+      moveCursor(140, 140, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('typing1');
-      }, 600));
+      }, 900));
     } else if (phase === 'typing1' && typed.length < insteadText1.length) {
-      moveCursor(50, 200, 1.15, 0, -(200 - 165) * 1.15);
+      moveCursor(50, 200, 1.04, 0, -(200 - 165) * 1.04);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText1.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing1' && typed.length >= insteadText1.length) {
-      moveCursor(120, 230, 1.12, 0, -(230 - 165) * 1.12);
+      moveCursor(120, 230, 1.04, 0, -(230 - 165) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('response1');
@@ -547,12 +551,12 @@ function AnimatedConversation() {
         setPhase('typing2');
       }, 1200));
     } else if (phase === 'typing2' && typed.length < insteadText2.length) {
-      moveCursor(50, 200, 1.15, 0, -(200 - 165) * 1.15);
+      moveCursor(50, 200, 1.04, 0, -(200 - 165) * 1.04);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText2.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing2' && typed.length >= insteadText2.length) {
-      moveCursor(120, 230, 1.12, 0, -(230 - 165) * 1.12);
+      moveCursor(120, 230, 1.04, 0, -(230 - 165) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('response2');
@@ -565,7 +569,7 @@ function AnimatedConversation() {
       timers.current.push(window.setTimeout(() => {
         setPhase('idle');
         setTyped('');
-      }, 2000));
+      }, 3000));
     }
     return clearTimers;
   }, [phase, typed, shouldReduceMotion, paused, isInView]);
@@ -584,10 +588,10 @@ function AnimatedConversation() {
           {clickBurst && (
             <motion.div
               key={clickBurst ? 'burst-convo' : 'none'}
-              initial={{ scale: 0, opacity: 0.5 }}
-              animate={{ scale: 3.5, opacity: 0 }}
+              initial={{ scale: 0, opacity: 0.6 }}
+              animate={{ scale: 4, opacity: 0 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/12 pointer-events-none z-10"
+              className="absolute w-14 h-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/10 pointer-events-none z-10"
               style={{ left: cursorPos.x, top: cursorPos.y }}
             />
           )}
@@ -596,18 +600,32 @@ function AnimatedConversation() {
             {phase === 'idle' && (
               <motion.div
                 key="idle"
-                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
-                className="flex flex-col items-center justify-center gap-3 h-full"
+                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.1 } }}
+                className="flex flex-col items-center justify-center gap-4 h-full relative overflow-visible"
               >
                 <motion.div
-                  animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-14 h-14 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+                  initial={{ y: -100, opacity: 0, rotate: -6 }}
+                  animate={{ y: 0, opacity: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 130, damping: 16, delay: 0.1 }}
+                  className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
+                  style={{ top: '26%' }}
                 >
-                  <MessageCircle size={24} className="text-coral/60" />
+                  <FileText size={15} className="text-coral" />
+                  <span className="font-body text-xs font-semibold text-charcoal/70">Report_Q2.pdf</span>
                 </motion.div>
-                <p className="font-body text-sm text-charcoal/50">Tap to generate script</p>
+                <motion.div
+                  initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
+                  animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
+                  transition={{ delay: 0.5, duration: 0.4 }}
+                  className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
+                >
+                  <Upload size={32} className="text-coral/50" />
+                </motion.div>
+                <div className="text-center mt-14">
+                  <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
+                  <p className="font-body text-xs text-charcoal/40 mt-0.5">Generating conversation guide...</p>
+                </div>
               </motion.div>
             )}
 
@@ -774,49 +792,49 @@ function AnimatedDayPlan() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
-      moveCursor(140, 135, 1, 0, 0);
+      moveCursor(140, 140, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('building');
-      }, 600));
+      }, 900));
     } else if (phase === 'building') {
       const targetY = 220;
-      moveCursor(140, targetY, 1.18, 0, -(targetY - 175) * 1.18);
+      moveCursor(140, targetY, 1.04, 0, -(targetY - 175) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week1');
       }, 1400));
     } else if (phase === 'week1') {
       const rowCenter = 35;
-      moveCursor(40, rowCenter, 1.18, 0, -(rowCenter - 175) * 1.18);
+      moveCursor(40, rowCenter, 1.04, 0, -(rowCenter - 175) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week2');
       }, 700));
     } else if (phase === 'week2') {
       const rowCenter = 87;
-      moveCursor(40, rowCenter, 1.18, 0, -(rowCenter - 175) * 1.18);
+      moveCursor(40, rowCenter, 1.04, 0, -(rowCenter - 175) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week3');
       }, 700));
     } else if (phase === 'week3') {
       const rowCenter = 139;
-      moveCursor(40, rowCenter, 1.18, 0, -(rowCenter - 175) * 1.18);
+      moveCursor(40, rowCenter, 1.04, 0, -(rowCenter - 175) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week4');
       }, 700));
     } else if (phase === 'week4') {
       const rowCenter = 191;
-      moveCursor(40, rowCenter, 1.18, 0, -(rowCenter - 175) * 1.18);
+      moveCursor(40, rowCenter, 1.04, 0, -(rowCenter - 175) * 1.04);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('done');
       }, 700));
     } else if (phase === 'done') {
       moveCursor(140, 315, 1, 0, 0);
-      timers.current.push(window.setTimeout(() => setPhase('idle'), 2500));
+      timers.current.push(window.setTimeout(() => setPhase('idle'), 3000));
     }
     return clearTimers;
   }, [phase, shouldReduceMotion, paused, isInView]);
@@ -837,10 +855,10 @@ function AnimatedDayPlan() {
           {clickBurst && (
             <motion.div
               key={clickBurst ? 'burst-dayplan' : 'none'}
-              initial={{ scale: 0, opacity: 0.5 }}
-              animate={{ scale: 3.5, opacity: 0 }}
+              initial={{ scale: 0, opacity: 0.6 }}
+              animate={{ scale: 4, opacity: 0 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/12 pointer-events-none z-10"
+              className="absolute w-14 h-14 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/10 pointer-events-none z-10"
               style={{ left: cursorPos.x, top: cursorPos.y }}
             />
           )}
@@ -849,18 +867,32 @@ function AnimatedDayPlan() {
             {phase === 'idle' && (
               <motion.div
                 key="idle"
-                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
-                className="flex flex-col items-center justify-center gap-3 h-full"
+                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.1 } }}
+                className="flex flex-col items-center justify-center gap-4 h-full relative overflow-visible"
               >
                 <motion.div
-                  animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-14 h-14 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+                  initial={{ y: -100, opacity: 0, rotate: -6 }}
+                  animate={{ y: 0, opacity: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 130, damping: 16, delay: 0.1 }}
+                  className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
+                  style={{ top: '26%' }}
                 >
-                  <Calendar size={24} className="text-coral/60" />
+                  <FileText size={15} className="text-coral" />
+                  <span className="font-body text-xs font-semibold text-charcoal/70">Term_2_Grade.pdf</span>
                 </motion.div>
-                <p className="font-body text-sm text-charcoal/50">Tap to build your plan</p>
+                <motion.div
+                  initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
+                  animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
+                  transition={{ delay: 0.5, duration: 0.4 }}
+                  className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
+                >
+                  <Upload size={32} className="text-coral/50" />
+                </motion.div>
+                <div className="text-center mt-14">
+                  <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
+                  <p className="font-body text-xs text-charcoal/40 mt-0.5">Creating 30-day improvement plan...</p>
+                </div>
               </motion.div>
             )}
 
