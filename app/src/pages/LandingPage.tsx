@@ -183,9 +183,10 @@ function AnimatedClarityCheck() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [cursorPos, setCursorPos] = useState({ x: 140, y: 160 });
   const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
+  const cursorTarget = useRef({ x: 140, y: 160, zScale: 1, zX: 0, zY: 0 });
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -193,6 +194,9 @@ function AnimatedClarityCheck() {
   }
 
   function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
+    const t = cursorTarget.current;
+    if (t.x === x && t.y === y && t.zScale === zScale && t.zX === zX && t.zY === zY) return;
+    cursorTarget.current = { x, y, zScale, zX, zY };
     setCursorPos({ x, y });
     setZoom({ scale: zScale, x: zX, y: zY });
   }
@@ -201,7 +205,7 @@ function AnimatedClarityCheck() {
     setCursorClicking(true);
     window.setTimeout(() => setCursorClicking(false), 200);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 300);
+    window.setTimeout(() => setClickBurst(false), 350);
   }
 
   useEffect(() => {
@@ -209,7 +213,7 @@ function AnimatedClarityCheck() {
       clearTimers();
       setPhase('start');
       setRevealed(0);
-      setZoom({ scale: 1, x: 0, y: 0 });
+      moveCursor(140, 160, 1, 0, 0);
     }
   }, [isInView]);
 
@@ -217,32 +221,33 @@ function AnimatedClarityCheck() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'start') {
-      moveCursor(135, 115, 1, 0, 0);
+      moveCursor(140, 115, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('loading');
       }, 800));
     } else if (phase === 'loading') {
-      moveCursor(135, 190, 1.04, 0, -28);
+      const targetY = 195;
+      moveCursor(140, targetY, 1.18, 0, -(targetY - 160) * 1.18);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('reveal');
       }, 1600));
     } else if (phase === 'reveal' && revealed < subjectRows.length) {
-      const rowCenter = 18 + revealed * 52;
-      moveCursor(60, rowCenter, 1.06, 0, -(rowCenter - 160) * 1.06);
+      const rowCenter = 18 + revealed * 52 + 17;
+      moveCursor(60, rowCenter, 1.18, 0, -(rowCenter - 160) * 1.18);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setRevealed(r => r + 1);
       }, 420));
     } else if (phase === 'reveal' && revealed >= subjectRows.length) {
-      moveCursor(135, 270, 1, 0, 0);
+      moveCursor(140, 270, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('done');
       }, 500));
     } else if (phase === 'done') {
-      moveCursor(135, 285, 1, 0, 0);
+      moveCursor(140, 285, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         setPhase('start');
         setRevealed(0);
@@ -265,14 +270,16 @@ function AnimatedClarityCheck() {
 
         <div className="h-[320px] overflow-hidden bg-white rounded-2xl relative">
           {!shouldReduceMotion && (
-            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} zoom={zoom.scale} />
+            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
           {clickBurst && (
             <motion.div
-              initial={{ scale: 0, opacity: 0.7 }}
-              animate={{ scale: 3, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
+              key={clickBurst ? 'burst-clarity' : 'none'}
+              initial={{ scale: 0, opacity: 0.5 }}
+              animate={{ scale: 3.5, opacity: 0 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/12 pointer-events-none z-10"
+              style={{ left: cursorPos.x, top: cursorPos.y }}
             />
           )}
           <ZoomArea zoom={zoom}>
@@ -280,37 +287,48 @@ function AnimatedClarityCheck() {
             {phase === 'start' && (
               <motion.div
                 key="start"
-                initial={{ opacity: 0, scale: 0.92 }}
+                initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.15 } }}
-                className="flex flex-col items-center justify-center gap-3 h-full"
+                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.12 } }}
+                className="flex flex-col items-center justify-center gap-4 h-full"
               >
                 <motion.div
-                  animate={shouldReduceMotion ? undefined : { scale: [1, 1.04, 1] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-14 h-14 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+                  animate={shouldReduceMotion ? undefined : { y: [0, -3, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-24 h-24 rounded-2xl border-2 border-dashed border-coral/30 bg-coral/3 flex items-center justify-center"
                 >
-                  <FileText size={24} className="text-coral/60" />
+                  <Upload size={32} className="text-coral/50" />
                 </motion.div>
-                <p className="font-body text-sm text-charcoal/50">Report card received</p>
+                <div className="text-center">
+                  <p className="font-body text-sm font-semibold text-charcoal/70">Upload report card</p>
+                  <p className="font-body text-xs text-charcoal/40 mt-0.5">Tap anywhere to begin</p>
+                </div>
               </motion.div>
             )}
 
             {phase === 'loading' && (
               <motion.div
                 key="loading"
-                initial={{ opacity: 0, scale: 0.92 }}
+                initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.15 } }}
+                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.12 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+                  className="w-10 h-10 rounded-xl bg-coral/8 border border-coral/15 flex items-center justify-center"
+                >
+                  <FileText size={18} className="text-coral/60" />
+                </motion.div>
                 <motion.div
                   animate={shouldReduceMotion ? undefined : { rotate: 360 }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
                   className="w-6 h-6 rounded-full border-2 border-coral/20 border-t-coral"
                 />
                 <p className="font-body text-sm text-charcoal/50">
-                  Analyzing
+                  Analyzing report card
                   <motion.span
                     animate={{ opacity: [0, 1, 0] }}
                     transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
@@ -321,7 +339,7 @@ function AnimatedClarityCheck() {
                     initial={{ width: '0%' }}
                     animate={{ width: '100%' }}
                     transition={{ duration: 1.2, ease: 'easeInOut' }}
-                    className="h-full rounded-full bg-coral"
+                    className="h-full rounded-full bg-gradient-to-r from-coral to-sage"
                   />
                 </div>
               </motion.div>
@@ -330,21 +348,21 @@ function AnimatedClarityCheck() {
             {(phase === 'reveal' || phase === 'done') && (
               <motion.div
                 key="results"
-                initial={{ opacity: 0, scale: 0.92 }}
+                initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.15 } }}
+                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.12 } }}
                 className="space-y-2.5"
               >
                 {subjectRows.map((row, i) => (
                   <motion.div
                     key={row.subject}
                     className="relative"
-                    initial={shouldReduceMotion ? false : { opacity: 0, x: -12 }}
-                    animate={revealed > i ? { opacity: 1, x: 0 } : { opacity: 0, x: -12 }}
+                    initial={shouldReduceMotion ? false : { opacity: 0, x: -16 }}
+                    animate={revealed > i ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
                   >
                     <motion.div
-                      animate={revealed > i && revealed - 1 === i ? { scale: [1, 1.02, 1] } : {}}
+                      animate={revealed > i && revealed - 1 === i ? { scale: [1, 1.025, 1] } : {}}
                       transition={{ duration: 0.3 }}
                       className={`flex items-center justify-between rounded-xl border border-light-gray px-4 py-3 ${revealed > i ? 'bg-card-surface-alt' : ''}`}
                     >
@@ -393,7 +411,7 @@ function AnimatedClarityCheck() {
   );
 }
 
-function SimulatedCursor({ x, y, clicking, zoom }: { x: number; y: number; clicking: boolean; zoom: number }) {
+function SimulatedCursor({ x, y, clicking }: { x: number; y: number; clicking: boolean }) {
   const shouldReduceMotion = useReducedMotion();
   if (shouldReduceMotion) return null;
 
@@ -402,15 +420,15 @@ function SimulatedCursor({ x, y, clicking, zoom }: { x: number; y: number; click
       className="absolute z-30 pointer-events-none"
       style={{ left: 0, top: 0 }}
       animate={{ x, y }}
-      transition={{ type: 'spring', stiffness: 120, damping: 18, mass: 0.8 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 16, mass: 0.7 }}
     >
       <motion.svg
-        width="18" height="24" viewBox="0 0 18 24" fill="none"
-        animate={clicking ? { scaleY: 0.8, scaleX: 0.9, y: 3 } : { scaleY: 1, scaleX: 1, y: 0 }}
-        transition={{ duration: 0.12, ease: 'easeInOut' }}
-        style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}
+        width="20" height="26" viewBox="0 0 20 26" fill="none"
+        animate={clicking ? { scaleY: 0.85, scaleX: 0.92, y: 3 } : { scaleY: 1, scaleX: 1, y: 0 }}
+        transition={{ duration: 0.1, ease: 'easeInOut' }}
+        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.25))' }}
       >
-        <path d="M2 1.5V19L6.5 14.5L10 21.5L12.5 20.5L9 13.5H16L2 1.5Z" fill="#1a1a1a" stroke="white" strokeWidth="0.6" strokeLinejoin="round" />
+        <path d="M2 2V21L6.5 16.5L10 23L13 21.5L9.5 15H16.5L2 2Z" fill="white" stroke="#555" strokeWidth="1.3" strokeLinejoin="round" />
       </motion.svg>
     </motion.div>
   );
@@ -460,9 +478,10 @@ function AnimatedConversation() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [cursorPos, setCursorPos] = useState({ x: 140, y: 160 });
   const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
+  const cursorTarget = useRef({ x: 140, y: 160, zScale: 1, zX: 0, zY: 0 });
   const listRef = useRef<HTMLDivElement>(null);
 
   const insteadText1 = 'How did you get a C in Science?';
@@ -476,6 +495,9 @@ function AnimatedConversation() {
   }
 
   function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
+    const t = cursorTarget.current;
+    if (t.x === x && t.y === y && t.zScale === zScale && t.zX === zX && t.zY === zY) return;
+    cursorTarget.current = { x, y, zScale, zX, zY };
     setCursorPos({ x, y });
     setZoom({ scale: zScale, x: zX, y: zY });
   }
@@ -484,7 +506,7 @@ function AnimatedConversation() {
     setCursorClicking(true);
     window.setTimeout(() => setCursorClicking(false), 200);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 300);
+    window.setTimeout(() => setClickBurst(false), 350);
   }
 
   useEffect(() => {
@@ -492,7 +514,7 @@ function AnimatedConversation() {
       clearTimers();
       setPhase('idle');
       setTyped('');
-      setZoom({ scale: 1, x: 0, y: 0 });
+      moveCursor(140, 160, 1, 0, 0);
     }
   }, [isInView]);
 
@@ -505,38 +527,38 @@ function AnimatedConversation() {
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('typing1');
-      }, 500));
+      }, 600));
     } else if (phase === 'typing1' && typed.length < insteadText1.length) {
-      moveCursor(30, 200, 1.04, 0, -30);
+      moveCursor(50, 200, 1.15, 0, -(200 - 165) * 1.15);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText1.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing1' && typed.length >= insteadText1.length) {
-      moveCursor(100, 230, 1.06, 0, -55);
+      moveCursor(120, 230, 1.12, 0, -(230 - 165) * 1.12);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('response1');
       }, 800));
     } else if (phase === 'response1') {
       setTyped('');
-      moveCursor(30, 200, 1, 0, 0);
+      moveCursor(50, 200, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('typing2');
       }, 1200));
     } else if (phase === 'typing2' && typed.length < insteadText2.length) {
-      moveCursor(30, 200, 1.04, 0, -30);
+      moveCursor(50, 200, 1.15, 0, -(200 - 165) * 1.15);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText2.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing2' && typed.length >= insteadText2.length) {
-      moveCursor(100, 230, 1.06, 0, -55);
+      moveCursor(120, 230, 1.12, 0, -(230 - 165) * 1.12);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('response2');
       }, 800));
     } else if (phase === 'response2') {
-      moveCursor(140, 300, 1, 0, 0);
+      moveCursor(140, 310, 1, 0, 0);
       timers.current.push(window.setTimeout(() => setPhase('done'), 2500));
     } else if (phase === 'done') {
       moveCursor(140, 310, 1, 0, 0);
@@ -557,14 +579,16 @@ function AnimatedConversation() {
 
         <div className="h-[330px] overflow-hidden bg-white rounded-2xl relative">
           {!shouldReduceMotion && (
-            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} zoom={zoom.scale} />
+            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
           {clickBurst && (
             <motion.div
-              initial={{ scale: 0, opacity: 0.7 }}
-              animate={{ scale: 3, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
+              key={clickBurst ? 'burst-convo' : 'none'}
+              initial={{ scale: 0, opacity: 0.5 }}
+              animate={{ scale: 3.5, opacity: 0 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/12 pointer-events-none z-10"
+              style={{ left: cursorPos.x, top: cursorPos.y }}
             />
           )}
           <ZoomArea zoom={zoom}>
@@ -572,27 +596,27 @@ function AnimatedConversation() {
             {phase === 'idle' && (
               <motion.div
                 key="idle"
-                initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
+                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
                   animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-12 h-12 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+                  className="w-14 h-14 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
                 >
-                  <MessageCircle size={22} className="text-coral/60" />
+                  <MessageCircle size={24} className="text-coral/60" />
                 </motion.div>
-                <p className="font-body text-sm text-charcoal/50">Ready to reframe</p>
+                <p className="font-body text-sm text-charcoal/50">Tap to generate script</p>
               </motion.div>
             )}
 
             {phase !== 'idle' && (
               <motion.div
                 key="conversation"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
+                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
                 className="space-y-3"
                 ref={listRef}
               >
@@ -713,9 +737,10 @@ function AnimatedDayPlan() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [cursorPos, setCursorPos] = useState({ x: 140, y: 175 });
   const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [cursorClicking, setCursorClicking] = useState(false);
+  const cursorTarget = useRef({ x: 140, y: 175, zScale: 1, zX: 0, zY: 0 });
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -723,6 +748,9 @@ function AnimatedDayPlan() {
   }
 
   function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
+    const t = cursorTarget.current;
+    if (t.x === x && t.y === y && t.zScale === zScale && t.zX === zX && t.zY === zY) return;
+    cursorTarget.current = { x, y, zScale, zX, zY };
     setCursorPos({ x, y });
     setZoom({ scale: zScale, x: zX, y: zY });
   }
@@ -731,14 +759,14 @@ function AnimatedDayPlan() {
     setCursorClicking(true);
     window.setTimeout(() => setCursorClicking(false), 200);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 300);
+    window.setTimeout(() => setClickBurst(false), 350);
   }
 
   useEffect(() => {
     if (!isInView) {
       clearTimers();
       setPhase('idle');
-      setZoom({ scale: 1, x: 0, y: 0 });
+      moveCursor(140, 175, 1, 0, 0);
     }
   }, [isInView]);
 
@@ -750,39 +778,44 @@ function AnimatedDayPlan() {
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('building');
-      }, 500));
+      }, 600));
     } else if (phase === 'building') {
-      moveCursor(140, 215, 1.04, 0, -42);
+      const targetY = 220;
+      moveCursor(140, targetY, 1.18, 0, -(targetY - 175) * 1.18);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week1');
       }, 1400));
     } else if (phase === 'week1') {
-      moveCursor(40, 20, 1.06, 0, -(20 - 175) * 1.06);
+      const rowCenter = 35;
+      moveCursor(40, rowCenter, 1.18, 0, -(rowCenter - 175) * 1.18);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week2');
       }, 700));
     } else if (phase === 'week2') {
-      moveCursor(40, 72, 1.06, 0, -(72 - 175) * 1.06);
+      const rowCenter = 87;
+      moveCursor(40, rowCenter, 1.18, 0, -(rowCenter - 175) * 1.18);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week3');
       }, 700));
     } else if (phase === 'week3') {
-      moveCursor(40, 124, 1.06, 0, -(124 - 175) * 1.06);
+      const rowCenter = 139;
+      moveCursor(40, rowCenter, 1.18, 0, -(rowCenter - 175) * 1.18);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('week4');
       }, 700));
     } else if (phase === 'week4') {
-      moveCursor(40, 176, 1.06, 0, -(176 - 175) * 1.06);
+      const rowCenter = 191;
+      moveCursor(40, rowCenter, 1.18, 0, -(rowCenter - 175) * 1.18);
       timers.current.push(window.setTimeout(() => {
         triggerClick();
         setPhase('done');
       }, 700));
     } else if (phase === 'done') {
-      moveCursor(140, 305, 1, 0, 0);
+      moveCursor(140, 315, 1, 0, 0);
       timers.current.push(window.setTimeout(() => setPhase('idle'), 2500));
     }
     return clearTimers;
@@ -799,14 +832,16 @@ function AnimatedDayPlan() {
 
         <div className="h-[350px] overflow-hidden bg-white rounded-2xl relative">
           {!shouldReduceMotion && (
-            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} zoom={zoom.scale} />
+            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
           {clickBurst && (
             <motion.div
-              initial={{ scale: 0, opacity: 0.7 }}
-              animate={{ scale: 3, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
+              key={clickBurst ? 'burst-dayplan' : 'none'}
+              initial={{ scale: 0, opacity: 0.5 }}
+              animate={{ scale: 3.5, opacity: 0 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/12 pointer-events-none z-10"
+              style={{ left: cursorPos.x, top: cursorPos.y }}
             />
           )}
           <ZoomArea zoom={zoom}>
@@ -814,26 +849,26 @@ function AnimatedDayPlan() {
             {phase === 'idle' && (
               <motion.div
                 key="idle"
-                initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
+                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <motion.div
                   animate={shouldReduceMotion ? undefined : { y: [-2, 2, -2] }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-12 h-12 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
+                  className="w-14 h-14 rounded-2xl bg-card-surface-alt border border-light-gray flex items-center justify-center"
                 >
-                  <Calendar size={22} className="text-coral/60" />
+                  <Calendar size={24} className="text-coral/60" />
                 </motion.div>
-                <p className="font-body text-sm text-charcoal/50">Ready to build your plan</p>
+                <p className="font-body text-sm text-charcoal/50">Tap to build your plan</p>
               </motion.div>
             )}
 
             {phase === 'building' && (
               <motion.div
                 key="building"
-                initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
+                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
                 className="flex flex-col items-center justify-center gap-3 h-full"
               >
                 <div className="flex gap-1.5">
@@ -852,7 +887,7 @@ function AnimatedDayPlan() {
                     initial={{ width: '0%' }}
                     animate={{ width: '100%' }}
                     transition={{ duration: 1, ease: 'easeInOut' }}
-                    className="h-full rounded-full bg-coral"
+                    className="h-full rounded-full bg-gradient-to-r from-coral to-sage"
                   />
                 </div>
               </motion.div>
@@ -861,9 +896,9 @@ function AnimatedDayPlan() {
             {(phase !== 'idle' && phase !== 'building') && (
               <motion.div
                 key="weeks"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.1 } }}
+                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
                 className="space-y-2.5"
               >
                 {planRows.map((row, i) => {
@@ -877,7 +912,7 @@ function AnimatedDayPlan() {
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     >
                       <motion.div
-                        animate={isVisible && weekPhases.indexOf(weekPhase) === weekPhases.indexOf(phase as typeof weekPhases[number]) ? { scale: [1, 1.02, 1] } : {}}
+                        animate={isVisible && weekPhases.indexOf(weekPhase) === weekPhases.indexOf(phase as typeof weekPhases[number]) ? { scale: [1, 1.025, 1] } : {}}
                         transition={{ duration: 0.3 }}
                         className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
                         whileHover={shouldReduceMotion ? undefined : { scale: 1.01, borderColor: 'rgba(232,93,62,0.2)' }}
