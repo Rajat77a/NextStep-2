@@ -54,19 +54,7 @@ export default function ClassManagement() {
       );
     });
 
-    const allAcceptedTeachers = users.filter((teacher) => {
-      return (
-        teacher.role === 'teacher' &&
-        teacher.invitationStatus === 'accepted' &&
-        !alreadyAssignedTeacherIds.has(teacher.id)
-      );
-    });
-
-    setTeachers(
-      acceptedTeachersForSchool.length > 0
-        ? acceptedTeachersForSchool
-        : allAcceptedTeachers
-    );
+    setTeachers(acceptedTeachersForSchool);
   };
 
   const resetForm = () => {

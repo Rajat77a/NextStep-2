@@ -13,6 +13,7 @@ import type {
   PlanProgress,
   ApiError,
   DashboardSummary,
+  AIReportAnalysis,
 } from '@/types';
 
 function createApiError(code: number, message: string): ApiError {
@@ -435,6 +436,8 @@ export async function getReportCards(filters?: {
   const { data: sessionData } = await supabase.auth.getSession();
   const supaUserId = sessionData.session?.user?.id;
 
+  let reportCards: ReportCard[] = [];
+
   // Build query — fetch from Supabase for authenticated users
   if (supaUserId) {
     let query = supabase
@@ -454,33 +457,39 @@ export async function getReportCards(filters?: {
             const studentIds = (myStudents ?? []).map((s: any) => s.id);
       if (studentIds.length > 0) {
         query = query.in('student_id', studentIds);
-      } else {
-        query = query.eq('uploaded_by', supaUserId);
       }
+      // If no students found (teacher/admin), don't scope — RLS handles it
     }
 
     const { data, error } = await query;
-    if (error) throw createApiError(500, error.message);
+    if (!error && data && data.length > 0) {
+      reportCards = data.map((row) => ({
+        id: row.id,
+        studentId: row.student_id,
+        classId: row.class_id ?? 'parent-local-class',
+        term: row.term,
+        uploadedBy: row.uploaded_by,
+        uploadMethod: (row.upload_source as any) || 'parent',
+        boardType: row.board_type as any,
+        createdAt: row.created_at,
+        status: row.status as any,
+        raw_text: row.raw_text ?? undefined,
+        ai_response: row.ai_response ?? undefined,
+      }));
+    }
 
-    return (data ?? []).map((row) => ({
-      id: row.id,
-      studentId: row.student_id,
-      classId: row.class_id ?? 'parent-local-class',
-      term: row.term,
-      uploadedBy: row.uploaded_by,
-      uploadMethod: (row.upload_source as any) || 'parent',
-      boardType: row.board_type as any,
-      createdAt: row.created_at,
-      status: row.status as any,
-      raw_text: row.raw_text ?? undefined,
-      ai_response: row.ai_response ?? undefined,
-    }));
+    if (reportCards.length === 0) {
+      // Supabase returned no data — try localStorage for backwards compat
+      await delay(50);
+      reportCards = storage.getReportCards();
+    }
+  } else {
+    // Fallback: localStorage (admin/teacher without Supabase tables)
+    await delay(100);
+    await requireAuth();
+    reportCards = storage.getReportCards();
   }
 
-  // Fallback: localStorage (admin/teacher without Supabase tables)
-  await delay(100);
-  await requireAuth();
-  let reportCards = storage.getReportCards();
   if (filters?.studentId) reportCards = reportCards.filter((c) => c.studentId === filters.studentId);
   if (filters?.classId) reportCards = reportCards.filter((c) => c.classId === filters.classId);
   return reportCards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -563,11 +572,31 @@ export async function addSubjectGrades(
 }
 
 export async function getSubjectGrades(reportCardId: string): Promise<SubjectGrade[]> {
-  await delay(80);
-
   await requireAuth();
 
-  return storage.getSubjectGrades().filter((grade) => grade.reportCardId === reportCardId);
+  const cached = storage.getSubjectGrades().filter((grade) => grade.reportCardId === reportCardId);
+  if (cached.length > 0) return cached;
+
+  const { data, error } = await supabase
+    .from('report_cards')
+    .select('ai_response')
+    .eq('id', reportCardId)
+    .single();
+
+  if (error || !data?.ai_response) return [];
+
+  const analysis = data.ai_response as AIReportAnalysis;
+  return analysis.subjects.map((subject, i) => ({
+    id: `${reportCardId}-${i}`,
+    reportCardId,
+    subjectName: subject.subject,
+    grade: subject.grade,
+    normalizedScore: subject.normalizedScore,
+    teacherComment: subject.teacherComment,
+    flag: subject.flag,
+    aiNote: subject.reasoning,
+    createdAt: new Date().toISOString(),
+  }));
 }
 
 // ===== Clarity Checks =====

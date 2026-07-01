@@ -3,20 +3,22 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Heart, Check, Copy, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getReportCards, getClarityCheck } from '@/api/data';
+import { getReportCards, getClarityCheck, getStudent } from '@/api/data';
 import type { ClarityCheck as IClarityCheck } from '@/types';
 
 export default function ConversationGuide() {
   const { user } = useAuth();
   const [check, setCheck] = useState<IClarityCheck | null>(null);
   const [copied, setCopied] = useState(false);
-  const [childName] = useState('your child');
+  const [childName, setChildName] = useState('your child');
 
   useEffect(() => {
     async function load() {
       if (!user) return;
       const cards = await getReportCards();
       if (cards.length > 0) {
+        const student = await getStudent(cards[0].studentId);
+        if (student) setChildName(student.fullName);
         const c = await getClarityCheck(cards[0].id);
         setCheck(c);
       }

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, FileText, AlertTriangle, BarChart3, ArrowRight, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getTeacherDashboard, getStudents, getTeacherNotes, addTeacherNote } from '@/api/data';
+import { getTeacherDashboard, getStudents, getClasses, getTeacherNotes, addTeacherNote } from '@/api/data';
 import { storage } from '@/api/storage';
 import FlagBadge from '@/components/shared/FlagBadge';
 import CountUp from '@/components/shared/CountUp';
@@ -32,6 +32,7 @@ export default function TeacherDashboard() {
   });
 
   const [students, setStudents] = useState<Student[]>([]);
+  const [classCount, setClassCount] = useState(0);
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentGrades, setStudentGrades] = useState<SubjectGrade[]>([]);
@@ -55,8 +56,11 @@ export default function TeacherDashboard() {
       const dashboardStats = await getTeacherDashboard();
       setStats(dashboardStats);
 
-      const teacherStudents = await getStudents();
-      setStudents(teacherStudents);
+      const allStudents = await getStudents();
+      const myClasses = await getClasses();
+      setClassCount(myClasses.length);
+      const myClassIds = myClasses.map(c => c.id);
+      setStudents(allStudents.filter(s => myClassIds.includes(s.classId)));
     }
 
     load();
@@ -201,7 +205,7 @@ export default function TeacherDashboard() {
                 { icon: <Users size={18} />, label: 'Total Students', value: stats.totalStudents },
                 { icon: <FileText size={18} />, label: 'Report Cards', value: stats.reportCardCount },
                 { icon: <AlertTriangle size={18} />, label: 'Flagged Students', value: stats.flaggedCount },
-                { icon: <BarChart3 size={18} />, label: 'Classes', value: user ? 1 : 0 },
+                { icon: <BarChart3 size={18} />, label: 'Classes', value: classCount },
               ].map((stat, index) => (
                 <motion.div
                   key={index}
