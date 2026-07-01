@@ -51,6 +51,14 @@ function extractJson(text) {
   }
 }
 
+function parseBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch { return {}; }
+  }
+  return {};
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -64,7 +72,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { text, studentName, boardType } = req.body || {};
+    const body = parseBody(req);
+    const { text, studentName, boardType } = body;
     if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ error: 'Please provide report card text.' });
     }
