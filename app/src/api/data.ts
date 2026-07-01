@@ -54,7 +54,7 @@ export async function createSchool(data: Partial<School>): Promise<School> {
 export async function getMySchool(): Promise<School | null> {
   await delay(100);
 
-  const user = await await requireAuth();
+  const user = await requireAuth();
 
   if (!user.schoolId) return null;
 
@@ -65,7 +65,7 @@ export async function getMySchool(): Promise<School | null> {
 export async function updateSchool(id: string, data: Partial<School>): Promise<School> {
   await delay(150);
 
-  requireRole(['admin']);
+  await requireRole(['admin']);
 
   const schools = storage.getSchools();
   const index = schools.findIndex((school) => school.id === id);
@@ -116,7 +116,7 @@ export async function getClasses(filters?: {
 }): Promise<Class[]> {
   await delay(100);
 
-  const user = await await requireAuth();
+  const user = await requireAuth();
   const classes = storage.getClasses();
 
   if (filters?.schoolId) {
@@ -141,7 +141,7 @@ export async function getClasses(filters?: {
 export async function updateClass(id: string, data: Partial<Class>): Promise<Class> {
   await delay(150);
 
-  requireRole(['admin']);
+  await requireRole(['admin']);
 
   const classes = storage.getClasses();
   const index = classes.findIndex((classItem) => classItem.id === id);
@@ -160,7 +160,7 @@ export async function updateClass(id: string, data: Partial<Class>): Promise<Cla
 export async function deleteClass(id: string): Promise<void> {
   await delay(150);
 
-  requireRole(['admin']);
+  await requireRole(['admin']);
 
   const classes = storage.getClasses().filter((classItem) => classItem.id !== id);
   storage.setClasses(classes);
@@ -176,7 +176,7 @@ export async function addStudent(data: {
 }): Promise<Student> {
   await delay(200);
 
-  const user = await await requireAuth();
+  const user = await requireAuth();
   const classes = storage.getClasses();
   const classItem = classes.find((storedClass) => storedClass.id === data.classId);
 
@@ -341,7 +341,7 @@ export async function updateStudent(id: string, data: Partial<Student>): Promise
 export async function deleteStudent(id: string): Promise<void> {
   await delay(150);
 
-  requireRole(['admin']);
+  await requireRole(['admin']);
 
   const students = storage.getStudents().filter((student) => student.id !== id);
   storage.setStudents(students);
@@ -358,7 +358,7 @@ export async function bulkUploadStudents(
 ): Promise<{ added: number; errors: string[] }> {
   await delay(400);
 
-  requireRole(['admin']);
+  await requireRole(['admin']);
 
   let added = 0;
   const errors: string[] = [];
@@ -487,10 +487,15 @@ export async function getReportCards(filters?: {
 }
 
 export async function deleteReportCard(id: string): Promise<void> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData.session?.user) {
+    const { error } = await supabase.from('report_cards').delete().eq('id', id);
+    if (error) throw createApiError(500, error.message);
+    return;
+  }
+
   await delay(150);
-
   await requireAuth();
-
   const reportCards = storage.getReportCards().filter((card) => card.id !== id);
   storage.setReportCards(reportCards);
 }
@@ -568,7 +573,7 @@ export async function getSubjectGrades(reportCardId: string): Promise<SubjectGra
 export async function getClarityCheck(reportCardId: string): Promise<ClarityCheck | null> {
   await delay(100);
 
-  requireRole(['parent']);
+  await requireRole(['parent']);
 
   return storage.getClarityChecks().find((check) => check.reportCardId === reportCardId) || null;
 }
@@ -576,7 +581,7 @@ export async function getClarityCheck(reportCardId: string): Promise<ClarityChec
 export async function saveClarityCheck(data: Omit<ClarityCheck, 'id'>): Promise<ClarityCheck> {
   await delay(200);
 
-  requireRole(['parent']);
+  await requireRole(['parent']);
 
   const checks = storage.getClarityChecks();
   const existingIndex = checks.findIndex((check) => check.reportCardId === data.reportCardId);
@@ -625,7 +630,7 @@ export async function addTeacherNote(data: {
 export async function getTeacherNotes(studentId: string): Promise<TeacherNote[]> {
   await delay(80);
 
-  requireRole(['teacher']);
+  await requireRole(['teacher']);
 
   return storage.getTeacherNotes().filter((note) => note.studentId === studentId);
 }
@@ -653,7 +658,7 @@ export async function updateTeacherNote(id: string, note: string): Promise<Teach
 export async function getPlanProgress(clarityCheckId: string): Promise<PlanProgress | null> {
   await delay(80);
 
-  requireRole(['parent']);
+  await requireRole(['parent']);
 
   return storage.getPlanProgress().find((progress) => progress.clarityCheckId === clarityCheckId) || null;
 }
@@ -689,7 +694,7 @@ export async function updateActionItem(
 ): Promise<PlanProgress> {
   await delay(100);
 
-  requireRole(['parent']);
+  await requireRole(['parent']);
 
   const allProgress = storage.getPlanProgress();
   const index = allProgress.findIndex((progress) => progress.id === progressId);
