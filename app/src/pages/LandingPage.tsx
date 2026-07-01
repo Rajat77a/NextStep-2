@@ -183,10 +183,25 @@ function AnimatedClarityCheck() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
+  const [cursorClicking, setCursorClicking] = useState(false);
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
+  }
+
+  function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
+    setCursorPos({ x, y });
+    setZoom({ scale: zScale, x: zX, y: zY });
+  }
+
+  function triggerClick() {
+    setCursorClicking(true);
+    window.setTimeout(() => setCursorClicking(false), 200);
+    setClickBurst(true);
+    window.setTimeout(() => setClickBurst(false), 300);
   }
 
   useEffect(() => {
@@ -194,6 +209,7 @@ function AnimatedClarityCheck() {
       clearTimers();
       setPhase('start');
       setRevealed(0);
+      setZoom({ scale: 1, x: 0, y: 0 });
     }
   }, [isInView]);
 
@@ -201,14 +217,32 @@ function AnimatedClarityCheck() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'start') {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('loading'); }, 800));
+      moveCursor(135, 115, 1, 0, 0);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('loading');
+      }, 800));
     } else if (phase === 'loading') {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('reveal'); }, 1600));
+      moveCursor(135, 190, 1.04, 0, -28);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('reveal');
+      }, 1600));
     } else if (phase === 'reveal' && revealed < subjectRows.length) {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setRevealed(r => r + 1); }, 420));
+      const rowCenter = 18 + revealed * 52;
+      moveCursor(60, rowCenter, 1.06, 0, -(rowCenter - 160) * 1.06);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setRevealed(r => r + 1);
+      }, 420));
     } else if (phase === 'reveal' && revealed >= subjectRows.length) {
-      timers.current.push(window.setTimeout(() => setPhase('done'), 500));
+      moveCursor(135, 270, 1, 0, 0);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('done');
+      }, 500));
     } else if (phase === 'done') {
+      moveCursor(135, 285, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         setPhase('start');
         setRevealed(0);
@@ -216,12 +250,6 @@ function AnimatedClarityCheck() {
     }
     return clearTimers;
   }, [phase, revealed, shouldReduceMotion, paused, isInView]);
-
-  useEffect(() => {
-    if (!clickBurst) return;
-    const t = window.setTimeout(() => setClickBurst(false), 300);
-    return () => window.clearTimeout(t);
-  }, [clickBurst]);
 
   return (
     <div ref={ref}>
@@ -236,6 +264,9 @@ function AnimatedClarityCheck() {
         </div>
 
         <div className="h-[320px] overflow-hidden bg-white rounded-2xl relative">
+          {!shouldReduceMotion && (
+            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} zoom={zoom.scale} />
+          )}
           {clickBurst && (
             <motion.div
               initial={{ scale: 0, opacity: 0.7 }}
@@ -244,6 +275,7 @@ function AnimatedClarityCheck() {
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
             />
           )}
+          <ZoomArea zoom={zoom}>
           <AnimatePresence mode="wait">
             {phase === 'start' && (
               <motion.div
@@ -353,10 +385,47 @@ function AnimatedClarityCheck() {
               </motion.div>
             )}
           </AnimatePresence>
+          </ZoomArea>
         </div>
       </div>
     </FloatingMockCard>
     </div>
+  );
+}
+
+function SimulatedCursor({ x, y, clicking, zoom }: { x: number; y: number; clicking: boolean; zoom: number }) {
+  const shouldReduceMotion = useReducedMotion();
+  if (shouldReduceMotion) return null;
+
+  return (
+    <motion.div
+      className="absolute z-30 pointer-events-none"
+      style={{ left: 0, top: 0 }}
+      animate={{ x, y }}
+      transition={{ type: 'spring', stiffness: 120, damping: 18, mass: 0.8 }}
+    >
+      <motion.svg
+        width="18" height="24" viewBox="0 0 18 24" fill="none"
+        animate={clicking ? { scaleY: 0.8, scaleX: 0.9, y: 3 } : { scaleY: 1, scaleX: 1, y: 0 }}
+        transition={{ duration: 0.12, ease: 'easeInOut' }}
+        style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}
+      >
+        <path d="M2 1.5V19L6.5 14.5L10 21.5L12.5 20.5L9 13.5H16L2 1.5Z" fill="#1a1a1a" stroke="white" strokeWidth="0.6" strokeLinejoin="round" />
+      </motion.svg>
+    </motion.div>
+  );
+}
+
+function ZoomArea({ zoom, children }: { zoom: { scale: number; x: number; y: number }; children: ReactNode }) {
+  return (
+    <motion.div
+      className="w-full h-full origin-center"
+      animate={{ scale: zoom.scale, x: zoom.x, y: zoom.y }}
+      transition={{ type: 'spring', stiffness: 180, damping: 22, mass: 0.6 }}
+      style={{ willChange: 'transform' }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -391,6 +460,9 @@ function AnimatedConversation() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
+  const [cursorClicking, setCursorClicking] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   const insteadText1 = 'How did you get a C in Science?';
@@ -403,44 +475,71 @@ function AnimatedConversation() {
     timers.current = [];
   }
 
+  function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
+    setCursorPos({ x, y });
+    setZoom({ scale: zScale, x: zX, y: zY });
+  }
+
+  function triggerClick() {
+    setCursorClicking(true);
+    window.setTimeout(() => setCursorClicking(false), 200);
+    setClickBurst(true);
+    window.setTimeout(() => setClickBurst(false), 300);
+  }
+
   useEffect(() => {
     if (!isInView) {
       clearTimers();
       setPhase('idle');
       setTyped('');
+      setZoom({ scale: 1, x: 0, y: 0 });
     }
   }, [isInView]);
-
-  useEffect(() => {
-    if (!clickBurst) return;
-    const t = window.setTimeout(() => setClickBurst(false), 300);
-    return () => window.clearTimeout(t);
-  }, [clickBurst]);
 
   useEffect(() => {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
       setTyped('');
-      timers.current.push(window.setTimeout(() => setPhase('typing1'), 500));
+      moveCursor(140, 125, 1, 0, 0);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('typing1');
+      }, 500));
     } else if (phase === 'typing1' && typed.length < insteadText1.length) {
+      moveCursor(30, 200, 1.04, 0, -30);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText1.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing1' && typed.length >= insteadText1.length) {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('response1'); }, 800));
+      moveCursor(100, 230, 1.06, 0, -55);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('response1');
+      }, 800));
     } else if (phase === 'response1') {
       setTyped('');
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('typing2'); }, 1200));
+      moveCursor(30, 200, 1, 0, 0);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('typing2');
+      }, 1200));
     } else if (phase === 'typing2' && typed.length < insteadText2.length) {
+      moveCursor(30, 200, 1.04, 0, -30);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText2.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing2' && typed.length >= insteadText2.length) {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('response2'); }, 800));
+      moveCursor(100, 230, 1.06, 0, -55);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('response2');
+      }, 800));
     } else if (phase === 'response2') {
+      moveCursor(140, 300, 1, 0, 0);
       timers.current.push(window.setTimeout(() => setPhase('done'), 2500));
     } else if (phase === 'done') {
+      moveCursor(140, 310, 1, 0, 0);
       timers.current.push(window.setTimeout(() => {
         setPhase('idle');
         setTyped('');
@@ -457,6 +556,9 @@ function AnimatedConversation() {
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
 
         <div className="h-[330px] overflow-hidden bg-white rounded-2xl relative">
+          {!shouldReduceMotion && (
+            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} zoom={zoom.scale} />
+          )}
           {clickBurst && (
             <motion.div
               initial={{ scale: 0, opacity: 0.7 }}
@@ -465,6 +567,7 @@ function AnimatedConversation() {
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
             />
           )}
+          <ZoomArea zoom={zoom}>
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
@@ -594,6 +697,7 @@ function AnimatedConversation() {
               </motion.div>
             )}
           </AnimatePresence>
+          </ZoomArea>
         </div>
       </div>
     </FloatingMockCard>
@@ -609,41 +713,76 @@ function AnimatedDayPlan() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
+  const [cursorClicking, setCursorClicking] = useState(false);
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
   }
 
+  function moveCursor(x: number, y: number, zScale: number, zX: number, zY: number) {
+    setCursorPos({ x, y });
+    setZoom({ scale: zScale, x: zX, y: zY });
+  }
+
+  function triggerClick() {
+    setCursorClicking(true);
+    window.setTimeout(() => setCursorClicking(false), 200);
+    setClickBurst(true);
+    window.setTimeout(() => setClickBurst(false), 300);
+  }
+
   useEffect(() => {
     if (!isInView) {
       clearTimers();
       setPhase('idle');
+      setZoom({ scale: 1, x: 0, y: 0 });
     }
   }, [isInView]);
-
-  useEffect(() => {
-    if (!clickBurst) return;
-    const t = window.setTimeout(() => setClickBurst(false), 300);
-    return () => window.clearTimeout(t);
-  }, [clickBurst]);
 
   useEffect(() => {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
-      timers.current.push(window.setTimeout(() => setPhase('building'), 500));
+      moveCursor(140, 135, 1, 0, 0);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('building');
+      }, 500));
     } else if (phase === 'building') {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('week1'); }, 1400));
+      moveCursor(140, 215, 1.04, 0, -42);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('week1');
+      }, 1400));
     } else if (phase === 'week1') {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('week2'); }, 700));
+      moveCursor(40, 20, 1.06, 0, -(20 - 175) * 1.06);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('week2');
+      }, 700));
     } else if (phase === 'week2') {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('week3'); }, 700));
+      moveCursor(40, 72, 1.06, 0, -(72 - 175) * 1.06);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('week3');
+      }, 700));
     } else if (phase === 'week3') {
-      timers.current.push(window.setTimeout(() => { setClickBurst(true); setPhase('week4'); }, 700));
+      moveCursor(40, 124, 1.06, 0, -(124 - 175) * 1.06);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('week4');
+      }, 700));
     } else if (phase === 'week4') {
-      timers.current.push(window.setTimeout(() => setPhase('done'), 700));
+      moveCursor(40, 176, 1.06, 0, -(176 - 175) * 1.06);
+      timers.current.push(window.setTimeout(() => {
+        triggerClick();
+        setPhase('done');
+      }, 700));
     } else if (phase === 'done') {
+      moveCursor(140, 305, 1, 0, 0);
       timers.current.push(window.setTimeout(() => setPhase('idle'), 2500));
     }
     return clearTimers;
@@ -659,6 +798,9 @@ function AnimatedDayPlan() {
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
 
         <div className="h-[350px] overflow-hidden bg-white rounded-2xl relative">
+          {!shouldReduceMotion && (
+            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} zoom={zoom.scale} />
+          )}
           {clickBurst && (
             <motion.div
               initial={{ scale: 0, opacity: 0.7 }}
@@ -667,6 +809,7 @@ function AnimatedDayPlan() {
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-coral/8 pointer-events-none z-10"
             />
           )}
+          <ZoomArea zoom={zoom}>
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
@@ -771,6 +914,7 @@ function AnimatedDayPlan() {
               </motion.div>
             )}
           </AnimatePresence>
+          </ZoomArea>
         </div>
       </div>
     </FloatingMockCard>
