@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, Mail, User, Chrome, Heart, Users, Building, Home, Sparkles, Search } from 'lucide-react'
+import { ArrowRight, Mail, User, Chrome, Heart, Users, Building, Home, Search } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import type { UserRole } from '@/types'
 
