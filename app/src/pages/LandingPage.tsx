@@ -227,15 +227,117 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
   const shouldReduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
-  const [show, setShow] = useState(false);
+  const timers = useRef<number[]>([]);
+
+  const [scene, setScene] = useState<'enter' | 'approach' | 'grab' | 'drag' | 'drop' | 'reveal'>('enter');
+  const [showOverlay, setShowOverlay] = useState(true);
+  const [showContent, setShowContent] = useState(false);
+  const [cursorPos, setCursorPos] = useState({ x: 300, y: -40 });
+  const [cursorGrabbing, setCursorGrabbing] = useState(false);
+  const [filePos, setFilePos] = useState({ x: 280, y: -50 });
+  const [dropZoneActive, setDropZoneActive] = useState(false);
+  const [clickBurst, setClickBurst] = useState(false);
+  const [burstId, setBurstId] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  function clearTimers() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  }
+
+  function moveCursor(x: number, y: number) {
+    setCursorPos({ x, y });
+  }
+
+  function moveFile(x: number, y: number) {
+    setFilePos({ x, y });
+  }
+
+  function triggerDrop() {
+    setCursorGrabbing(false);
+    setBurstId(n => n + 1);
+    setClickBurst(true);
+    window.setTimeout(() => setClickBurst(false), 400);
+  }
 
   useEffect(() => {
-    if (isInView) setShow(true);
+    if (!isInView) {
+      clearTimers();
+      setScene('enter');
+      setShowOverlay(true);
+      setShowContent(false);
+      moveCursor(300, -40);
+      moveFile(280, -50);
+      setCursorGrabbing(false);
+      setDropZoneActive(false);
+    }
   }, [isInView]);
+
+  useEffect(() => {
+    if (shouldReduceMotion || paused || !isInView) return;
+    clearTimers();
+
+    if (scene === 'enter') {
+      moveFile(190, 40);
+      timers.current.push(window.setTimeout(() => {
+        setScene('approach');
+      }, 700));
+    } else if (scene === 'approach') {
+      moveCursor(320, 110);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(220, 55);
+      }, 400));
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(195, 42);
+        setScene('grab');
+      }, 1000));
+    } else if (scene === 'grab') {
+      setCursorGrabbing(true);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(195, 45);
+        setScene('drag');
+      }, 300));
+    } else if (scene === 'drag') {
+      setDropZoneActive(true);
+      moveCursor(190, 220);
+      moveFile(190, 215);
+      timers.current.push(window.setTimeout(() => {
+        setScene('drop');
+      }, 1200));
+    } else if (scene === 'drop') {
+      triggerDrop();
+      moveFile(190, 230);
+      timers.current.push(window.setTimeout(() => {
+        setScene('reveal');
+      }, 600));
+    } else if (scene === 'reveal') {
+      setShowContent(true);
+      timers.current.push(window.setTimeout(() => {
+        setShowOverlay(false);
+      }, 500));
+      timers.current.push(window.setTimeout(() => {
+        setScene('enter');
+        setShowOverlay(true);
+        setShowContent(false);
+        moveCursor(300, -40);
+        moveFile(280, -50);
+        setCursorGrabbing(false);
+        setDropZoneActive(false);
+      }, 8000));
+    }
+
+    return clearTimers;
+  }, [scene, shouldReduceMotion, paused, isInView]);
 
   const baseDelay = 0.1 + index * 0.15;
   const cinematicEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
   const ambientDuration = 18 + index * 4;
+
+  const blobColors = [
+    'radial-gradient(circle at 30% 30%, rgba(232,93,62,0.18), transparent 70%)',
+    'radial-gradient(circle at 70% 20%, rgba(232,93,62,0.12), transparent 70%)',
+    'radial-gradient(circle at 40% 60%, rgba(154,205,165,0.10), transparent 70%)',
+  ];
 
   if (shouldReduceMotion) {
     return (
@@ -267,15 +369,9 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
     );
   }
 
-  const blobColors = [
-    'radial-gradient(circle at 30% 30%, rgba(232,93,62,0.18), transparent 70%)',
-    'radial-gradient(circle at 70% 20%, rgba(232,93,62,0.12), transparent 70%)',
-    'radial-gradient(circle at 40% 60%, rgba(154,205,165,0.10), transparent 70%)',
-  ];
-
   return (
-    <motion.div ref={ref} className="h-full relative">
-      {/* Cinematic background blob — morphs continuously like an AE video layer */}
+    <motion.div ref={ref} className="h-full relative select-none">
+      {/* Ambient background blobs — morph continuously like AE video layers */}
       {[0, 1, 2].map((b) => (
         <motion.div
           key={b}
@@ -289,7 +385,7 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
             top: `${b * 20}%`,
           }}
           initial={{ opacity: 0, scale: 0.3 }}
-          animate={show ? {
+          animate={showContent ? {
             opacity: [0, 0.4, 0.2, 0.5, 0.3],
             scale: [0.3, 1.2, 0.8, 1.1, 1],
             x: [0, 12 + b * 8, -8, 15, 0],
@@ -317,7 +413,7 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
             top: `${25 + (p % 3) * 25}%`,
           }}
           initial={{ opacity: 0 }}
-          animate={show ? {
+          animate={showContent ? {
             opacity: [0, 0.3, 0, 0.5, 0],
             y: [0, -(18 + p * 6), 0, -(10 + p * 4), 0],
             x: [0, (p - 1.5) * 6, 0, (p - 2) * 8, 0],
@@ -331,132 +427,243 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
         />
       ))}
 
-      {/* Card with cinematic layered entrance */}
+      {/* Scene Overlay — drag-drop cinematic intro */}
+      <AnimatePresence>
+        {showOverlay && (
+          <motion.div
+            className="absolute inset-0 z-20 bg-dark-surface rounded-2xl overflow-hidden"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: cinematicEase }}
+          >
+            {/* Black simulated cursor */}
+            <motion.div
+              className="absolute z-30 pointer-events-none"
+              style={{ left: 0, top: 0 }}
+              animate={{ x: cursorPos.x, y: cursorPos.y }}
+              transition={{ type: 'spring', stiffness: 150, damping: 22, mass: 0.5 }}
+            >
+              <motion.svg
+                width="18" height="24" viewBox="0 0 18 24" fill="none"
+                animate={cursorGrabbing ? { scale: 0.82, y: 6 } : { scale: 1, y: 0 }}
+                transition={{ duration: 0.12, ease: 'easeInOut' }}
+                style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))' }}
+              >
+                <path
+                  d="M2 2L2 21L5.5 16L9 23L11.5 21.5L8 15L15.5 15L2 2Z"
+                  fill="black"
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth="0.5"
+                  strokeLinejoin="round"
+                />
+              </motion.svg>
+            </motion.div>
+
+            {/* Click burst on drop */}
+            {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+
+            {/* Scene content */}
+            <div className="flex flex-col items-center justify-center h-full px-8">
+              {/* Document file card */}
+              <motion.div
+                className="absolute z-10"
+                style={{ left: 0, top: 0 }}
+                animate={{ x: filePos.x, y: filePos.y }}
+                transition={{
+                  type: 'spring',
+                  stiffness: cursorGrabbing ? 180 : 120,
+                  damping: cursorGrabbing ? 16 : 18,
+                  mass: 0.6,
+                }}
+              >
+                <motion.div
+                  className="w-36 rounded-xl bg-white border border-coral/20 shadow-lg flex flex-col items-center justify-center gap-2 py-3"
+                  animate={
+                    cursorGrabbing
+                      ? { scale: 0.92, rotate: 4, boxShadow: '0 8px 25px rgba(0,0,0,0.25)' }
+                      : { scale: 1, rotate: -3, boxShadow: '0 4px 15px rgba(0,0,0,0.15)' }
+                  }
+                  transition={{ duration: 0.2 }}
+                >
+                  <FileText size={22} className="text-coral" />
+                  <span className="font-body text-[11px] font-semibold text-charcoal/70 whitespace-nowrap px-2 leading-tight text-center">report_card.pdf</span>
+                </motion.div>
+              </motion.div>
+
+              {/* Drop zone */}
+              <motion.div
+                className="w-44 h-28 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2"
+                animate={
+                  dropZoneActive
+                    ? {
+                        borderColor: 'rgba(232,93,62,0.7)',
+                        backgroundColor: 'rgba(232,93,62,0.06)',
+                        scale: 1.03,
+                      }
+                    : {
+                        borderColor: 'rgba(255,255,255,0.15)',
+                        backgroundColor: 'rgba(255,255,255,0.02)',
+                        scale: 1,
+                      }
+                }
+                transition={{ duration: 0.4, ease: cinematicEase }}
+              >
+                <motion.div
+                  animate={
+                    dropZoneActive
+                      ? { y: [0, -3, 0], opacity: [0.6, 1, 0.6] }
+                      : { opacity: 0.4 }
+                  }
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <Upload size={28} className="text-coral/60" />
+                </motion.div>
+                <span className="font-body text-xs text-white/40">
+                  {dropZoneActive ? 'Release to upload' : 'Drop files here'}
+                </span>
+              </motion.div>
+
+              {/* "Drag from above" hint */}
+              {scene === 'enter' && (
+                <motion.p
+                  className="absolute bottom-6 font-body text-xs text-white/15 tracking-wider"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 0.3, 0] }}
+                  transition={{ duration: 2.5, ease: 'easeInOut' }}
+                >
+                  Drag report card into portal
+                </motion.p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Card Content — reveals after the drag-drop scene */}
       <TiltCard className="h-full" tiltDegree={6} liftY={-8}>
       <GlowTiltCard className="h-full">
         <Link
           id={role.id}
           to={role.link}
           className="relative flex h-full min-h-[400px] flex-col bg-dark-surface/90 backdrop-blur-sm border border-white/[0.06] rounded-2xl p-8 overflow-hidden group scroll-mt-28 hover:border-coral/25"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
         >
-          {/* Animated gradient border overlay */}
-          <motion.div
-            className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100"
-            style={{
-              background: 'linear-gradient(135deg, rgba(232,93,62,0.08), transparent 40%, transparent 60%, rgba(154,205,165,0.06))',
-            }}
-            transition={{ duration: 0.6 }}
-          />
-
-          {/* Row 1: Icon + Number */}
-          <motion.div
-            className="mb-5 flex items-center justify-between relative z-10"
-            initial={{ opacity: 0, y: -15 }}
-            animate={show ? { opacity: 1, y: 0 } : undefined}
-            transition={{ duration: 0.6, delay: baseDelay + 0.05, ease: cinematicEase }}
-          >
+          {!shouldReduceMotion && (
             <motion.div
-              animate={{
-                y: [0, -5, 0, 4, 0],
-                rotate: [0, -3, 0, 3, 0],
+              className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100"
+              style={{
+                background: 'linear-gradient(135deg, rgba(232,93,62,0.08), transparent 40%, transparent 60%, rgba(154,205,165,0.06))',
               }}
-              transition={{ duration: 6 + index * 0.5, repeat: Infinity, ease: 'easeInOut' }}
-              whileHover={{ rotate: -8, scale: 1.15, transition: { type: 'spring', stiffness: 250, damping: 14 } }}
+              transition={{ duration: 0.6 }}
+            />
+          )}
+
+          <div className="relative z-10" style={{ opacity: showContent ? 1 : 0 }}>
+            {/* Row 1: Icon + Number */}
+            <motion.div
+              className="mb-5 flex items-center justify-between"
+              initial={{ opacity: 0, y: -15 }}
+              animate={showContent ? { opacity: 1, y: 0 } : undefined}
+              transition={{ duration: 0.6, delay: baseDelay + 0.05, ease: cinematicEase }}
             >
-              {role.icon}
-            </motion.div>
-            <motion.span
-              className="font-body text-xs font-semibold tracking-[0.22em] text-white/15"
-              animate={{ opacity: [0.15, 0.3, 0.15] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              0{index + 1}
-            </motion.span>
-          </motion.div>
-
-          {/* Title */}
-          <motion.h3
-            className="font-display text-2xl font-medium text-white mb-3 relative z-10"
-            initial={{ opacity: 0, y: -10 }}
-            animate={show ? { opacity: 1, y: 0 } : undefined}
-            transition={{ duration: 0.5, delay: baseDelay + 0.2, ease: cinematicEase }}
-          >
-            {role.title}
-          </motion.h3>
-
-          {/* Description */}
-          <motion.p
-            className="font-body text-white/60 leading-relaxed min-h-[84px] relative z-10"
-            initial={{ opacity: 0, y: 8 }}
-            animate={show ? { opacity: 1, y: 0 } : undefined}
-            transition={{ duration: 0.5, delay: baseDelay + 0.35, ease: cinematicEase }}
-          >
-            {role.desc}
-          </motion.p>
-
-          {/* Bullet points — staggered with spring */}
-          <div className="my-6 grid gap-2 relative z-10">
-            {role.points.map((point, pi) => (
               <motion.div
-                key={point}
-                initial={{ opacity: 0, y: 14, scale: 0.95 }}
-                animate={show ? { opacity: 1, y: 0, scale: 1 } : undefined}
-                transition={{
-                  type: 'spring',
-                  stiffness: 200,
-                  damping: 18,
-                  delay: baseDelay + 0.5 + pi * 0.1,
-                }}
-                whileHover={{
-                  x: 4,
-                  borderColor: 'rgba(154,205,165,0.2)',
-                  transition: { duration: 0.2 },
-                }}
-                className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2 transition-colors"
+                animate={showContent ? { y: [0, -5, 0, 4, 0], rotate: [0, -3, 0, 3, 0] } : undefined}
+                transition={{ duration: 6 + index * 0.5, repeat: Infinity, ease: 'easeInOut' }}
+                whileHover={{ rotate: -8, scale: 1.15, transition: { type: 'spring', stiffness: 250, damping: 14 } }}
               >
-                <motion.span
-                  className="w-5 h-5 rounded-full bg-gradient-to-br from-sage to-sage/70 flex items-center justify-center flex-shrink-0 shadow-sm"
-                  whileHover={{ rotate: 360, scale: 1.15 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <Star size={9} className="text-white" fill="white" />
-                </motion.span>
-                <span className="font-body text-sm text-white/65">{point}</span>
+                {role.icon}
               </motion.div>
-            ))}
+              {!shouldReduceMotion && (
+                <motion.span
+                  className="font-body text-xs font-semibold tracking-[0.22em] text-white/15"
+                  animate={showContent ? { opacity: [0.15, 0.3, 0.15] } : undefined}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  0{index + 1}
+                </motion.span>
+              )}
+            </motion.div>
+
+            {/* Title */}
+            <motion.h3
+              className="font-display text-2xl font-medium text-white mb-3"
+              initial={{ opacity: 0, y: -10 }}
+              animate={showContent ? { opacity: 1, y: 0 } : undefined}
+              transition={{ duration: 0.5, delay: baseDelay + 0.2, ease: cinematicEase }}
+            >
+              {role.title}
+            </motion.h3>
+
+            {/* Description */}
+            <motion.p
+              className="font-body text-white/60 leading-relaxed min-h-[84px]"
+              initial={{ opacity: 0, y: 8 }}
+              animate={showContent ? { opacity: 1, y: 0 } : undefined}
+              transition={{ duration: 0.5, delay: baseDelay + 0.35, ease: cinematicEase }}
+            >
+              {role.desc}
+            </motion.p>
+
+            {/* Bullet points */}
+            <div className="my-6 grid gap-2">
+              {role.points.map((point, pi) => (
+                <motion.div
+                  key={point}
+                  initial={{ opacity: 0, y: 14, scale: 0.95 }}
+                  animate={showContent ? { opacity: 1, y: 0, scale: 1 } : undefined}
+                  transition={{ type: 'spring', stiffness: 200, damping: 18, delay: baseDelay + 0.5 + pi * 0.1 }}
+                  whileHover={{ x: 4, borderColor: 'rgba(154,205,165,0.2)', transition: { duration: 0.2 } }}
+                  className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2"
+                >
+                  <motion.span
+                    className="w-5 h-5 rounded-full bg-gradient-to-br from-sage to-sage/70 flex items-center justify-center flex-shrink-0 shadow-sm"
+                    whileHover={{ rotate: 360, scale: 1.15 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <Star size={9} className="text-white" fill="white" />
+                  </motion.span>
+                  <span className="font-body text-sm text-white/65">{point}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <motion.div
+              className="mt-auto"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={showContent ? { opacity: 1, scale: 1 } : undefined}
+              transition={{ type: 'spring', stiffness: 220, damping: 16, delay: baseDelay + 0.8 }}
+            >
+              <motion.span
+                className="font-body text-sm font-semibold text-coral inline-flex items-center gap-2 cursor-pointer"
+                whileHover={{ gap: '0.75rem' }}
+                transition={{ type: 'spring', stiffness: 250, damping: 16 }}
+              >
+                {role.cta}
+                <motion.span
+                  animate={showContent ? { x: [0, 3, 0] } : undefined}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <ArrowRight size={14} />
+                </motion.span>
+              </motion.span>
+            </motion.div>
           </div>
 
-          {/* CTA */}
-          <motion.div
-            className="mt-auto relative z-10"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={show ? { opacity: 1, scale: 1 } : undefined}
-            transition={{ type: 'spring', stiffness: 220, damping: 16, delay: baseDelay + 0.8 }}
-          >
-            <motion.span
-              className="font-body text-sm font-semibold text-coral inline-flex items-center gap-2 cursor-pointer"
-              whileHover={{ gap: '0.75rem' }}
-              transition={{ type: 'spring', stiffness: 250, damping: 16 }}
-            >
-              {role.cta}
-              <motion.span
-                animate={{ x: [0, 3, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                <ArrowRight size={14} />
-              </motion.span>
-            </motion.span>
-          </motion.div>
-
-          {/* Shimmer sweep on hover */}
-          <motion.div
-            className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100"
-            style={{
-              background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.03) 55%, transparent 60%)',
-            }}
-            animate={show ? { x: ['-100%', '100%'] } : undefined}
-            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
-          />
+          {/* Shimmer sweep */}
+          {!shouldReduceMotion && (
+            <motion.div
+              className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100"
+              style={{
+                background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.03) 55%, transparent 60%)',
+              }}
+              animate={showContent ? { x: ['-100%', '100%'] } : undefined}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+            />
+          )}
         </Link>
       </GlowTiltCard>
       </TiltCard>
