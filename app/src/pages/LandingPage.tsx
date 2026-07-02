@@ -175,6 +175,295 @@ function MagneticWrap({ children, className = '' }: { children: ReactNode; class
   );
 }
 
+function AmbientParticles({ className = '' }: { className?: string }) {
+  const shouldReduceMotion = useReducedMotion();
+  const particles = useRef(
+    Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 2 + Math.random() * 3,
+      delay: Math.random() * 8,
+      duration: 8 + Math.random() * 12,
+      driftX: (Math.random() - 0.5) * 20,
+      driftY: (Math.random() - 0.5) * 20,
+    })),
+  ).current;
+
+  if (shouldReduceMotion) return null;
+
+  return (
+    <div className={className}>
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            background: p.id % 3 === 0 ? 'rgba(232,93,62,0.3)' : 'rgba(255,255,255,0.12)',
+          }}
+          animate={{
+            y: [0, p.driftY, 0, -p.driftY, 0],
+            x: [0, p.driftX, 0, -p.driftX, 0],
+            opacity: [0, 0.5, 0.2, 0.6, 0],
+            scale: [0, 1, 0.6, 1, 0],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            delay: p.delay,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: number }) {
+  const shouldReduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (isInView) setShow(true);
+  }, [isInView]);
+
+  const baseDelay = 0.1 + index * 0.15;
+  const cinematicEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
+  const ambientDuration = 18 + index * 4;
+
+  if (shouldReduceMotion) {
+    return (
+      <TiltCard className="h-full" tiltDegree={0} liftY={0}>
+        <GlowTiltCard className="h-full">
+          <Link id={role.id} to={role.link} className="flex h-full min-h-[360px] flex-col bg-dark-surface border border-white/[0.08] rounded-2xl p-8 group scroll-mt-28">
+            <div className="mb-5 flex items-center justify-between">
+              <div>{role.icon}</div>
+              <span className="font-body text-xs font-semibold tracking-[0.22em] text-white/20">0{index + 1}</span>
+            </div>
+            <h3 className="font-display text-2xl font-medium text-white mb-3">{role.title}</h3>
+            <p className="font-body text-white/60 leading-relaxed min-h-[84px]">{role.desc}</p>
+            <div className="my-6 grid gap-2">
+              {role.points.map(point => (
+                <div key={point} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-sage to-sage/70 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <Star size={9} className="text-white" fill="white" />
+                  </span>
+                  <span className="font-body text-sm text-white/70">{point}</span>
+                </div>
+              ))}
+            </div>
+            <span className="mt-auto font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-4 transition-all duration-300">
+              {role.cta} <ArrowRight size={14} />
+            </span>
+          </Link>
+        </GlowTiltCard>
+      </TiltCard>
+    );
+  }
+
+  const blobColors = [
+    'radial-gradient(circle at 30% 30%, rgba(232,93,62,0.18), transparent 70%)',
+    'radial-gradient(circle at 70% 20%, rgba(232,93,62,0.12), transparent 70%)',
+    'radial-gradient(circle at 40% 60%, rgba(154,205,165,0.10), transparent 70%)',
+  ];
+
+  return (
+    <motion.div ref={ref} className="h-full relative">
+      {/* Cinematic background blob — morphs continuously like an AE video layer */}
+      {[0, 1, 2].map((b) => (
+        <motion.div
+          key={b}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            background: blobColors[b],
+            filter: 'blur(50px)',
+            width: `${160 + b * 40}px`,
+            height: `${160 + b * 40}px`,
+            left: `${b * 25}%`,
+            top: `${b * 20}%`,
+          }}
+          initial={{ opacity: 0, scale: 0.3 }}
+          animate={show ? {
+            opacity: [0, 0.4, 0.2, 0.5, 0.3],
+            scale: [0.3, 1.2, 0.8, 1.1, 1],
+            x: [0, 12 + b * 8, -8, 15, 0],
+            y: [0, -8 - b * 5, 10, -12, 0],
+            rotate: [0, 15 + b * 10, -10, 20, 0],
+          } : undefined}
+          transition={{
+            opacity: { duration: 2, delay: baseDelay + b * 0.2, ease: cinematicEase },
+            scale: { duration: ambientDuration - b * 3, repeat: Infinity, ease: 'easeInOut', delay: baseDelay + 2 },
+            x: { duration: ambientDuration + b * 2, repeat: Infinity, ease: 'easeInOut', delay: baseDelay + 2 },
+            y: { duration: ambientDuration + b * 4, repeat: Infinity, ease: 'easeInOut', delay: baseDelay + 2 },
+            rotate: { duration: ambientDuration + b * 6, repeat: Infinity, ease: 'easeInOut', delay: baseDelay + 2 },
+          }}
+        />
+      ))}
+
+      {/* Floating ambient specks */}
+      {[0, 1, 2, 3].map((p) => (
+        <motion.div
+          key={`s-${p}`}
+          className="absolute w-1 h-1 rounded-full pointer-events-none"
+          style={{
+            background: p % 2 === 0 ? 'rgba(232,93,62,0.25)' : 'rgba(255,255,255,0.10)',
+            left: `${15 + p * 22}%`,
+            top: `${25 + (p % 3) * 25}%`,
+          }}
+          initial={{ opacity: 0 }}
+          animate={show ? {
+            opacity: [0, 0.3, 0, 0.5, 0],
+            y: [0, -(18 + p * 6), 0, -(10 + p * 4), 0],
+            x: [0, (p - 1.5) * 6, 0, (p - 2) * 8, 0],
+          } : undefined}
+          transition={{
+            duration: 5 + p * 2.5,
+            repeat: Infinity,
+            delay: baseDelay + 0.8 + p * 1.2,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+
+      {/* Card with cinematic layered entrance */}
+      <TiltCard className="h-full" tiltDegree={6} liftY={-8}>
+      <GlowTiltCard className="h-full">
+        <Link
+          id={role.id}
+          to={role.link}
+          className="relative flex h-full min-h-[400px] flex-col bg-dark-surface/90 backdrop-blur-sm border border-white/[0.06] rounded-2xl p-8 overflow-hidden group scroll-mt-28 hover:border-coral/25"
+        >
+          {/* Animated gradient border overlay */}
+          <motion.div
+            className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100"
+            style={{
+              background: 'linear-gradient(135deg, rgba(232,93,62,0.08), transparent 40%, transparent 60%, rgba(154,205,165,0.06))',
+            }}
+            transition={{ duration: 0.6 }}
+          />
+
+          {/* Row 1: Icon + Number */}
+          <motion.div
+            className="mb-5 flex items-center justify-between relative z-10"
+            initial={{ opacity: 0, y: -15 }}
+            animate={show ? { opacity: 1, y: 0 } : undefined}
+            transition={{ duration: 0.6, delay: baseDelay + 0.05, ease: cinematicEase }}
+          >
+            <motion.div
+              animate={{
+                y: [0, -5, 0, 4, 0],
+                rotate: [0, -3, 0, 3, 0],
+              }}
+              transition={{ duration: 6 + index * 0.5, repeat: Infinity, ease: 'easeInOut' }}
+              whileHover={{ rotate: -8, scale: 1.15, transition: { type: 'spring', stiffness: 250, damping: 14 } }}
+            >
+              {role.icon}
+            </motion.div>
+            <motion.span
+              className="font-body text-xs font-semibold tracking-[0.22em] text-white/15"
+              animate={{ opacity: [0.15, 0.3, 0.15] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              0{index + 1}
+            </motion.span>
+          </motion.div>
+
+          {/* Title */}
+          <motion.h3
+            className="font-display text-2xl font-medium text-white mb-3 relative z-10"
+            initial={{ opacity: 0, y: -10 }}
+            animate={show ? { opacity: 1, y: 0 } : undefined}
+            transition={{ duration: 0.5, delay: baseDelay + 0.2, ease: cinematicEase }}
+          >
+            {role.title}
+          </motion.h3>
+
+          {/* Description */}
+          <motion.p
+            className="font-body text-white/60 leading-relaxed min-h-[84px] relative z-10"
+            initial={{ opacity: 0, y: 8 }}
+            animate={show ? { opacity: 1, y: 0 } : undefined}
+            transition={{ duration: 0.5, delay: baseDelay + 0.35, ease: cinematicEase }}
+          >
+            {role.desc}
+          </motion.p>
+
+          {/* Bullet points — staggered with spring */}
+          <div className="my-6 grid gap-2 relative z-10">
+            {role.points.map((point, pi) => (
+              <motion.div
+                key={point}
+                initial={{ opacity: 0, y: 14, scale: 0.95 }}
+                animate={show ? { opacity: 1, y: 0, scale: 1 } : undefined}
+                transition={{
+                  type: 'spring',
+                  stiffness: 200,
+                  damping: 18,
+                  delay: baseDelay + 0.5 + pi * 0.1,
+                }}
+                whileHover={{
+                  x: 4,
+                  borderColor: 'rgba(154,205,165,0.2)',
+                  transition: { duration: 0.2 },
+                }}
+                className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2 transition-colors"
+              >
+                <motion.span
+                  className="w-5 h-5 rounded-full bg-gradient-to-br from-sage to-sage/70 flex items-center justify-center flex-shrink-0 shadow-sm"
+                  whileHover={{ rotate: 360, scale: 1.15 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <Star size={9} className="text-white" fill="white" />
+                </motion.span>
+                <span className="font-body text-sm text-white/65">{point}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <motion.div
+            className="mt-auto relative z-10"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={show ? { opacity: 1, scale: 1 } : undefined}
+            transition={{ type: 'spring', stiffness: 220, damping: 16, delay: baseDelay + 0.8 }}
+          >
+            <motion.span
+              className="font-body text-sm font-semibold text-coral inline-flex items-center gap-2 cursor-pointer"
+              whileHover={{ gap: '0.75rem' }}
+              transition={{ type: 'spring', stiffness: 250, damping: 16 }}
+            >
+              {role.cta}
+              <motion.span
+                animate={{ x: [0, 3, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <ArrowRight size={14} />
+              </motion.span>
+            </motion.span>
+          </motion.div>
+
+          {/* Shimmer sweep on hover */}
+          <motion.div
+            className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100"
+            style={{
+              background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.03) 55%, transparent 60%)',
+            }}
+            animate={show ? { x: ['-100%', '100%'] } : undefined}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+          />
+        </Link>
+      </GlowTiltCard>
+      </TiltCard>
+    </motion.div>
+  );
+}
+
 function AnimatedClarityCheck() {
   const shouldReduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<'start' | 'loading' | 'reveal' | 'done'>('start');
@@ -1421,63 +1710,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Role Entry */}
-      <section className="py-20 md:py-28 bg-charcoal">
-        <div className="max-w-7xl mx-auto px-5 md:px-12">
+      {/* Role Entry — AE-style cinematic portal cards */}
+      <section className="py-20 md:py-28 bg-charcoal relative overflow-hidden">
+        <AmbientParticles className="absolute inset-0 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-5 md:px-12 relative z-10">
           <ScrollReveal>
             <h2 className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4">Built for everyone in your school community</h2>
             <p className="font-body text-lg text-white/60 text-center mb-12">Choose your portal to get started</p>
           </ScrollReveal>
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {portalCards.map((role, i) => (
-              <ScrollReveal key={role.title} delay={i * 0.12} scale={0.95}>
-                <TiltCard className="h-full" tiltDegree={5} liftY={-6}>
-                <GlowTiltCard className="h-full">
-                  <Link id={role.id} to={role.link} className="flex h-full min-h-[360px] flex-col bg-dark-surface border border-white/[0.08] rounded-2xl p-8 transition-all duration-500 group scroll-mt-28 hover:border-coral/30 hover:shadow-[0_0_40px_rgba(232,93,62,0.08)]">
-                    <div className="mb-5 flex items-center justify-between">
-                      <motion.div
-                        variants={{
-                          float: {
-                            y: [0, -5, 0],
-                            transition: { duration: 3 + i * 0.4, repeat: Infinity, ease: 'easeInOut' },
-                          },
-                        }}
-                        animate={shouldReduceMotion ? undefined : 'float'}
-                        whileHover={shouldReduceMotion ? undefined : { rotate: -6, scale: 1.12, transition: { type: 'spring', stiffness: 300, damping: 15 } }}
-                      >
-                        {role.icon}
-                      </motion.div>
-                      <span className="font-body text-xs font-semibold tracking-[0.22em] text-white/20">0{i + 1}</span>
-                    </div>
-                    <h3 className="font-display text-2xl font-medium text-white mb-3">{role.title}</h3>
-                    <p className="font-body text-white/60 leading-relaxed min-h-[84px]">{role.desc}</p>
-                    <div className="my-6 grid gap-2">
-                      {role.points.map((point, pi) => (
-                        <motion.div
-                          key={point}
-                          initial={shouldReduceMotion ? false : { opacity: 0, x: -12 }}
-                          whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.35, delay: i * 0.08 + pi * 0.06, ease: 'easeOut' }}
-                          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                        >
-                          <span className="w-5 h-5 rounded-full bg-gradient-to-br from-sage to-sage/70 flex items-center justify-center flex-shrink-0 shadow-sm">
-                            <Star size={9} className="text-white" fill="white" />
-                          </span>
-                          <span className="font-body text-sm text-white/70">{point}</span>
-                        </motion.div>
-                      ))}
-                    </div>
-                    <motion.span
-                      className="mt-auto font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-4 transition-all duration-300"
-                      whileHover={shouldReduceMotion ? undefined : { x: 4 }}
-                    >
-                      {role.cta} <ArrowRight size={14} />
-                    </motion.span>
-                  </Link>
-                </GlowTiltCard>
-                </TiltCard>
-              </ScrollReveal>
+              <AEPortalCard key={role.title} role={role} index={i} />
             ))}
           </div>
         </div>
