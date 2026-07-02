@@ -6,6 +6,7 @@ import {
   Users, Building, ChevronLeft, ChevronRight, ChevronUp, Menu, X, Check, Star, Calendar, MessageCircle,
 } from 'lucide-react';
 import ScrollReveal from '@/components/shared/ScrollReveal';
+import TiltCard from '@/components/shared/TiltCard';
 
 const testimonials = [
   { name: 'Meera Krishnan', role: 'Parent of Grade 5 student', text: 'The AI analysis helped me understand what my daughter\'s teacher was really trying to say. The conversation guide made our talk so much more productive.', stars: 5 },
@@ -1430,12 +1431,19 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {portalCards.map((role, i) => (
               <ScrollReveal key={role.title} delay={i * 0.12} scale={0.95}>
+                <TiltCard className="h-full" tiltDegree={5} liftY={-6}>
                 <GlowTiltCard className="h-full">
                   <Link id={role.id} to={role.link} className="flex h-full min-h-[360px] flex-col bg-dark-surface border border-white/[0.08] rounded-2xl p-8 transition-all duration-500 group scroll-mt-28 hover:border-coral/30 hover:shadow-[0_0_40px_rgba(232,93,62,0.08)]">
                     <div className="mb-5 flex items-center justify-between">
                       <motion.div
-                        whileHover={shouldReduceMotion ? undefined : { rotate: -6, scale: 1.12 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                        variants={{
+                          float: {
+                            y: [0, -5, 0],
+                            transition: { duration: 3 + i * 0.4, repeat: Infinity, ease: 'easeInOut' },
+                          },
+                        }}
+                        animate={shouldReduceMotion ? undefined : 'float'}
+                        whileHover={shouldReduceMotion ? undefined : { rotate: -6, scale: 1.12, transition: { type: 'spring', stiffness: 300, damping: 15 } }}
                       >
                         {role.icon}
                       </motion.div>
@@ -1468,6 +1476,7 @@ export default function LandingPage() {
                     </motion.span>
                   </Link>
                 </GlowTiltCard>
+                </TiltCard>
               </ScrollReveal>
             ))}
           </div>
