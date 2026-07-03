@@ -257,7 +257,7 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
     setCursorGrabbing(false);
     setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 400);
+    window.setTimeout(() => setClickBurst(false), 550);
   }
 
   useEffect(() => {
@@ -462,7 +462,7 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
             </motion.div>
 
             {/* Click burst on drop */}
-            {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+            {clickBurst && <CinematicBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
 
             {/* Scene content */}
             <div className="flex flex-col items-center justify-center h-full px-8">
@@ -681,8 +681,11 @@ function AnimatedClarityCheck() {
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
   const [burstId, setBurstId] = useState(0);
-  const [cursorPos, setCursorPos] = useState({ x: 140, y: 160 });
+  const [cursorPos, setCursorPos] = useState({ x: 160, y: -20 });
   const [cursorClicking, setCursorClicking] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [shake, setShake] = useState(false);
+  const [lightLeak, setLightLeak] = useState(false);
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -695,10 +698,17 @@ function AnimatedClarityCheck() {
 
   function triggerClick() {
     setCursorClicking(true);
-    window.setTimeout(() => setCursorClicking(false), 200);
+    window.setTimeout(() => setCursorClicking(false), 180);
     setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 400);
+    window.setTimeout(() => setClickBurst(false), 550);
+    setShake(true);
+    window.setTimeout(() => setShake(false), 400);
+  }
+
+  function triggerTransition() {
+    setLightLeak(true);
+    window.setTimeout(() => setLightLeak(false), 1500);
   }
 
   useEffect(() => {
@@ -706,7 +716,8 @@ function AnimatedClarityCheck() {
       clearTimers();
       setPhase('start');
       setRevealed(0);
-      moveCursor(140, 160);
+      moveCursor(160, -20);
+      setZoom(1);
     }
   }, [isInView]);
 
@@ -714,35 +725,65 @@ function AnimatedClarityCheck() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'start') {
-      moveCursor(140, 140);
+      setZoom(1);
+      moveCursor(120, 80);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(100, 130);
+      }, 400));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.06);
+        triggerTransition();
         setPhase('loading');
       }, 900));
     } else if (phase === 'loading') {
-      moveCursor(140, 190);
+      setZoom(1.06);
+      moveCursor(140, 170);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(145, 185);
+      }, 600));
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(150, 200);
+      }, 1000));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(0.98);
+        triggerTransition();
         setPhase('reveal');
       }, 1600));
     } else if (phase === 'reveal' && revealed < subjectRows.length) {
+      setZoom(1);
       const rowCenter = 18 + revealed * 52 + 17;
-      moveCursor(60, rowCenter);
+      moveCursor(55, rowCenter - 5);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(50, rowCenter);
+      }, 200));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.02);
         setRevealed(r => r + 1);
       }, 500));
     } else if (phase === 'reveal' && revealed >= subjectRows.length) {
-      moveCursor(140, 270);
+      setZoom(1);
+      moveCursor(140, 265);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(140, 275);
+      }, 200));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.08);
+        triggerTransition();
         setPhase('done');
       }, 500));
     } else if (phase === 'done') {
-      moveCursor(140, 285);
+      moveCursor(140, 290);
+      timers.current.push(window.setTimeout(() => {
+        setZoom(0.92);
+      }, 2000));
       timers.current.push(window.setTimeout(() => {
         setPhase('start');
         setRevealed(0);
+        moveCursor(160, -20);
       }, 3000));
     }
     return clearTimers;
@@ -761,141 +802,180 @@ function AnimatedClarityCheck() {
         </div>
 
         <div className="h-[320px] overflow-hidden bg-white rounded-2xl relative">
+          {/* Cinematic overlays */}
           {!shouldReduceMotion && (
-            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
+            <>
+              <div className="cinematic-grain absolute inset-0 rounded-2xl pointer-events-none" />
+              <div className="cinematic-vignette absolute inset-0 rounded-2xl pointer-events-none" />
+              {lightLeak && <div className="cinematic-light-leak" />}
+            </>
           )}
-          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
-          <AnimatePresence mode="wait">
-            {phase === 'start' && (
-              <motion.div
-                key="start"
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.06, transition: { duration: 0.15, ease: 'easeIn' } }}
-                className="flex flex-col items-center justify-center gap-4 h-full relative overflow-visible"
-              >
-                <motion.div
-                  initial={{ y: -100, opacity: 0, rotate: -6 }}
-                  animate={{ y: 0, opacity: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 130, damping: 16, delay: 0.1 }}
-                  className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
-                  style={{ top: '26%' }}
-                >
-                  <FileText size={15} className="text-coral" />
-                  <span className="font-body text-xs font-semibold text-charcoal/70">Term2_Report.pdf</span>
-                </motion.div>
-                <motion.div
-                  initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
-                  animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
-                  transition={{ delay: 0.5, duration: 0.4 }}
-                  className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
-                >
-                  <Upload size={32} className="text-coral/50" />
-                </motion.div>
-                <div className="text-center mt-14">
-                  <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
-                  <p className="font-body text-xs text-charcoal/40 mt-0.5">Analyzing performance...</p>
-                </div>
-              </motion.div>
-            )}
 
-            {phase === 'loading' && (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.12 } }}
-                className="flex flex-col items-center justify-center gap-3 h-full"
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 12 }}
-                  className="w-10 h-10 rounded-xl bg-coral/8 border border-coral/15 flex items-center justify-center"
-                >
-                  <FileText size={18} className="text-coral/60" />
-                </motion.div>
-                <motion.div
-                  animate={shouldReduceMotion ? undefined : { rotate: 360 }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                  className="w-6 h-6 rounded-full border-2 border-coral/20 border-t-coral"
-                />
-                <p className="font-body text-sm text-charcoal/50">
-                  Analyzing report card
-                  <motion.span
-                    animate={{ opacity: [0, 1, 0] }}
-                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                  > ...</motion.span>
-                </p>
-                <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
+          {/* Camera shake container */}
+          <motion.div
+            className={shake && !shouldReduceMotion ? 'cinematic-shake' : ''}
+            animate={{ scale: zoom }}
+            transition={{ duration: zoom === 0.92 ? 0.3 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+            style={{ transformOrigin: 'center center' }}
+          >
+            {/* Bokeh orbs */}
+            {!shouldReduceMotion && (phase === 'reveal' || phase === 'done') && (
+              <>
+                {[0, 1, 2, 3].map(b => (
                   <motion.div
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 1.2, ease: 'easeInOut' }}
-                    className="h-full rounded-full bg-gradient-to-r from-coral to-sage"
+                    key={`bokeh-${b}`}
+                    className="absolute rounded-full pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    style={{
+                      width: `${18 + b * 12}px`,
+                      height: `${18 + b * 12}px`,
+                      left: `${15 + b * 22}%`,
+                      top: `${20 + (b % 2) * 40}%`,
+                      background: b % 2 === 0 ? 'rgba(232,93,62,0.04)' : 'rgba(255,255,255,0.06)',
+                      filter: 'blur(20px)',
+                    }}
                   />
-                </div>
-              </motion.div>
+                ))}
+              </>
             )}
 
-            {(phase === 'reveal' || phase === 'done') && (
-              <motion.div
-                key="results"
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.12 } }}
-                className="space-y-2.5"
-              >
-                {subjectRows.map((row, i) => (
-                  <motion.div
-                    key={row.subject}
-                    className="relative"
-                    initial={shouldReduceMotion ? false : { opacity: 0, x: -16 }}
-                    animate={revealed > i ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }}
-                    transition={{ duration: 0.35, ease: 'easeOut' }}
-                  >
-                    <motion.div
-                      animate={revealed > i && revealed - 1 === i ? { scale: [1, 1.025, 1] } : {}}
-                      transition={{ duration: 0.3 }}
-                      className={`flex items-center justify-between rounded-xl border border-light-gray px-4 py-3 ${revealed > i ? 'bg-card-surface-alt' : ''}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <motion.span
-                          initial={{ scale: 0 }}
-                          animate={revealed > i ? { scale: 1 } : { scale: 0 }}
-                          transition={{ type: 'spring', stiffness: 300, damping: 12, delay: 0.15 }}
-                          className={`w-2.5 h-2.5 rounded-full ${row.color}`}
-                        />
-                        <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
-                      </div>
-                      <motion.span
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={revealed > i ? { opacity: 1, y: 0 } : {}}
-                        transition={{ duration: 0.25, delay: 0.25 }}
-                        className={`font-body text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          row.status === 'On Track' ? 'bg-sage/15 text-sage' :
-                          row.status === 'Watch' ? 'bg-amber/15 text-amber' :
-                          'bg-coral/15 text-coral'
-                        }`}
-                      >
-                        {row.status}
-                      </motion.span>
-                    </motion.div>
-                  </motion.div>
-                ))}
-                {phase === 'done' && (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
-                    className="font-body text-xs text-coral text-center pt-2"
-                  >
-                    ✓ Clarity check complete
-                  </motion.p>
-                )}
-              </motion.div>
+            {!shouldReduceMotion && (
+              <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
             )}
-          </AnimatePresence>
+            {clickBurst && <CinematicBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+            <AnimatePresence mode="wait">
+              {phase === 'start' && (
+                <motion.div
+                  key="start"
+                  initial={{ opacity: 0, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, scale: 1.04, filter: 'blur(4px)', transition: { duration: 0.15, ease: 'easeIn' } }}
+                  className="flex flex-col items-center justify-center gap-4 h-[320px] relative overflow-visible"
+                >
+                  <motion.div
+                    initial={{ y: -80, opacity: 0, rotate: -4 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 120, damping: 14, delay: 0.1 }}
+                    className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
+                    style={{ top: '26%' }}
+                  >
+                    <FileText size={15} className="text-coral" />
+                    <span className="font-body text-xs font-semibold text-charcoal/70">Term2_Report.pdf</span>
+                  </motion.div>
+                  <motion.div
+                    initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
+                    animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
+                    transition={{ delay: 0.5, duration: 0.4 }}
+                    className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
+                  >
+                    <Upload size={32} className="text-coral/50" />
+                  </motion.div>
+                  <div className="text-center mt-14">
+                    <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
+                    <p className="font-body text-xs text-charcoal/40 mt-0.5">Analyzing performance...</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {phase === 'loading' && (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(4px)', transition: { duration: 0.12 } }}
+                  className="flex flex-col items-center justify-center gap-3 h-[320px]"
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+                    className="w-10 h-10 rounded-xl bg-coral/8 border border-coral/15 flex items-center justify-center"
+                  >
+                    <FileText size={18} className="text-coral/60" />
+                  </motion.div>
+                  <motion.div
+                    animate={shouldReduceMotion ? undefined : { rotate: 360 }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                    className="w-6 h-6 rounded-full border-2 border-coral/20 border-t-coral"
+                  />
+                  <p className="font-body text-sm text-charcoal/50">
+                    Analyzing report card
+                    <motion.span
+                      animate={{ opacity: [0, 1, 0] }}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                    > ...</motion.span>
+                  </p>
+                  <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
+                    <motion.div
+                      initial={{ width: '0%' }}
+                      animate={{ width: '100%' }}
+                      transition={{ duration: 1.2, ease: 'easeInOut' }}
+                      className="h-full rounded-full bg-gradient-to-r from-coral to-sage"
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {(phase === 'reveal' || phase === 'done') && (
+                <motion.div
+                  key="results"
+                  initial={{ opacity: 0, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(4px)', transition: { duration: 0.12 } }}
+                  className="space-y-2.5 p-1"
+                >
+                  {subjectRows.map((row, i) => (
+                    <motion.div
+                      key={row.subject}
+                      className="relative overflow-hidden"
+                      initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+                      animate={revealed > i ? { clipPath: 'inset(0 0% 0 0)' } : { clipPath: 'inset(0 100% 0 0)' }}
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <motion.div
+                        animate={revealed > i && revealed - 1 === i ? { scale: [1, 1.025, 1] } : {}}
+                        transition={{ duration: 0.3 }}
+                        className={`flex items-center justify-between rounded-xl border border-light-gray px-4 py-3 ${revealed > i ? 'bg-card-surface-alt' : ''}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={revealed > i ? { scale: 1 } : { scale: 0 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 12, delay: 0.15 }}
+                            className={`w-2.5 h-2.5 rounded-full ${row.color}`}
+                          />
+                          <span className="font-body text-sm font-semibold text-charcoal">{row.subject}</span>
+                        </div>
+                        <motion.span
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={revealed > i ? { opacity: 1, y: 0 } : {}}
+                          transition={{ duration: 0.25, delay: 0.25 }}
+                          className={`font-body text-xs font-semibold px-2 py-0.5 rounded-full ${
+                            row.status === 'On Track' ? 'bg-sage/15 text-sage' :
+                            row.status === 'Watch' ? 'bg-amber/15 text-amber' :
+                            'bg-coral/15 text-coral'
+                          }`}
+                        >
+                          {row.status}
+                        </motion.span>
+                      </motion.div>
+                    </motion.div>
+                  ))}
+                  {phase === 'done' && (
+                    <motion.p
+                      initial={{ opacity: 0, filter: 'blur(4px)' }}
+                      animate={{ opacity: 1, filter: 'blur(0px)' }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      className="font-body text-xs text-coral text-center pt-2"
+                    >
+                      ✓ Clarity check complete
+                    </motion.p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
       </div>
     </FloatingMockCard>
@@ -905,46 +985,132 @@ function AnimatedClarityCheck() {
 
 function SimulatedCursor({ x, y, clicking }: { x: number; y: number; clicking: boolean }) {
   const shouldReduceMotion = useReducedMotion();
+  const prevPos = useRef({ x, y });
+  const [trailing, setTrailing] = useState<{ x: number; y: number; opacity: number }[]>([]);
+
+  useEffect(() => {
+    const dx = x - prevPos.current.x;
+    const dy = y - prevPos.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 60) {
+      setTrailing([
+        { x: prevPos.current.x, y: prevPos.current.y, opacity: 0.12 },
+        { x: (prevPos.current.x + x) / 2, y: (prevPos.current.y + y) / 2, opacity: 0.06 },
+        { x: x - dx * 0.15, y: y - dy * 0.15, opacity: 0.02 },
+      ]);
+      const t2 = window.setTimeout(() => setTrailing([]), 200);
+      prevPos.current = { x, y };
+      return () => { clearTimeout(t2); };
+    }
+    prevPos.current = { x, y };
+  }, [x, y]);
+
   if (shouldReduceMotion) return null;
 
   return (
-    <motion.div
-      className="absolute z-30 pointer-events-none"
-      style={{ left: 0, top: 0 }}
-      initial={false}
-      animate={{ x, y }}
-      transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.4 }}
-    >
-      <motion.svg
-        width="20" height="26" viewBox="0 0 20 26" fill="none"
-        animate={clicking ? { scaleY: 0.75, scaleX: 0.88, y: 4 } : { scaleY: 1, scaleX: 1, y: 0 }}
-        transition={{ duration: 0.1, ease: 'easeInOut' }}
-        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.25))' }}
+    <>
+      {trailing.map((t, i) => (
+        <motion.div
+          key={`trail-${i}`}
+          className="absolute z-29 pointer-events-none"
+          style={{ left: 0, top: 0, opacity: t.opacity }}
+          animate={{ x: t.x, y: t.y }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+        >
+          <svg width="18" height="24" viewBox="0 0 18 24" fill="none">
+            <path d="M2 2L2 21L5.5 16L9 23L11.5 21.5L8 15L15.5 15L2 2Z" fill="black" opacity="0.4" />
+          </svg>
+        </motion.div>
+      ))}
+      <motion.div
+        className="absolute z-30 pointer-events-none"
+        style={{ left: 0, top: 0 }}
+        initial={false}
+        animate={{ x, y }}
+        transition={{ type: 'spring', stiffness: 180, damping: 24, mass: 0.5 }}
       >
-        <path d="M2 2V21L6.5 16.5L10 23L13 21.5L9.5 15H16.5L2 2Z" fill="white" stroke="#444" strokeWidth="1.3" strokeLinejoin="round" />
-      </motion.svg>
-    </motion.div>
+        <motion.svg
+          width="20" height="26" viewBox="0 0 20 26" fill="none"
+          animate={clicking
+            ? { scaleY: 0.7, scaleX: 0.85, y: 5, filter: 'drop-shadow(0 0 6px rgba(232,93,62,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }
+            : { scaleY: 1, scaleX: 1, y: 0, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))' }
+          }
+          transition={{ duration: 0.08, ease: [0.33, 0, 0.67, 0] }}
+        >
+          <path
+            d="M2 2L2 21L5.5 16L9 23L11.5 21.5L8 15L15.5 15L2 2Z"
+            fill="black"
+            stroke="rgba(255,255,255,0.25)"
+            strokeWidth="0.6"
+            strokeLinejoin="round"
+          />
+        </motion.svg>
+      </motion.div>
+    </>
   );
 }
 
-function ClickBurst({ x, y, id }: { x: number; y: number; id: number }) {
+function CinematicBurst({ x, y, id }: { x: number; y: number; id: number }) {
   return (
     <>
+      {/* Screen flash */}
       <motion.div
-        key={`ob-${id}`}
-        initial={{ scale: 0, opacity: 0.65 }}
-        animate={{ scale: 6, opacity: 0 }}
-        transition={{ duration: 0.45, ease: 'easeOut' }}
-        className="absolute w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/8 pointer-events-none z-10"
+        key={`sf-${id}`}
+        initial={{ opacity: 0.08 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className="absolute inset-0 bg-white pointer-events-none z-10"
+      />
+      {/* Outer ring */}
+      <motion.div
+        key={`or-${id}`}
+        initial={{ scale: 0, opacity: 0.5 }}
+        animate={{ scale: 7, opacity: 0 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-coral/20 pointer-events-none z-10"
         style={{ left: x, top: y }}
       />
+      {/* Inner flash */}
       <motion.div
-        key={`ib-${id}`}
-        initial={{ scale: 0, opacity: 0.5 }}
-        animate={{ scale: 3, opacity: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut', delay: 0.03 }}
-        className="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/50 pointer-events-none z-10"
+        key={`if-${id}`}
+        initial={{ scale: 0, opacity: 0.6 }}
+        animate={{ scale: 3.5, opacity: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut', delay: 0.02 }}
+        className="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 pointer-events-none z-10"
         style={{ left: x, top: y }}
+      />
+      {/* Radial streaks */}
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+        <motion.div
+          key={`rs-${id}-${angle}`}
+          initial={{ scaleX: 0, opacity: 0.4 }}
+          animate={{ scaleX: 1.5, opacity: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: angle * 0.0003 }}
+          className="absolute pointer-events-none z-10"
+          style={{
+            left: x,
+            top: y,
+            width: '2px',
+            height: '28px',
+            background: 'linear-gradient(to bottom, rgba(232,93,62,0.5), transparent)',
+            transformOrigin: 'top center',
+            rotate: `${angle}deg`,
+            translate: '-50% 0',
+          }}
+        />
+      ))}
+      {/* Glow blob */}
+      <motion.div
+        key={`gb-${id}`}
+        initial={{ scale: 0, opacity: 0.12 }}
+        animate={{ scale: 5, opacity: 0 }}
+        transition={{ duration: 0.65, ease: 'easeOut' }}
+        className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none z-10"
+        style={{
+          left: x,
+          top: y,
+          background: 'radial-gradient(circle, rgba(232,93,62,0.3), transparent 70%)',
+        }}
       />
     </>
   );
@@ -982,8 +1148,11 @@ function AnimatedConversation() {
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
   const [burstId, setBurstId] = useState(0);
-  const [cursorPos, setCursorPos] = useState({ x: 140, y: 160 });
+  const [cursorPos, setCursorPos] = useState({ x: 160, y: -20 });
   const [cursorClicking, setCursorClicking] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [shake, setShake] = useState(false);
+  const [lightLeak, setLightLeak] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   const insteadText1 = 'How did you get a C in Science?';
@@ -1002,10 +1171,17 @@ function AnimatedConversation() {
 
   function triggerClick() {
     setCursorClicking(true);
-    window.setTimeout(() => setCursorClicking(false), 200);
+    window.setTimeout(() => setCursorClicking(false), 180);
     setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 400);
+    window.setTimeout(() => setClickBurst(false), 550);
+    setShake(true);
+    window.setTimeout(() => setShake(false), 400);
+  }
+
+  function triggerTransition() {
+    setLightLeak(true);
+    window.setTimeout(() => setLightLeak(false), 1500);
   }
 
   useEffect(() => {
@@ -1013,7 +1189,8 @@ function AnimatedConversation() {
       clearTimers();
       setPhase('idle');
       setTyped('');
-      moveCursor(140, 160);
+      moveCursor(160, -20);
+      setZoom(1);
     }
   }, [isInView]);
 
@@ -1022,48 +1199,85 @@ function AnimatedConversation() {
     clearTimers();
     if (phase === 'idle') {
       setTyped('');
-      moveCursor(140, 140);
+      setZoom(1);
+      moveCursor(120, 80);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(100, 120);
+      }, 400));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.06);
+        triggerTransition();
         setPhase('typing1');
       }, 900));
     } else if (phase === 'typing1' && typed.length < insteadText1.length) {
-      moveCursor(50, 200);
+      setZoom(1.04);
+      const charIdx = typed.length;
+      moveCursor(45 + charIdx * 2.8, 195);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText1.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing1' && typed.length >= insteadText1.length) {
-      moveCursor(120, 230);
+      setZoom(1.04);
+      moveCursor(115, 225);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(120, 230);
+      }, 200));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        triggerTransition();
         setPhase('response1');
       }, 800));
     } else if (phase === 'response1') {
+      setZoom(1);
       setTyped('');
-      moveCursor(50, 200);
+      moveCursor(100, 200);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(80, 195);
+      }, 400));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.04);
+        triggerTransition();
         setPhase('typing2');
       }, 1200));
     } else if (phase === 'typing2' && typed.length < insteadText2.length) {
-      moveCursor(50, 200);
+      setZoom(1.04);
+      const charIdx = typed.length;
+      moveCursor(45 + charIdx * 3.5, 280);
       timers.current.push(window.setTimeout(() => {
         setTyped(prev => insteadText2.slice(0, prev.length + 1));
       }, 40));
     } else if (phase === 'typing2' && typed.length >= insteadText2.length) {
-      moveCursor(120, 230);
+      setZoom(1.04);
+      moveCursor(115, 310);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(120, 315);
+      }, 200));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        triggerTransition();
         setPhase('response2');
       }, 800));
     } else if (phase === 'response2') {
-      moveCursor(140, 310);
-      timers.current.push(window.setTimeout(() => setPhase('done'), 2500));
+      setZoom(1);
+      moveCursor(140, 300);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(140, 305);
+      }, 500));
+      timers.current.push(window.setTimeout(() => {
+        setZoom(1.08);
+        setPhase('done');
+      }, 2500));
     } else if (phase === 'done') {
       moveCursor(140, 310);
       timers.current.push(window.setTimeout(() => {
+        setZoom(0.92);
+      }, 2000));
+      timers.current.push(window.setTimeout(() => {
         setPhase('idle');
         setTyped('');
+        moveCursor(160, -20);
       }, 3000));
     }
     return clearTimers;
@@ -1077,153 +1291,195 @@ function AnimatedConversation() {
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">A calmer way in</h4>
 
         <div className="h-[330px] overflow-hidden bg-white rounded-2xl relative">
+          {/* Cinematic overlays */}
           {!shouldReduceMotion && (
-            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
+            <>
+              <div className="cinematic-grain absolute inset-0 rounded-2xl pointer-events-none" />
+              <div className="cinematic-vignette absolute inset-0 rounded-2xl pointer-events-none" />
+              {lightLeak && <div className="cinematic-light-leak" />}
+            </>
           )}
-          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
-          <AnimatePresence mode="wait">
-            {phase === 'idle' && (
-              <motion.div
-                key="idle"
-                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.1 } }}
-                className="flex flex-col items-center justify-center gap-4 h-full relative overflow-visible"
-              >
-                <motion.div
-                  initial={{ y: -100, opacity: 0, rotate: -6 }}
-                  animate={{ y: 0, opacity: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 130, damping: 16, delay: 0.1 }}
-                  className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
-                  style={{ top: '26%' }}
-                >
-                  <FileText size={15} className="text-coral" />
-                  <span className="font-body text-xs font-semibold text-charcoal/70">Report_Q2.pdf</span>
-                </motion.div>
-                <motion.div
-                  initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
-                  animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
-                  transition={{ delay: 0.5, duration: 0.4 }}
-                  className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
-                >
-                  <Upload size={32} className="text-coral/50" />
-                </motion.div>
-                <div className="text-center mt-14">
-                  <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
-                  <p className="font-body text-xs text-charcoal/40 mt-0.5">Generating conversation guide...</p>
-                </div>
-              </motion.div>
+
+          {/* Camera shake + zoom container */}
+          <motion.div
+            className={shake && !shouldReduceMotion ? 'cinematic-shake' : ''}
+            animate={{ scale: zoom }}
+            transition={{ duration: zoom === 0.92 ? 0.3 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+            style={{ transformOrigin: 'center center' }}
+          >
+            {/* Bokeh orbs */}
+            {!shouldReduceMotion && phase !== 'idle' && (
+              <>
+                {[0, 1, 2].map(b => (
+                  <motion.div
+                    key={`bokeh-c-${b}`}
+                    className="absolute rounded-full pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    style={{
+                      width: `${15 + b * 10}px`,
+                      height: `${15 + b * 10}px`,
+                      left: `${20 + b * 25}%`,
+                      top: `${25 + (b % 2) * 35}%`,
+                      background: b % 2 === 0 ? 'rgba(232,93,62,0.04)' : 'rgba(255,255,255,0.05)',
+                      filter: 'blur(18px)',
+                    }}
+                  />
+                ))}
+              </>
             )}
 
-            {phase !== 'idle' && (
-              <motion.div
-                key="conversation"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
-                className="space-y-3"
-                ref={listRef}
-              >
-                {phase === 'typing1' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 18 }}
-                    className="rounded-2xl bg-card-surface-alt px-4 py-4"
-                  >
-                    <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
-                    <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
-                      {typed}
-                      <motion.span
-                        animate={{ opacity: [1, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity }}
-                        className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
-                      />
-                    </p>
-                  </motion.div>
-                )}
-
-                {(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done') && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -12, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 16 }}
-                    className="rounded-2xl bg-card-surface-alt px-4 py-3"
-                  >
-                    <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
-                    <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText1}</p>
-                  </motion.div>
-                )}
-
-                {(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done') && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 16, delay: 0.2 }}
-                    className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
-                  >
-                    <span className="font-body text-xs font-semibold text-coral">Try:</span>
-                    <p className="font-body text-sm text-charcoal/80 mt-1">{tryText1}</p>
-                  </motion.div>
-                )}
-
-                {phase === 'typing2' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 18 }}
-                    className="rounded-2xl bg-card-surface-alt px-4 py-4"
-                  >
-                    <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
-                    <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
-                      {typed}
-                      <motion.span
-                        animate={{ opacity: [1, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity }}
-                        className="inline-block w-[2px] h-4 bg-coral/60 ml-0.5 align-middle"
-                      />
-                    </p>
-                  </motion.div>
-                )}
-
-                {(phase === 'response2' || phase === 'done') && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -12, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 16 }}
-                    className="rounded-2xl bg-card-surface-alt px-4 py-3"
-                  >
-                    <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
-                    <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText2}</p>
-                  </motion.div>
-                )}
-
-                {(phase === 'response2' || phase === 'done') && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 16, delay: 0.2 }}
-                    className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
-                  >
-                    <span className="font-body text-xs font-semibold text-coral">Try:</span>
-                    <p className="font-body text-sm text-charcoal/80 mt-1">{tryText2}</p>
-                  </motion.div>
-                )}
-
-                {phase === 'done' && (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
-                    className="font-body text-xs text-coral text-center pt-1"
-                  >
-                    ✓ Script ready for tonight
-                  </motion.p>
-                )}
-              </motion.div>
+            {!shouldReduceMotion && (
+              <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
             )}
-          </AnimatePresence>
+            {clickBurst && <CinematicBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+            <AnimatePresence mode="wait">
+              {phase === 'idle' && (
+                <motion.div
+                  key="idle"
+                  initial={{ opacity: 0, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, scale: 1.04, filter: 'blur(4px)', transition: { duration: 0.12 } }}
+                  className="flex flex-col items-center justify-center gap-4 h-[330px] relative overflow-visible"
+                >
+                  <motion.div
+                    initial={{ y: -80, opacity: 0, rotate: -4 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 120, damping: 14, delay: 0.1 }}
+                    className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
+                    style={{ top: '26%' }}
+                  >
+                    <FileText size={15} className="text-coral" />
+                    <span className="font-body text-xs font-semibold text-charcoal/70">Report_Q2.pdf</span>
+                  </motion.div>
+                  <motion.div
+                    initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
+                    animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
+                    transition={{ delay: 0.5, duration: 0.4 }}
+                    className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
+                  >
+                    <Upload size={32} className="text-coral/50" />
+                  </motion.div>
+                  <div className="text-center mt-14">
+                    <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
+                    <p className="font-body text-xs text-charcoal/40 mt-0.5">Generating conversation guide...</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {phase !== 'idle' && (
+                <motion.div
+                  key="conversation"
+                  initial={{ opacity: 0, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(4px)', transition: { duration: 0.1 } }}
+                  className="space-y-3 p-1 h-[330px]"
+                  ref={listRef}
+                >
+                  {phase === 'typing1' && (
+                    <motion.div
+                      initial={{ opacity: 0, clipPath: 'inset(0 0 0 100%)' }}
+                      animate={{ opacity: 1, clipPath: 'inset(0 0 0 0%)' }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="rounded-2xl bg-card-surface-alt px-4 py-4"
+                    >
+                      <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                      <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
+                        {typed}
+                        <motion.span
+                          animate={{ opacity: [1, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity }}
+                          className="inline-block w-[3px] h-4 bg-coral/70 ml-0.5 align-middle"
+                          style={{ boxShadow: '0 0 4px rgba(232,93,62,0.4)' }}
+                        />
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done') && (
+                    <motion.div
+                      initial={{ opacity: 0, clipPath: 'inset(0 0 0 100%)' }}
+                      animate={{ opacity: 1, clipPath: 'inset(0 0 0 0%)' }}
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      className="rounded-2xl bg-card-surface-alt px-4 py-3"
+                    >
+                      <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                      <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText1}</p>
+                    </motion.div>
+                  )}
+
+                  {(phase === 'response1' || phase === 'typing2' || phase === 'response2' || phase === 'done') && (
+                    <motion.div
+                      initial={{ opacity: 0, clipPath: 'inset(0 100% 0 0)' }}
+                      animate={{ opacity: 1, clipPath: 'inset(0 0% 0 0)' }}
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+                      className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
+                    >
+                      <span className="font-body text-xs font-semibold text-coral">Try:</span>
+                      <p className="font-body text-sm text-charcoal/80 mt-1">{tryText1}</p>
+                    </motion.div>
+                  )}
+
+                  {phase === 'typing2' && (
+                    <motion.div
+                      initial={{ opacity: 0, clipPath: 'inset(0 0 0 100%)' }}
+                      animate={{ opacity: 1, clipPath: 'inset(0 0 0 0%)' }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="rounded-2xl bg-card-surface-alt px-4 py-4"
+                    >
+                      <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                      <p className="font-body text-sm text-charcoal/80 mt-1 min-h-[20px]">
+                        {typed}
+                        <motion.span
+                          animate={{ opacity: [1, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity }}
+                          className="inline-block w-[3px] h-4 bg-coral/70 ml-0.5 align-middle"
+                          style={{ boxShadow: '0 0 4px rgba(232,93,62,0.4)' }}
+                        />
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {(phase === 'response2' || phase === 'done') && (
+                    <motion.div
+                      initial={{ opacity: 0, clipPath: 'inset(0 0 0 100%)' }}
+                      animate={{ opacity: 1, clipPath: 'inset(0 0 0 0%)' }}
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      className="rounded-2xl bg-card-surface-alt px-4 py-3"
+                    >
+                      <span className="font-body text-xs font-semibold text-coral">Instead of:</span>
+                      <p className="font-body text-sm text-charcoal/80 mt-1">{insteadText2}</p>
+                    </motion.div>
+                  )}
+
+                  {(phase === 'response2' || phase === 'done') && (
+                    <motion.div
+                      initial={{ opacity: 0, clipPath: 'inset(0 100% 0 0)' }}
+                      animate={{ opacity: 1, clipPath: 'inset(0 0% 0 0)' }}
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+                      className="rounded-2xl bg-coral/10 ml-4 px-4 py-3 border border-coral/10"
+                    >
+                      <span className="font-body text-xs font-semibold text-coral">Try:</span>
+                      <p className="font-body text-sm text-charcoal/80 mt-1">{tryText2}</p>
+                    </motion.div>
+                  )}
+
+                  {phase === 'done' && (
+                    <motion.p
+                      initial={{ opacity: 0, filter: 'blur(4px)' }}
+                      animate={{ opacity: 1, filter: 'blur(0px)' }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      className="font-body text-xs text-coral text-center pt-1"
+                    >
+                      ✓ Script ready for tonight
+                    </motion.p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
       </div>
     </FloatingMockCard>
@@ -1240,8 +1496,11 @@ function AnimatedDayPlan() {
   const isInView = useInView(ref, { margin: '-80px' });
   const [clickBurst, setClickBurst] = useState(false);
   const [burstId, setBurstId] = useState(0);
-  const [cursorPos, setCursorPos] = useState({ x: 140, y: 175 });
+  const [cursorPos, setCursorPos] = useState({ x: 160, y: -20 });
   const [cursorClicking, setCursorClicking] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [shake, setShake] = useState(false);
+  const [lightLeak, setLightLeak] = useState(false);
 
   function clearTimers() {
     timers.current.forEach(clearTimeout);
@@ -1254,17 +1513,25 @@ function AnimatedDayPlan() {
 
   function triggerClick() {
     setCursorClicking(true);
-    window.setTimeout(() => setCursorClicking(false), 200);
+    window.setTimeout(() => setCursorClicking(false), 180);
     setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 400);
+    window.setTimeout(() => setClickBurst(false), 550);
+    setShake(true);
+    window.setTimeout(() => setShake(false), 400);
+  }
+
+  function triggerTransition() {
+    setLightLeak(true);
+    window.setTimeout(() => setLightLeak(false), 1500);
   }
 
   useEffect(() => {
     if (!isInView) {
       clearTimers();
       setPhase('idle');
-      moveCursor(140, 175);
+      moveCursor(160, -20);
+      setZoom(1);
     }
   }, [isInView]);
 
@@ -1272,44 +1539,83 @@ function AnimatedDayPlan() {
     if (shouldReduceMotion || paused || !isInView) return;
     clearTimers();
     if (phase === 'idle') {
-      moveCursor(140, 140);
+      setZoom(1);
+      moveCursor(120, 80);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(100, 120);
+      }, 400));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.06);
+        triggerTransition();
         setPhase('building');
       }, 900));
     } else if (phase === 'building') {
-      moveCursor(140, 220);
+      setZoom(1.06);
+      moveCursor(140, 210);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(145, 215);
+      }, 500));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(0.98);
+        triggerTransition();
         setPhase('week1');
       }, 1400));
     } else if (phase === 'week1') {
-      moveCursor(40, 35);
+      setZoom(1);
+      moveCursor(38, 30);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(35, 35);
+      }, 200));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.02);
         setPhase('week2');
       }, 700));
     } else if (phase === 'week2') {
-      moveCursor(40, 87);
+      setZoom(1);
+      moveCursor(38, 82);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(35, 87);
+      }, 200));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.02);
         setPhase('week3');
       }, 700));
     } else if (phase === 'week3') {
-      moveCursor(40, 139);
+      setZoom(1);
+      moveCursor(38, 134);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(35, 139);
+      }, 200));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.02);
         setPhase('week4');
       }, 700));
     } else if (phase === 'week4') {
-      moveCursor(40, 191);
+      setZoom(1);
+      moveCursor(38, 186);
+      timers.current.push(window.setTimeout(() => {
+        moveCursor(35, 191);
+      }, 200));
       timers.current.push(window.setTimeout(() => {
         triggerClick();
+        setZoom(1.08);
+        triggerTransition();
         setPhase('done');
       }, 700));
     } else if (phase === 'done') {
-      moveCursor(140, 315);
-      timers.current.push(window.setTimeout(() => setPhase('idle'), 3000));
+      moveCursor(140, 310);
+      timers.current.push(window.setTimeout(() => {
+        setZoom(0.92);
+      }, 2000));
+      timers.current.push(window.setTimeout(() => {
+        setPhase('idle');
+        moveCursor(160, -20);
+      }, 3000));
     }
     return clearTimers;
   }, [phase, shouldReduceMotion, paused, isInView]);
@@ -1324,128 +1630,170 @@ function AnimatedDayPlan() {
         <h4 className="font-display text-2xl font-medium text-charcoal mb-5">Four small weeks</h4>
 
         <div className="h-[350px] overflow-hidden bg-white rounded-2xl relative">
+          {/* Cinematic overlays */}
           {!shouldReduceMotion && (
-            <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
+            <>
+              <div className="cinematic-grain absolute inset-0 rounded-2xl pointer-events-none" />
+              <div className="cinematic-vignette absolute inset-0 rounded-2xl pointer-events-none" />
+              {lightLeak && <div className="cinematic-light-leak" />}
+            </>
           )}
-          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
-          <AnimatePresence mode="wait">
-            {phase === 'idle' && (
-              <motion.div
-                key="idle"
-                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.1 } }}
-                className="flex flex-col items-center justify-center gap-4 h-full relative overflow-visible"
-              >
-                <motion.div
-                  initial={{ y: -100, opacity: 0, rotate: -6 }}
-                  animate={{ y: 0, opacity: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 130, damping: 16, delay: 0.1 }}
-                  className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
-                  style={{ top: '26%' }}
-                >
-                  <FileText size={15} className="text-coral" />
-                  <span className="font-body text-xs font-semibold text-charcoal/70">Term_2_Grade.pdf</span>
-                </motion.div>
-                <motion.div
-                  initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
-                  animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
-                  transition={{ delay: 0.5, duration: 0.4 }}
-                  className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
-                >
-                  <Upload size={32} className="text-coral/50" />
-                </motion.div>
-                <div className="text-center mt-14">
-                  <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
-                  <p className="font-body text-xs text-charcoal/40 mt-0.5">Creating 30-day improvement plan...</p>
-                </div>
-              </motion.div>
-            )}
 
-            {phase === 'building' && (
-              <motion.div
-                key="building"
-                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
-                className="flex flex-col items-center justify-center gap-3 h-full"
-              >
-                <div className="flex gap-1.5">
-                  {[0, 1, 2].map(i => (
-                    <motion.div
-                      key={i}
-                      animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
-                      transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.15 }}
-                      className="w-2 h-2 rounded-full bg-coral/60"
-                    />
-                  ))}
-                </div>
-                <p className="font-body text-sm text-charcoal/50">Building weekly steps...</p>
-                <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
+          {/* Camera shake + zoom container */}
+          <motion.div
+            className={shake && !shouldReduceMotion ? 'cinematic-shake' : ''}
+            animate={{ scale: zoom }}
+            transition={{ duration: zoom === 0.92 ? 0.3 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+            style={{ transformOrigin: 'center center' }}
+          >
+            {/* Bokeh orbs */}
+            {!shouldReduceMotion && (phase !== 'idle' && phase !== 'building') && (
+              <>
+                {[0, 1, 2, 3].map(b => (
                   <motion.div
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 1, ease: 'easeInOut' }}
-                    className="h-full rounded-full bg-gradient-to-r from-coral to-sage"
+                    key={`bokeh-d-${b}`}
+                    className="absolute rounded-full pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    style={{
+                      width: `${16 + b * 11}px`,
+                      height: `${16 + b * 11}px`,
+                      left: `${18 + b * 20}%`,
+                      top: `${22 + (b % 2) * 38}%`,
+                      background: b % 2 === 0 ? 'rgba(232,93,62,0.04)' : 'rgba(255,255,255,0.05)',
+                      filter: 'blur(20px)',
+                    }}
                   />
-                </div>
-              </motion.div>
+                ))}
+              </>
             )}
 
-            {(phase !== 'idle' && phase !== 'building') && (
-              <motion.div
-                key="weeks"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.1 } }}
-                className="space-y-2.5"
-              >
-                {planRows.map((row, i) => {
-                  const weekPhase = weekPhases[i];
-                  const isVisible = weekPhases.indexOf(weekPhase as typeof weekPhases[number]) <= weekPhases.indexOf(phase as typeof weekPhases[number]) || phase === 'done';
-                  return (
-                    <motion.div
-                      key={row.week}
-                      initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-                      animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <motion.div
-                        animate={isVisible && weekPhases.indexOf(weekPhase) === weekPhases.indexOf(phase as typeof weekPhases[number]) ? { scale: [1, 1.025, 1] } : {}}
-                        transition={{ duration: 0.3 }}
-                        className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
-                        whileHover={shouldReduceMotion ? undefined : { scale: 1.01, borderColor: 'rgba(232,93,62,0.2)' }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-body text-xs font-bold text-coral">{row.week}</span>
-                          {isVisible && phase !== 'idle' && (
-                            <motion.span
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ type: 'spring', stiffness: 300, damping: 12 }}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            </motion.span>
-                          )}
-                        </div>
-                        <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
-                      </motion.div>
-                    </motion.div>
-                  );
-                })}
-                {phase === 'done' && (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
-                    className="font-body text-xs text-coral text-center pt-2"
-                  >
-                    ✓ 4-week plan ready
-                  </motion.p>
-                )}
-              </motion.div>
+            {!shouldReduceMotion && (
+              <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
             )}
-          </AnimatePresence>
+            {clickBurst && <CinematicBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+            <AnimatePresence mode="wait">
+              {phase === 'idle' && (
+                <motion.div
+                  key="idle"
+                  initial={{ opacity: 0, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, scale: 1.04, filter: 'blur(4px)', transition: { duration: 0.12 } }}
+                  className="flex flex-col items-center justify-center gap-4 h-[350px] relative overflow-visible"
+                >
+                  <motion.div
+                    initial={{ y: -80, opacity: 0, rotate: -4 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 120, damping: 14, delay: 0.1 }}
+                    className="absolute w-36 h-14 rounded-xl bg-white border border-coral/30 shadow-lg flex items-center justify-center gap-2 z-10"
+                    style={{ top: '26%' }}
+                  >
+                    <FileText size={15} className="text-coral" />
+                    <span className="font-body text-xs font-semibold text-charcoal/70">Term_2_Grade.pdf</span>
+                  </motion.div>
+                  <motion.div
+                    initial={{ borderColor: 'rgba(232,93,62,0.3)', background: 'rgba(232,93,62,0.03)' }}
+                    animate={{ borderColor: 'rgba(232,93,62,0.6)', background: 'rgba(232,93,62,0.08)' }}
+                    transition={{ delay: 0.5, duration: 0.4 }}
+                    className="w-24 h-24 rounded-2xl border-2 border-dashed flex items-center justify-center"
+                  >
+                    <Upload size={32} className="text-coral/50" />
+                  </motion.div>
+                  <div className="text-center mt-14">
+                    <p className="font-body text-sm font-semibold text-charcoal/70">Report card uploaded</p>
+                    <p className="font-body text-xs text-charcoal/40 mt-0.5">Creating 30-day improvement plan...</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {phase === 'building' && (
+                <motion.div
+                  key="building"
+                  initial={{ opacity: 0, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(4px)', transition: { duration: 0.1 } }}
+                  className="flex flex-col items-center justify-center gap-3 h-[350px]"
+                >
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2].map(i => (
+                      <motion.div
+                        key={i}
+                        animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
+                        transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.15 }}
+                        className="w-2 h-2 rounded-full bg-coral/60"
+                      />
+                    ))}
+                  </div>
+                  <p className="font-body text-sm text-charcoal/50">Building weekly steps...</p>
+                  <div className="w-36 h-1 rounded-full bg-light-gray overflow-hidden">
+                    <motion.div
+                      initial={{ width: '0%' }}
+                      animate={{ width: '100%' }}
+                      transition={{ duration: 1, ease: 'easeInOut' }}
+                      className="h-full rounded-full bg-gradient-to-r from-coral to-sage"
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {(phase !== 'idle' && phase !== 'building') && (
+                <motion.div
+                  key="weeks"
+                  initial={{ opacity: 0, filter: 'blur(6px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(4px)', transition: { duration: 0.1 } }}
+                  className="space-y-2.5 p-1"
+                >
+                  {planRows.map((row, i) => {
+                    const weekPhase = weekPhases[i];
+                    const isVisible = weekPhases.indexOf(weekPhase as typeof weekPhases[number]) <= weekPhases.indexOf(phase as typeof weekPhases[number]) || phase === 'done';
+                    return (
+                      <motion.div
+                        key={row.week}
+                        className="relative overflow-hidden"
+                        initial={shouldReduceMotion ? false : { clipPath: 'inset(100% 0 0 0)' }}
+                        animate={isVisible ? { clipPath: 'inset(0% 0 0 0)' } : { clipPath: 'inset(100% 0 0 0)' }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        <motion.div
+                          animate={isVisible && weekPhases.indexOf(weekPhase) === weekPhases.indexOf(phase as typeof weekPhases[number]) ? { scale: [1, 1.025, 1] } : {}}
+                          transition={{ duration: 0.3 }}
+                          className="rounded-xl border border-light-gray bg-card-surface-alt px-4 py-3"
+                          whileHover={shouldReduceMotion ? undefined : { scale: 1.01, borderColor: 'rgba(232,93,62,0.2)' }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-body text-xs font-bold text-coral">{row.week}</span>
+                            {isVisible && phase !== 'idle' && (
+                              <motion.span
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 8 }}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A9B8A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </motion.span>
+                            )}
+                          </div>
+                          <p className="font-body text-sm text-charcoal/80 mt-1">{row.text}</p>
+                        </motion.div>
+                      </motion.div>
+                    );
+                  })}
+                  {phase === 'done' && (
+                    <motion.p
+                      initial={{ opacity: 0, filter: 'blur(4px)' }}
+                      animate={{ opacity: 1, filter: 'blur(0px)' }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      className="font-body text-xs text-coral text-center pt-2"
+                    >
+                      ✓ 4-week plan ready
+                    </motion.p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
       </div>
     </FloatingMockCard>
