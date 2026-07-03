@@ -240,6 +240,15 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
   const [burstId, setBurstId] = useState(0);
   const [paused, setPaused] = useState(false);
 
+  // AE-level: camera shake state
+  const [shakeKey, setShakeKey] = useState(0);
+  // AE-level: zoom per scene (scale of scene content)
+  const [zoomScale, setZoomScale] = useState(1);
+  // AE-level: trailing cursor ghosts
+  const [trail, setTrail] = useState<{ x: number; y: number; age: number }[]>([]);
+  const trailRef = useRef<{ x: number; y: number; age: number }[]>([]);
+  const prevCursorRef = useRef({ x: 300, y: -40 });
+
   function clearTimers() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
@@ -257,8 +266,38 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
     setCursorGrabbing(false);
     setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 400);
+    setShakeKey(n => n + 1);
+    setZoomScale(1.06);
+    window.setTimeout(() => setClickBurst(false), 600);
+    window.setTimeout(() => setZoomScale(1), 500);
   }
+
+  // Trail updater — pushes ghost positions on every cursor move
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const dx = cursorPos.x - prevCursorRef.current.x;
+    const dy = cursorPos.y - prevCursorRef.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 2) {
+      trailRef.current = [
+        ...trailRef.current.slice(-4),
+        { x: prevCursorRef.current.x, y: prevCursorRef.current.y, age: Date.now() },
+      ];
+      setTrail([...trailRef.current]);
+    }
+    prevCursorRef.current = cursorPos;
+  }, [cursorPos, shouldReduceMotion]);
+
+  // Decay trail ghosts
+  useEffect(() => {
+    if (shouldReduceMotion || trail.length === 0) return;
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      trailRef.current = trailRef.current.filter(g => now - g.age < 350);
+      setTrail([...trailRef.current]);
+    }, 50);
+    return () => clearInterval(id);
+  }, [trail.length, shouldReduceMotion]);
 
   useEffect(() => {
     if (!isInView) {
@@ -270,6 +309,9 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
       moveFile(280, -50);
       setCursorGrabbing(false);
       setDropZoneActive(false);
+      setZoomScale(1);
+      trailRef.current = [];
+      setTrail([]);
     }
   }, [isInView]);
 
@@ -323,6 +365,9 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
         moveFile(280, -50);
         setCursorGrabbing(false);
         setDropZoneActive(false);
+        setZoomScale(1);
+        trailRef.current = [];
+        setTrail([]);
       }, 8000));
     }
 
@@ -438,7 +483,40 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: cinematicEase }}
           >
-            {/* Black simulated cursor */}
+            {/* Film grain overlay */}
+            <div className="cinematic-grain absolute inset-0 rounded-2xl overflow-hidden pointer-events-none" />
+            {/* Vignette overlay */}
+            <div className="cinematic-vignette absolute inset-0 rounded-2xl overflow-hidden pointer-events-none" />
+            {/* Light leak overlay */}
+            {clickBurst && <div className="cinematic-light-leak" />}
+
+            {/* Trailing cursor ghosts */}
+            {!shouldReduceMotion && trail.map((ghost, i) => {
+              const age = Date.now() - ghost.age;
+              const opacity = Math.max(0, 0.3 * (1 - age / 350));
+              const scale = 0.6 + 0.4 * (1 - age / 350);
+              return (
+                <motion.div
+                  key={`ghost-${i}-${ghost.x}-${ghost.y}`}
+                  className="absolute z-25 pointer-events-none"
+                  style={{ left: 0, top: 0, opacity }}
+                  animate={{ x: ghost.x, y: ghost.y }}
+                  transition={{ duration: 0.05 }}
+                >
+                  <svg width="18" height="24" viewBox="0 0 18 24" fill="none" style={{ transform: `scale(${scale})` }}>
+                    <path
+                      d="M2 2L2 21L5.5 16L9 23L11.5 21.5L8 15L15.5 15L2 2Z"
+                      fill="black"
+                      stroke="rgba(255,255,255,0.15)"
+                      strokeWidth="0.5"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </motion.div>
+              );
+            })}
+
+            {/* Black simulated cursor with glow */}
             <motion.div
               className="absolute z-30 pointer-events-none"
               style={{ left: 0, top: 0 }}
@@ -449,7 +527,11 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
                 width="18" height="24" viewBox="0 0 18 24" fill="none"
                 animate={cursorGrabbing ? { scale: 0.82, y: 6 } : { scale: 1, y: 0 }}
                 transition={{ duration: 0.12, ease: 'easeInOut' }}
-                style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))' }}
+                style={{
+                  filter: cursorGrabbing
+                    ? 'drop-shadow(0 1px 3px rgba(0,0,0,0.35)) drop-shadow(0 0 6px rgba(232,93,62,0.5))'
+                    : 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))',
+                }}
               >
                 <path
                   d="M2 2L2 21L5.5 16L9 23L11.5 21.5L8 15L15.5 15L2 2Z"
@@ -462,10 +544,16 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
             </motion.div>
 
             {/* Click burst on drop */}
-            {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+            {clickBurst && <CinematicBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
 
-            {/* Scene content */}
-            <div className="flex flex-col items-center justify-center h-full px-8">
+            {/* Scene content — zooms in on drop */}
+            <motion.div
+              className="flex flex-col items-center justify-center h-full px-8"
+              key={shakeKey}
+              animate={{ scale: zoomScale }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              style={shakeKey > 0 ? { animation: 'camera-shake 0.4s ease-out' } : undefined}
+            >
               {/* Document file card */}
               <motion.div
                 className="absolute z-10"
@@ -536,7 +624,7 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
                   Drag report card into portal
                 </motion.p>
               )}
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -561,7 +649,15 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
             />
           )}
 
-          <div className="relative z-10" style={{ opacity: showContent ? 1 : 0 }}>
+          {/* AE blur-in content reveal */}
+          <div
+            className="relative z-10"
+            style={{
+              opacity: showContent ? 1 : 0,
+              filter: showContent ? 'blur(0px)' : 'blur(4px)',
+              transition: 'filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
+          >
             {/* Row 1: Icon + Number */}
             <motion.div
               className="mb-5 flex items-center justify-between"
@@ -607,14 +703,18 @@ function AEPortalCard({ role, index }: { role: typeof portalCards[0]; index: num
               {role.desc}
             </motion.p>
 
-            {/* Bullet points */}
+            {/* Bullet points — clip-path wipe reveal */}
             <div className="my-6 grid gap-2">
               {role.points.map((point, pi) => (
                 <motion.div
                   key={point}
-                  initial={{ opacity: 0, y: 14, scale: 0.95 }}
-                  animate={showContent ? { opacity: 1, y: 0, scale: 1 } : undefined}
-                  transition={{ type: 'spring', stiffness: 200, damping: 18, delay: baseDelay + 0.5 + pi * 0.1 }}
+                  initial={{ clipPath: 'inset(0 100% 0 0)', opacity: 0, y: 14 }}
+                  animate={showContent ? { clipPath: 'inset(0 0% 0 0)', opacity: 1, y: 0 } : undefined}
+                  transition={{
+                    clipPath: { duration: 0.5, delay: baseDelay + 0.5 + pi * 0.1, ease: [0.22, 1, 0.36, 1] },
+                    opacity: { duration: 0.3, delay: baseDelay + 0.5 + pi * 0.1 },
+                    y: { type: 'spring', stiffness: 200, damping: 18, delay: baseDelay + 0.5 + pi * 0.1 },
+                  }}
                   whileHover={{ x: 4, borderColor: 'rgba(154,205,165,0.2)', transition: { duration: 0.2 } }}
                   className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2"
                 >
@@ -698,7 +798,7 @@ function AnimatedClarityCheck() {
     window.setTimeout(() => setCursorClicking(false), 200);
     setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 400);
+    window.setTimeout(() => setClickBurst(false), 600);
   }
 
   useEffect(() => {
@@ -764,7 +864,7 @@ function AnimatedClarityCheck() {
           {!shouldReduceMotion && (
             <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
-          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+          {clickBurst && <CinematicBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
           <AnimatePresence mode="wait">
             {phase === 'start' && (
               <motion.div
@@ -927,24 +1027,62 @@ function SimulatedCursor({ x, y, clicking }: { x: number; y: number; clicking: b
   );
 }
 
-function ClickBurst({ x, y, id }: { x: number; y: number; id: number }) {
+function CinematicBurst({ x, y, id }: { x: number; y: number; id: number }) {
   return (
     <>
       <motion.div
-        key={`ob-${id}`}
-        initial={{ scale: 0, opacity: 0.65 }}
-        animate={{ scale: 6, opacity: 0 }}
-        transition={{ duration: 0.45, ease: 'easeOut' }}
-        className="absolute w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-coral/8 pointer-events-none z-10"
+        key={`sf-${id}`}
+        initial={{ opacity: 0.1 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="absolute inset-0 bg-white pointer-events-none z-10 rounded-2xl"
+      />
+      <motion.div
+        key={`or-${id}`}
+        initial={{ scale: 0, opacity: 0.5 }}
+        animate={{ scale: 7, opacity: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-coral/25 pointer-events-none z-10"
         style={{ left: x, top: y }}
       />
       <motion.div
-        key={`ib-${id}`}
-        initial={{ scale: 0, opacity: 0.5 }}
-        animate={{ scale: 3, opacity: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut', delay: 0.03 }}
-        className="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/50 pointer-events-none z-10"
+        key={`if-${id}`}
+        initial={{ scale: 0, opacity: 0.6 }}
+        animate={{ scale: 3.5, opacity: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.02 }}
+        className="absolute w-8 h-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 pointer-events-none z-10"
         style={{ left: x, top: y }}
+      />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+        <motion.div
+          key={`rs-${id}-${angle}`}
+          initial={{ scaleX: 0, opacity: 0.4 }}
+          animate={{ scaleX: 1.5, opacity: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: angle * 0.0003 }}
+          className="absolute pointer-events-none z-10"
+          style={{
+            left: x,
+            top: y,
+            width: '2px',
+            height: '28px',
+            background: 'linear-gradient(to bottom, rgba(232,93,62,0.5), transparent)',
+            transformOrigin: 'top center',
+            rotate: `${angle}deg`,
+            translate: '-50% 0',
+          }}
+        />
+      ))}
+      <motion.div
+        key={`gb-${id}`}
+        initial={{ scale: 0, opacity: 0.12 }}
+        animate={{ scale: 5, opacity: 0 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none z-10"
+        style={{
+          left: x,
+          top: y,
+          background: 'radial-gradient(circle, rgba(232,93,62,0.3), transparent 70%)',
+        }}
       />
     </>
   );
@@ -1005,7 +1143,7 @@ function AnimatedConversation() {
     window.setTimeout(() => setCursorClicking(false), 200);
     setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 400);
+    window.setTimeout(() => setClickBurst(false), 600);
   }
 
   useEffect(() => {
@@ -1080,7 +1218,7 @@ function AnimatedConversation() {
           {!shouldReduceMotion && (
             <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
-          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+          {clickBurst && <CinematicBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
@@ -1257,7 +1395,7 @@ function AnimatedDayPlan() {
     window.setTimeout(() => setCursorClicking(false), 200);
     setBurstId(n => n + 1);
     setClickBurst(true);
-    window.setTimeout(() => setClickBurst(false), 400);
+    window.setTimeout(() => setClickBurst(false), 600);
   }
 
   useEffect(() => {
@@ -1327,7 +1465,7 @@ function AnimatedDayPlan() {
           {!shouldReduceMotion && (
             <SimulatedCursor x={cursorPos.x} y={cursorPos.y} clicking={cursorClicking} />
           )}
-          {clickBurst && <ClickBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
+          {clickBurst && <CinematicBurst x={cursorPos.x} y={cursorPos.y} id={burstId} />}
           <AnimatePresence mode="wait">
             {phase === 'idle' && (
               <motion.div
