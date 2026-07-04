@@ -387,23 +387,6 @@ function AnimatedClarityCheck() {
                     </motion.div>
                   </motion.div>
                 ))}
-                {phase === 'done' && (
-                  <motion.div
-                    initial={{ scale: 0, y: 8 }}
-                    animate={{ scale: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 250, damping: 14 }}
-                    className="flex justify-center pt-3"
-                  >
-                    <motion.span
-                      animate={{ boxShadow: ['0 0 0px rgba(232,93,62,0)', '0 0 12px rgba(232,93,62,0.2)', '0 0 0px rgba(232,93,62,0)'] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-coral/10 to-coral/5 border border-coral/15 px-3 py-1"
-                    >
-                      <Star size={10} className="text-coral" />
-                      <span className="font-body text-[10px] font-semibold text-coral tracking-wide">All clear</span>
-                    </motion.span>
-                  </motion.div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -770,23 +753,6 @@ function AnimatedConversation() {
                   </motion.div>
                 )}
 
-                {phase === 'done' && (
-                  <motion.div
-                    initial={{ scale: 0, y: 8 }}
-                    animate={{ scale: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 250, damping: 14 }}
-                    className="flex justify-center pt-2"
-                  >
-                    <motion.span
-                      animate={{ boxShadow: ['0 0 0px rgba(232,93,62,0)', '0 0 12px rgba(232,93,62,0.2)', '0 0 0px rgba(232,93,62,0)'] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-coral/10 to-coral/5 border border-coral/15 px-3 py-1"
-                    >
-                      <MessageCircle size={10} className="text-coral" />
-                      <span className="font-body text-[10px] font-semibold text-coral tracking-wide">Ready to talk</span>
-                    </motion.span>
-                  </motion.div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -1005,23 +971,6 @@ function AnimatedDayPlan() {
                     </motion.div>
                   );
                 })}
-                {phase === 'done' && (
-                  <motion.div
-                    initial={{ scale: 0, y: 8 }}
-                    animate={{ scale: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 250, damping: 14 }}
-                    className="flex justify-center pt-2"
-                  >
-                    <motion.span
-                      animate={{ boxShadow: ['0 0 0px rgba(232,93,62,0)', '0 0 12px rgba(232,93,62,0.2)', '0 0 0px rgba(232,93,62,0)'] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-coral/10 to-coral/5 border border-coral/15 px-3 py-1"
-                    >
-                      <Calendar size={10} className="text-coral" />
-                      <span className="font-body text-[10px] font-semibold text-coral tracking-wide">4 weeks set</span>
-                    </motion.span>
-                  </motion.div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
