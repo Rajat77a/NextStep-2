@@ -1005,25 +1005,92 @@ function AnimatedClarityCheck() {
 
 function SimulatedCursor({ x, y, clicking }: { x: number; y: number; clicking: boolean }) {
   const shouldReduceMotion = useReducedMotion();
+  const trailRef = useRef<{ x: number; y: number; age: number }[]>([]);
+  const [trail, setTrail] = useState<{ x: number; y: number; age: number }[]>([]);
+  const prevPos = useRef({ x, y });
+  const ghostIdRef = useRef(0);
+
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const dx = x - prevPos.current.x;
+    const dy = y - prevPos.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 2) {
+      ghostIdRef.current += 1;
+      trailRef.current = [
+        ...trailRef.current.slice(-4),
+        { x: prevPos.current.x, y: prevPos.current.y, age: Date.now() },
+      ];
+      setTrail([...trailRef.current]);
+    }
+    prevPos.current = { x, y };
+  }, [x, y, shouldReduceMotion]);
+
+  useEffect(() => {
+    if (shouldReduceMotion || trail.length === 0) return;
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      trailRef.current = trailRef.current.filter(g => now - g.age < 350);
+      setTrail([...trailRef.current]);
+    }, 50);
+    return () => clearInterval(id);
+  }, [trail.length, shouldReduceMotion]);
+
   if (shouldReduceMotion) return null;
 
   return (
-    <motion.div
-      className="absolute z-30 pointer-events-none"
-      style={{ left: 0, top: 0 }}
-      initial={false}
-      animate={{ x, y }}
-      transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.4 }}
-    >
-      <motion.svg
-        width="20" height="26" viewBox="0 0 20 26" fill="none"
-        animate={clicking ? { scaleY: 0.75, scaleX: 0.88, y: 4 } : { scaleY: 1, scaleX: 1, y: 0 }}
-        transition={{ duration: 0.1, ease: 'easeInOut' }}
-        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.25))' }}
+    <>
+      {trail.map((ghost, i) => {
+        const age = Date.now() - ghost.age;
+        const opacity = Math.max(0, 0.3 * (1 - age / 350));
+        const scale = 0.6 + 0.4 * (1 - age / 350);
+        return (
+          <motion.div
+            key={`ghost-${i}`}
+            className="absolute z-25 pointer-events-none"
+            style={{ left: 0, top: 0, opacity }}
+            animate={{ x: ghost.x, y: ghost.y }}
+            transition={{ duration: 0.05 }}
+          >
+            <svg width="18" height="24" viewBox="0 0 18 24" fill="none" style={{ transform: `scale(${scale})` }}>
+              <path
+                d="M2 2L2 21L5.5 16L9 23L11.5 21.5L8 15L15.5 15L2 2Z"
+                fill="black"
+                stroke="rgba(255,255,255,0.15)"
+                strokeWidth="0.5"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </motion.div>
+        );
+      })}
+      <motion.div
+        className="absolute z-30 pointer-events-none"
+        style={{ left: 0, top: 0 }}
+        initial={false}
+        animate={{ x, y }}
+        transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.4 }}
       >
-        <path d="M2 2V21L6.5 16.5L10 23L13 21.5L9.5 15H16.5L2 2Z" fill="white" stroke="#444" strokeWidth="1.3" strokeLinejoin="round" />
-      </motion.svg>
-    </motion.div>
+        <motion.svg
+          width="18" height="24" viewBox="0 0 18 24" fill="none"
+          animate={clicking ? { scaleY: 0.7, scaleX: 0.85, y: 5 } : { scaleY: 1, scaleX: 1, y: 0 }}
+          transition={{ duration: 0.1, ease: 'easeInOut' }}
+          style={{
+            filter: clicking
+              ? 'drop-shadow(0 1px 3px rgba(0,0,0,0.35)) drop-shadow(0 0 6px rgba(232,93,62,0.5))'
+              : 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))',
+          }}
+        >
+          <path
+            d="M2 2L2 21L5.5 16L9 23L11.5 21.5L8 15L15.5 15L2 2Z"
+            fill="black"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="0.5"
+            strokeLinejoin="round"
+          />
+        </motion.svg>
+      </motion.div>
+    </>
   );
 }
 
