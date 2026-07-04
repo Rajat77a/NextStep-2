@@ -996,11 +996,16 @@ export default function LandingPage() {
   const testimonialResumeTimer = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const heroRef = useRef<HTMLElement | null>(null);
+  const howItWorksRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
   });
   const { scrollYProgress: pageProgress } = useScroll();
+  const { scrollYProgress: howItWorksProgress } = useScroll({
+    target: howItWorksRef,
+    offset: ['start end', 'end start'],
+  });
   const heroBgY = useTransform(scrollYProgress, [0, 1], ['0px', '110px']);
   const heroGlowX = useTransform(scrollYProgress, [0, 1], ['12%', '28%']);
   const heroGlowY = useTransform(scrollYProgress, [0, 1], ['18%', '38%']);
@@ -1011,6 +1016,16 @@ export default function LandingPage() {
   const parallaxShape1 = useTransform(scrollYProgress, [0, 1], ['0px', '-80px']);
   const parallaxShape2 = useTransform(scrollYProgress, [0, 1], ['0px', '120px']);
   const parallaxShape3 = useTransform(scrollYProgress, [0, 1], ['0px', '-40px']);
+  const ambientGradient = useTransform(
+    pageProgress,
+    [0, 0.3, 0.6, 1],
+    [
+      'radial-gradient(800px at 20% 20%, rgba(232,93,62,0.04) 0%, transparent 70%)',
+      'radial-gradient(800px at 70% 40%, rgba(167,189,165,0.04) 0%, transparent 70%)',
+      'radial-gradient(800px at 40% 70%, rgba(232,93,62,0.03) 0%, transparent 70%)',
+      'radial-gradient(800px at 60% 30%, rgba(167,189,165,0.03) 0%, transparent 70%)',
+    ]
+  );
 
   useEffect(() => {
     const handler = () => {
@@ -1106,6 +1121,13 @@ export default function LandingPage() {
       <motion.div
         className="fixed top-0 left-0 right-0 z-[60] h-[3px] bg-gradient-to-r from-coral to-coral-dark origin-left"
         style={{ scaleX: pageProgress }}
+      />
+
+      {/* Scroll-linked ambient gradient — Stripe-inspired living background */}
+      <motion.div
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{ background: ambientGradient }}
       />
 
       {/* Mobile Menu */}
@@ -1330,26 +1352,55 @@ export default function LandingPage() {
       </motion.section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 md:py-28 bg-white relative">
+      <section id="how-it-works" ref={howItWorksRef} className="py-20 md:py-28 bg-white relative">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-4">Three steps to clarity</h2>
-          <p className="font-body text-medium-gray text-center mb-16 max-w-xl mx-auto">From upload to actionable plan — in minutes, not hours.</p>
+          <motion.h2
+            className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-4"
+            initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+            whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Three steps to clarity
+          </motion.h2>
+          <motion.p
+            className="font-body text-medium-gray text-center mb-16 max-w-xl mx-auto"
+            initial={shouldReduceMotion ? false : { y: 18 }}
+            whileInView={shouldReduceMotion ? undefined : { y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            From upload to actionable plan — in minutes, not hours.
+          </motion.p>
           <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
-            {/* Connecting line between steps — desktop only */}
+            {/* Connecting line — track + scroll-driven progress */}
             <svg
               className="hidden md:block absolute top-14 left-[calc(16.66%+40px)] right-[calc(16.66%+40px)] h-[2px] pointer-events-none z-0"
               viewBox="0 0 100 2"
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              <line x1="0" y1="1" x2="100" y2="1" stroke="#E85D3E" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.25" />
+              <line x1="0" y1="1" x2="100" y2="1" stroke="#E85D3E" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.15" />
+              <motion.line
+                x1="0" y1="1" x2="100" y2="1"
+                stroke="#E85D3E"
+                strokeWidth="1.5"
+                style={{ pathLength: shouldReduceMotion ? 1 : howItWorksProgress }}
+              />
             </svg>
             {[
               { num: '01', title: 'Upload', desc: "Snap or upload your child's report card. We support all major school boards and formats.", icon: <Upload size={28} className="text-coral" /> },
               { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} className="text-coral" /> },
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} className="text-coral" /> },
             ].map((step, i) => (
-              <div key={step.num} className="text-center md:text-left group relative">
+              <motion.div
+                key={step.num}
+                className="text-center md:text-left group relative"
+                initial={shouldReduceMotion ? false : { opacity: 0, rotateY: i === 0 ? 12 : i === 2 ? -12 : 0, y: 24, scale: 0.96 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, rotateY: 0, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.7, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+              >
                 <span
                   className="font-display text-[88px] md:text-[104px] font-semibold leading-none inline-block transition-all duration-500 group-hover:scale-105 group-hover:text-coral"
                   style={{ color: 'rgba(232, 93, 62, 0.75)', textShadow: '0 10px 24px rgba(232,93,62,0.20)' }}
@@ -1366,7 +1417,7 @@ export default function LandingPage() {
                   <h3 className="font-display text-2xl font-medium text-charcoal">{step.title}</h3>
                 </div>
                 <p className="font-body text-charcoal/70 leading-relaxed">{step.desc}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -1380,12 +1431,42 @@ export default function LandingPage() {
             { label: "TONIGHT'S CONVERSATION", title: 'Talk to your child with confidence', desc: 'Get a personalized conversation script that opens dialogue instead of interrogation. Connection-focused phrasing that strengthens your relationship.', bullets: ['Age-appropriate language', 'Connection over evaluation', 'Copy-paste ready scripts'], bg: 'white' },
             { label: '30-DAY PLAN', title: 'Small habits, real progress', desc: 'A concrete, week-by-week action plan tied directly to what was flagged. Not generic advice — targeted steps that address the specific areas from the report card.', bullets: ['Daily and weekly actions', 'Progress tracking', 'Evidence-based suggestions'], bg: 'cream' },
           ].map((feature, i) => (
-            <div key={feature.label}>
+            <motion.div
+              key={feature.label}
+              initial={shouldReduceMotion ? false : { y: 30 }}
+              whileInView={shouldReduceMotion ? undefined : { y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            >
               <div className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center ${i % 2 !== 0 ? 'md:[direction:rtl]' : ''}`}>
                 <div className={`${i % 2 !== 0 ? 'md:[direction:ltr]' : ''}`}>
-                  <p className="label-text text-coral mb-3">{feature.label}</p>
-                  <h3 className="font-display text-[28px] md:text-[42px] font-normal text-charcoal leading-tight mb-4">{feature.title}</h3>
-                  <p className="font-body text-lg text-charcoal/70 leading-relaxed mb-6">{feature.desc}</p>
+                  <motion.p
+                    className="label-text text-coral mb-3"
+                    initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+                    whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {feature.label}
+                  </motion.p>
+                  <motion.h3
+                    className="font-display text-[28px] md:text-[42px] font-normal text-charcoal leading-tight mb-4"
+                    initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+                    whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {feature.title}
+                  </motion.h3>
+                  <motion.p
+                    className="font-body text-lg text-charcoal/70 leading-relaxed mb-6"
+                    initial={shouldReduceMotion ? false : { y: 12 }}
+                    whileInView={shouldReduceMotion ? undefined : { y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {feature.desc}
+                  </motion.p>
                   <ul className="space-y-3">
                     {feature.bullets.map(b => (
                       <li key={b} className="flex items-center gap-3">
@@ -1416,7 +1497,7 @@ export default function LandingPage() {
                   </GlowTiltCard>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -1424,11 +1505,34 @@ export default function LandingPage() {
       {/* Role Entry */}
       <section className="py-20 md:py-28 bg-charcoal">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <h2 className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4">Built for everyone in your school community</h2>
-          <p className="font-body text-lg text-white/60 text-center mb-12">Choose your portal to get started</p>
+          <motion.h2
+            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4"
+            initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+            whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Built for everyone in your school community
+          </motion.h2>
+          <motion.p
+            className="font-body text-lg text-white/60 text-center mb-12"
+            initial={shouldReduceMotion ? false : { y: 12 }}
+            whileInView={shouldReduceMotion ? undefined : { y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Choose your portal to get started
+          </motion.p>
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {portalCards.map((role, i) => (
-              <TiltCard key={role.title} className="h-full" tiltDegree={5} liftY={-6}>
+              <motion.div
+                key={role.title}
+                initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.94, y: 16 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              >
+              <TiltCard className="h-full" tiltDegree={5} liftY={-6}>
                 <GlowTiltCard className="h-full">
                   <Link
                     to={role.link}
@@ -1454,8 +1558,9 @@ export default function LandingPage() {
                       {role.cta} <ArrowRight size={14} />
                     </span>
                   </Link>
-                </GlowTiltCard>
-              </TiltCard>
+              </GlowTiltCard>
+            </TiltCard>
+            </motion.div>
             ))}
           </div>
         </div>
@@ -1464,7 +1569,15 @@ export default function LandingPage() {
       {/* Testimonials */}
       <section id="stories" className="py-20 md:py-28 bg-cream">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">What parents are saying</h2>
+          <motion.h2
+            className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12"
+            initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+            whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          >
+            What parents are saying
+          </motion.h2>
           <div className="relative" onMouseEnter={pauseTestimonials} onMouseLeave={resumeTestimonialsSoon}>
             <div className="relative min-h-[330px] md:min-h-[280px]">
               <AnimatePresence mode="wait">
@@ -1546,7 +1659,15 @@ export default function LandingPage() {
       {/* FAQ */}
       <section className="py-20 md:py-28 bg-white">
         <div className="max-w-3xl mx-auto px-5 md:px-12">
-          <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">Common questions</h2>
+          <motion.h2
+            className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12"
+            initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+            whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Common questions
+          </motion.h2>
           <div className="space-y-0">
             {faqs.map((faq, i) => (
               <div key={i} className="border-b border-light-gray">
