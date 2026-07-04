@@ -1018,6 +1018,25 @@ export default function LandingPage() {
   const parallaxShape2 = useTransform(scrollYProgress, [0, 1], ['0px', '120px']);
   const parallaxShape3 = useTransform(scrollYProgress, [0, 1], ['0px', '-40px']);
   // Scroll-linked step card transforms — continuous, not triggered
+  // Mouse tracking for cursor-responsive ambient gradient
+  const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight });
+    };
+    window.addEventListener('mousemove', handler, { passive: true });
+    return () => window.removeEventListener('mousemove', handler);
+  }, []);
+  const parallaxRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: parallaxProgress } = useScroll({
+    target: parallaxRef,
+    offset: ['start end', 'end start'],
+  });
+  const floatOffset1 = useTransform(pageProgress, [0, 1], ['0px', '-120px']);
+  const floatOffset2 = useTransform(pageProgress, [0, 1], ['0px', '80px']);
+  const floatOffset3 = useTransform(pageProgress, [0, 1], ['0px', '-60px']);
+  const floatOffset4 = useTransform(pageProgress, [0, 1], ['0px', '100px']);
+
   const stepStyles = shouldReduceMotion ? [] : [
     {
       opacity: useTransform(howItWorksProgress, [0, 0.2, 0.4], [0, 1, 1]),
@@ -1149,6 +1168,14 @@ export default function LandingPage() {
         aria-hidden="true"
         className="fixed inset-0 pointer-events-none z-0"
         style={{ background: ambientGradient }}
+      />
+      {/* Cursor-responsive gradient overlay — follows mouse */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-1000"
+        style={{
+          background: `radial-gradient(800px at ${mousePos.x * 100}% ${mousePos.y * 100}%, rgba(232,93,62,0.03) 0%, transparent 70%)`,
+        }}
       />
 
       {/* Mobile Menu */}
@@ -1372,6 +1399,56 @@ export default function LandingPage() {
         </div>
       </motion.section>
 
+      {/* Parallax depth shapes — floating geometric orbs behind content */}
+      <div ref={parallaxRef} aria-hidden="true" className="relative pointer-events-none" style={{ zIndex: 0 }}>
+        <motion.div
+          className="absolute w-[500px] h-[500px] rounded-full opacity-[0.04]"
+          style={{
+            y: floatOffset1,
+            top: '10%',
+            left: '-5%',
+            background: 'radial-gradient(circle, rgba(232,93,62,0.5), transparent 70%)',
+            filter: 'blur(60px)',
+            willChange: 'transform',
+          }}
+        />
+        <motion.div
+          className="absolute w-[350px] h-[350px] rounded-full opacity-[0.03]"
+          style={{
+            y: floatOffset2,
+            top: '45%',
+            right: '-3%',
+            background: 'radial-gradient(circle, rgba(167,189,165,0.6), transparent 70%)',
+            filter: 'blur(50px)',
+            willChange: 'transform',
+          }}
+        />
+        <motion.div
+          className="absolute w-[280px] h-[280px] opacity-[0.025]"
+          style={{
+            y: floatOffset3,
+            top: '75%',
+            left: '8%',
+            background: 'radial-gradient(circle, rgba(232,93,62,0.4), transparent 70%)',
+            filter: 'blur(45px)',
+            borderRadius: '40% 60% 60% 40% / 60% 30% 70% 40%',
+            willChange: 'transform',
+          }}
+        />
+        <motion.div
+          className="absolute w-[200px] h-[200px] opacity-[0.03]"
+          style={{
+            y: floatOffset4,
+            top: '25%',
+            right: '15%',
+            background: 'radial-gradient(circle, rgba(167,189,165,0.5), transparent 70%)',
+            filter: 'blur(40px)',
+            borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%',
+            willChange: 'transform',
+          }}
+        />
+      </div>
+
       {/* How It Works */}
       <section id="how-it-works" ref={howItWorksRef} className="py-20 md:py-28 bg-white relative">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
@@ -1542,6 +1619,34 @@ export default function LandingPage() {
             </motion.div>
           );
           })}
+        </div>
+      </section>
+
+      {/* Stats Counter Bar — scroll-driven count-up */}
+      <section className="py-16 md:py-20 bg-gradient-to-r from-coral/5 via-white to-coral/5 relative overflow-hidden">
+        <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(600px_at_20%_50%,rgba(232,93,62,0.04),transparent_70%)]" />
+        <div className="max-w-7xl mx-auto px-5 md:px-12 relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+            {[
+              { value: 2500, suffix: '+', label: 'Reports analyzed this term', icon: '📊' },
+              { value: 95, suffix: '%', label: 'Parents find it helpful', icon: '⭐' },
+              { value: 50, suffix: '+', label: 'School boards supported', icon: '🎓' },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                className="text-center"
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="font-display text-[44px] md:text-[56px] font-semibold text-coral leading-none mb-2">
+                  <CountUp value={stat.value} suffix={stat.suffix} />
+                </div>
+                <p className="font-body text-sm md:text-base text-charcoal/60 max-w-[200px] mx-auto">{stat.label}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
