@@ -5,7 +5,6 @@ import {
   ArrowRight, Upload, Brain, FileText, Heart,
   Users, Building, ChevronLeft, ChevronRight, ChevronUp, Menu, X, Check, Star, Calendar, MessageCircle,
 } from 'lucide-react';
-import ScrollReveal from '@/components/shared/ScrollReveal';
 import TiltCard from '@/components/shared/TiltCard';
 
 const testimonials = [
@@ -1333,10 +1332,8 @@ export default function LandingPage() {
       {/* How It Works */}
       <section id="how-it-works" className="py-20 md:py-28 bg-white relative">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <ScrollReveal>
-            <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-4">Three steps to clarity</h2>
-            <p className="font-body text-medium-gray text-center mb-16 max-w-xl mx-auto">From upload to actionable plan — in minutes, not hours.</p>
-          </ScrollReveal>
+          <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-4">Three steps to clarity</h2>
+          <p className="font-body text-medium-gray text-center mb-16 max-w-xl mx-auto">From upload to actionable plan — in minutes, not hours.</p>
           <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
             {/* Connecting line between steps — desktop only */}
             <svg
@@ -1352,29 +1349,24 @@ export default function LandingPage() {
               { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} className="text-coral" /> },
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} className="text-coral" /> },
             ].map((step, i) => (
-              <ScrollReveal key={step.num} delay={i * 0.2} scale={0.9}>
-                <div className="text-center md:text-left group relative">
+              <div key={step.num} className="text-center md:text-left group relative">
+                <span
+                  className="font-display text-[88px] md:text-[104px] font-semibold leading-none inline-block transition-all duration-500 group-hover:scale-105 group-hover:text-coral"
+                  style={{ color: 'rgba(232, 93, 62, 0.75)', textShadow: '0 10px 24px rgba(232,93,62,0.20)' }}
+                >
+                  {step.num}
+                </span>
+                <div className="flex items-center gap-3 mt-2 mb-3">
                   <motion.span
-                    className="font-display text-[88px] md:text-[104px] font-semibold leading-none inline-block transition-all duration-500 group-hover:scale-105 group-hover:text-coral"
-                    style={{ color: 'rgba(232, 93, 62, 0.75)', textShadow: '0 10px 24px rgba(232,93,62,0.20)' }}
-                    whileInView={shouldReduceMotion ? undefined : { scale: [0.5, 1.05, 1], opacity: [0, 1] }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.7, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 15 }}
                   >
-                    {step.num}
+                    {step.icon}
                   </motion.span>
-                  <div className="flex items-center gap-3 mt-2 mb-3">
-                    <motion.span
-                      whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-                    >
-                      {step.icon}
-                    </motion.span>
-                    <h3 className="font-display text-2xl font-medium text-charcoal">{step.title}</h3>
-                  </div>
-                  <p className="font-body text-charcoal/70 leading-relaxed">{step.desc}</p>
+                  <h3 className="font-display text-2xl font-medium text-charcoal">{step.title}</h3>
                 </div>
-              </ScrollReveal>
+                <p className="font-body text-charcoal/70 leading-relaxed">{step.desc}</p>
+              </div>
             ))}
           </div>
         </div>
@@ -1388,38 +1380,22 @@ export default function LandingPage() {
             { label: "TONIGHT'S CONVERSATION", title: 'Talk to your child with confidence', desc: 'Get a personalized conversation script that opens dialogue instead of interrogation. Connection-focused phrasing that strengthens your relationship.', bullets: ['Age-appropriate language', 'Connection over evaluation', 'Copy-paste ready scripts'], bg: 'white' },
             { label: '30-DAY PLAN', title: 'Small habits, real progress', desc: 'A concrete, week-by-week action plan tied directly to what was flagged. Not generic advice — targeted steps that address the specific areas from the report card.', bullets: ['Daily and weekly actions', 'Progress tracking', 'Evidence-based suggestions'], bg: 'cream' },
           ].map((feature, i) => (
-            <ScrollReveal key={feature.label} direction={i % 2 === 0 ? 'left' : 'right'}>
+            <div key={feature.label}>
               <div className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center ${i % 2 !== 0 ? 'md:[direction:rtl]' : ''}`}>
                 <div className={`${i % 2 !== 0 ? 'md:[direction:ltr]' : ''}`}>
                   <p className="label-text text-coral mb-3">{feature.label}</p>
                   <h3 className="font-display text-[28px] md:text-[42px] font-normal text-charcoal leading-tight mb-4">{feature.title}</h3>
                   <p className="font-body text-lg text-charcoal/70 leading-relaxed mb-6">{feature.desc}</p>
-                  <motion.ul
-                    className="space-y-3"
-                    initial={shouldReduceMotion ? false : 'hidden'}
-                    whileInView={shouldReduceMotion ? undefined : 'visible'}
-                    viewport={{ once: true, margin: '-80px' }}
-                    variants={{
-                      visible: { transition: { staggerChildren: 0.12 } },
-                    }}
-                  >
+                  <ul className="space-y-3">
                     {feature.bullets.map(b => (
-                      <motion.li
-                        key={b}
-                        variants={shouldReduceMotion ? undefined : {
-                          hidden: { opacity: 0, y: 18 },
-                          visible: { opacity: 1, y: 0 },
-                        }}
-                        transition={{ duration: 0.35, ease: 'easeOut' }}
-                        className="flex items-center gap-3"
-                      >
+                      <li key={b} className="flex items-center gap-3">
                       <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber to-coral flex items-center justify-center flex-shrink-0 shadow-sm">
                           <Star size={10} className="text-white" fill="white" />
                         </span>
                         <span className="font-body text-charcoal/80">{b}</span>
-                      </motion.li>
+                      </li>
                     ))}
-                  </motion.ul>
+                  </ul>
                 </div>
                 {feature.label === 'CLARITY CHECK' ? (
                   <AnimatedClarityCheck />
@@ -1440,7 +1416,7 @@ export default function LandingPage() {
                   </GlowTiltCard>
                 )}
               </div>
-            </ScrollReveal>
+            </div>
           ))}
         </div>
       </section>
@@ -1448,10 +1424,8 @@ export default function LandingPage() {
       {/* Role Entry */}
       <section className="py-20 md:py-28 bg-charcoal">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <ScrollReveal>
-            <h2 className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4">Built for everyone in your school community</h2>
-            <p className="font-body text-lg text-white/60 text-center mb-12">Choose your portal to get started</p>
-          </ScrollReveal>
+          <h2 className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4">Built for everyone in your school community</h2>
+          <p className="font-body text-lg text-white/60 text-center mb-12">Choose your portal to get started</p>
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {portalCards.map((role, i) => (
               <TiltCard key={role.title} className="h-full" tiltDegree={5} liftY={-6}>
@@ -1490,9 +1464,7 @@ export default function LandingPage() {
       {/* Testimonials */}
       <section id="stories" className="py-20 md:py-28 bg-cream">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <ScrollReveal>
-            <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">What parents are saying</h2>
-          </ScrollReveal>
+          <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">What parents are saying</h2>
           <div className="relative" onMouseEnter={pauseTestimonials} onMouseLeave={resumeTestimonialsSoon}>
             <div className="relative min-h-[330px] md:min-h-[280px]">
               <AnimatePresence mode="wait">
@@ -1574,36 +1546,32 @@ export default function LandingPage() {
       {/* FAQ */}
       <section className="py-20 md:py-28 bg-white">
         <div className="max-w-3xl mx-auto px-5 md:px-12">
-          <ScrollReveal>
-            <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">Common questions</h2>
-          </ScrollReveal>
+          <h2 className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12">Common questions</h2>
           <div className="space-y-0">
             {faqs.map((faq, i) => (
-              <ScrollReveal key={i} delay={i * 0.05}>
-                <div className="border-b border-light-gray">
-                  <button
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    className="w-full py-5 flex items-center justify-between text-left group"
+              <div key={i} className="border-b border-light-gray">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full py-5 flex items-center justify-between text-left group"
+                >
+                  <span className="font-display text-lg md:text-xl font-medium text-charcoal pr-4 group-hover:text-coral transition-colors duration-300">{faq.q}</span>
+                  <motion.span
+                    animate={{ rotate: openFaq === i ? 45 : 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="text-coral text-xl flex-shrink-0 w-6 h-6 flex items-center justify-center"
                   >
-                    <span className="font-display text-lg md:text-xl font-medium text-charcoal pr-4 group-hover:text-coral transition-colors duration-300">{faq.q}</span>
-                    <motion.span
-                      animate={{ rotate: openFaq === i ? 45 : 0 }}
-                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      className="text-coral text-xl flex-shrink-0 w-6 h-6 flex items-center justify-center"
-                    >
-                      +
-                    </motion.span>
-                  </button>
-                  <motion.div
-                    initial={false}
-                    animate={{ height: openFaq === i ? 'auto' : 0, opacity: openFaq === i ? 1 : 0 }}
-                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <p className="font-body text-charcoal/70 pb-5 leading-relaxed max-w-xl">{faq.a}</p>
-                  </motion.div>
-                </div>
-              </ScrollReveal>
+                    +
+                  </motion.span>
+                </button>
+                <motion.div
+                  initial={false}
+                  animate={{ height: openFaq === i ? 'auto' : 0, opacity: openFaq === i ? 1 : 0 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden"
+                >
+                  <p className="font-body text-charcoal/70 pb-5 leading-relaxed max-w-xl">{faq.a}</p>
+                </motion.div>
+              </div>
             ))}
           </div>
         </div>
