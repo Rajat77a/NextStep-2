@@ -1266,9 +1266,9 @@ export default function LandingPage() {
           </AnimatePresence>
         </div>
 
-        {/* Gradient overlays for readability */}
-        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-charcoal/70 via-charcoal/30 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-charcoal/40 to-transparent pointer-events-none" />
+        {/* Gradient overlays for readability — darkened for text contrast */}
+        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#0a0a0f]/95 via-[#0a0a0f]/60 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0a0a0f]/70 to-transparent pointer-events-none" />
 
         {/* Parallax depth shapes on top of images */}
         {!shouldReduceMotion && (
@@ -1366,16 +1366,18 @@ export default function LandingPage() {
         >
           <div className="max-w-7xl mx-auto px-5 md:px-12 w-full">
             <div className="grid lg:grid-cols-[55%_45%] gap-12 lg:gap-8 items-center">
-              <div>
+              <div className="md:bg-[#0a0a0f]/40 md:backdrop-blur-[2px] md:rounded-2xl md:p-10 md:-ml-10 md:border md:border-white/[0.04]">
                 <motion.p
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
                   className="label-text text-coral mb-4"
+                  style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
                 >
                   Report Card Clarity for Every Parent
                 </motion.p>
                 <motion.h1
                   initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
                   className="font-display text-[40px] md:text-[72px] font-medium text-white leading-[1.0] tracking-tight mb-6"
+                  style={{ filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.4))' }}
                 >
                   Turn your child's report card into your{' '}
                   <AnimatePresence mode="wait">
@@ -1390,6 +1392,7 @@ export default function LandingPage() {
                         backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, white 50% 100%)',
                         backgroundSize: '200% 100%',
                         backgroundPosition: '0% 0',
+                        filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.4))',
                       }}
                     >
                       {valueProps[valuePropIdx]}
@@ -1398,7 +1401,8 @@ export default function LandingPage() {
                 </motion.h1>
                 <motion.p
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.55 }}
-                  className="font-body text-lg md:text-xl text-white/70 max-w-[480px] mb-8 leading-relaxed"
+                  className="font-body text-lg md:text-xl text-white/85 max-w-[480px] mb-8 leading-relaxed"
+                  style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
                 >
                   Upload a report card. Get a clear, honest breakdown of what matters — plus the exact words to use with your child and their teacher.
                 </motion.p>
@@ -1526,9 +1530,11 @@ export default function LandingPage() {
       </div>
 
       {/* How It Works */}
-      <section id="how-it-works" ref={howItWorksRef} className="py-20 md:py-28 bg-white relative">
+      <section id="how-it-works" ref={howItWorksRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
+        {/* Subtle ambient glow */}
+        <div aria-hidden="true" className="absolute top-1/2 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.04] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.8), transparent 70%)', filter: 'blur(80px)', transform: 'translate(-50%, -50%)' }} />
         <motion.div
-          className="max-w-7xl mx-auto px-5 md:px-12"
+          className="max-w-7xl mx-auto px-5 md:px-12 relative"
           style={shouldReduceMotion ? undefined : {
             opacity: howItWorksExitOpacity,
             y: howItWorksExitY,
@@ -1536,7 +1542,7 @@ export default function LandingPage() {
           }}
         >
           <motion.h2
-            className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-4"
+            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
             whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
             viewport={{ once: true }}
@@ -1545,7 +1551,7 @@ export default function LandingPage() {
             Three steps to clarity
           </motion.h2>
           <motion.p
-            className="font-body text-medium-gray text-center mb-16 max-w-xl mx-auto"
+            className="font-body text-white/50 text-center mb-16 max-w-xl mx-auto"
             initial={shouldReduceMotion ? false : { y: 18 }}
             whileInView={shouldReduceMotion ? undefined : { y: 0 }}
             viewport={{ once: true }}
@@ -1553,51 +1559,30 @@ export default function LandingPage() {
           >
             From upload to actionable plan — in minutes, not hours.
           </motion.p>
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
-            {/* Connecting line — track + scroll-driven progress */}
-            <svg
-              className="hidden md:block absolute top-14 left-[calc(16.66%+40px)] right-[calc(16.66%+40px)] h-[2px] pointer-events-none z-0"
-              viewBox="0 0 100 2"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <line x1="0" y1="1" x2="100" y2="1" stroke="#E85D3E" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.15" />
-              <motion.line
-                x1="0" y1="1" x2="100" y2="1"
-                stroke="#E85D3E"
-                strokeWidth="1.5"
-                style={{ pathLength: shouldReduceMotion ? 1 : howItWorksProgress }}
-              />
-            </svg>
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8 relative">
             {[
-              { num: '01', title: 'Upload', desc: "Snap or upload your child's report card. We support all major school boards and formats.", icon: <Upload size={28} className="text-coral" /> },
-              { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} className="text-coral" /> },
-              { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} className="text-coral" /> },
+              { num: '01', title: 'Upload', desc: "Snap or upload your child's report card. We support all major school boards and formats.", icon: <Upload size={28} /> },
+              { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} /> },
+              { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} /> },
             ].map((step, i) => (
-              <div key={step.num} className="text-center md:text-left group relative">
-                <motion.span
-                  className="font-display text-[88px] md:text-[104px] font-semibold leading-none inline-block transition-all duration-500 group-hover:scale-105 group-hover:text-coral"
-                  style={{ color: 'rgba(232, 93, 62, 0.75)', textShadow: '0 10px 24px rgba(232,93,62,0.20)' }}
-                  initial={shouldReduceMotion ? false : { scale: 0.7, y: 12 }}
-                  whileInView={shouldReduceMotion ? undefined : { scale: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ type: 'spring', stiffness: 220, damping: 14, delay: i * 0.1 }}
-                >
-                  {step.num}
-                </motion.span>
-                <div className="flex items-center gap-3 mt-2 mb-3">
-                  <motion.span
-                    initial={shouldReduceMotion ? false : { scale: 0.3, rotate: -45 }}
-                    whileInView={shouldReduceMotion ? undefined : { scale: 1, rotate: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 12, delay: i * 0.1 + 0.12 }}
-                    whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
-                  >
-                    {step.icon}
-                  </motion.span>
-                  <h3 className="font-display text-2xl font-medium text-charcoal">{step.title}</h3>
+              <div key={step.num} className="group relative">
+                <div className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-8 h-full backdrop-blur-sm hover:bg-white/[0.07] hover:border-white/[0.12] transition-all duration-500">
+                  <div className="flex items-center gap-4 mb-5">
+                    <span className="font-display text-[44px] md:text-[52px] font-semibold leading-none text-white/15 group-hover:text-coral/40 transition-colors duration-500">{step.num}</span>
+                    <motion.span
+                      initial={shouldReduceMotion ? false : { scale: 0.3, rotate: -45 }}
+                      whileInView={shouldReduceMotion ? undefined : { scale: 1, rotate: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 12, delay: i * 0.1 + 0.12 }}
+                      whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
+                      className="w-12 h-12 rounded-xl bg-coral/15 flex items-center justify-center text-coral shrink-0"
+                    >
+                      {step.icon}
+                    </motion.span>
+                  </div>
+                  <h3 className="font-display text-2xl font-medium text-white mb-3">{step.title}</h3>
+                  <p className="font-body text-white/60 leading-relaxed">{step.desc}</p>
                 </div>
-                <p className="font-body text-charcoal/70 leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -1605,7 +1590,8 @@ export default function LandingPage() {
       </section>
 
       {/* Feature Highlights */}
-      <section id="parents" ref={featuresRef} className="py-20 md:py-28 bg-cream relative">
+      <section id="parents" ref={featuresRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#12121a' }}>
+        <div aria-hidden="true" className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(167,189,165,0.6), transparent 70%)', filter: 'blur(80px)' }} />
         <motion.div
           className="max-w-7xl mx-auto px-5 md:px-12 space-y-24 md:space-y-32"
           style={shouldReduceMotion ? undefined : {
@@ -1614,9 +1600,9 @@ export default function LandingPage() {
           }}
         >
           {[
-            { label: 'CLARITY CHECK', title: "Know what's worth worrying about", desc: "Our AI flags each subject as green, yellow, or red — with gentle, advisory language. No predictions about your child's future. Just clear, actionable insights.", bullets: ['Board-specific grade interpretation', 'Soft, non-judgmental language', 'Teacher comment analysis'], bg: 'cream' },
-            { label: "TONIGHT'S CONVERSATION", title: 'Talk to your child with confidence', desc: 'Get a personalized conversation script that opens dialogue instead of interrogation. Connection-focused phrasing that strengthens your relationship.', bullets: ['Age-appropriate language', 'Connection over evaluation', 'Copy-paste ready scripts'], bg: 'white' },
-            { label: '30-DAY PLAN', title: 'Small habits, real progress', desc: 'A concrete, week-by-week action plan tied directly to what was flagged. Not generic advice — targeted steps that address the specific areas from the report card.', bullets: ['Daily and weekly actions', 'Progress tracking', 'Evidence-based suggestions'], bg: 'cream' },
+            { label: 'CLARITY CHECK', title: "Know what's worth worrying about", desc: "Our AI flags each subject as green, yellow, or red — with gentle, advisory language. No predictions about your child's future. Just clear, actionable insights.", bullets: ['Board-specific grade interpretation', 'Soft, non-judgmental language', 'Teacher comment analysis'] },
+            { label: "TONIGHT'S CONVERSATION", title: 'Talk to your child with confidence', desc: 'Get a personalized conversation script that opens dialogue instead of interrogation. Connection-focused phrasing that strengthens your relationship.', bullets: ['Age-appropriate language', 'Connection over evaluation', 'Copy-paste ready scripts'] },
+            { label: '30-DAY PLAN', title: 'Small habits, real progress', desc: 'A concrete, week-by-week action plan tied directly to what was flagged. Not generic advice — targeted steps that address the specific areas from the report card.', bullets: ['Daily and weekly actions', 'Progress tracking', 'Evidence-based suggestions'] },
           ].map((feature, i) => {
             const featureEntrance = [
               { initial: { opacity: 0, x: -50, scale: 0.94 }, whileInView: { opacity: 1, x: 0, scale: 1 } },
@@ -1643,7 +1629,7 @@ export default function LandingPage() {
                     {feature.label}
                   </motion.p>
                   <motion.h3
-                    className="font-display text-[28px] md:text-[42px] font-normal text-charcoal leading-tight mb-4"
+                    className="font-display text-[28px] md:text-[42px] font-normal text-white leading-tight mb-4"
                     initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
                     whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
                     viewport={{ once: true }}
@@ -1652,7 +1638,7 @@ export default function LandingPage() {
                     {feature.title}
                   </motion.h3>
                   <motion.p
-                    className="font-body text-lg text-charcoal/70 leading-relaxed mb-6"
+                    className="font-body text-lg text-white/60 leading-relaxed mb-6"
                     initial={shouldReduceMotion ? false : { y: 15 }}
                     whileInView={shouldReduceMotion ? undefined : { y: 0 }}
                     viewport={{ once: true }}
@@ -1677,29 +1663,20 @@ export default function LandingPage() {
                       <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber to-coral flex items-center justify-center flex-shrink-0 shadow-sm">
                           <Star size={10} className="text-white" fill="white" />
                         </span>
-                        <span className="font-body text-charcoal/80">{b}</span>
+                        <span className="font-body text-white/70">{b}</span>
                       </motion.li>
                     ))}
                   </motion.ul>
                 </div>
-                {feature.label === 'CLARITY CHECK' ? (
-                  <AnimatedClarityCheck />
-                ) : feature.label === "TONIGHT'S CONVERSATION" ? (
-                  <AnimatedConversation />
-                ) : feature.label === '30-DAY PLAN' ? (
-                  <AnimatedDayPlan />
-                ) : (
-                  <GlowTiltCard>
-                    <div className={`rounded-2xl overflow-hidden shadow-card aspect-[16/10] flex items-center justify-center ${feature.bg === 'cream' ? 'bg-white' : 'bg-card-surface-alt'}`}>
-                      <div className="text-center p-8">
-                        <div className="w-16 h-16 rounded-full bg-coral/10 flex items-center justify-center mx-auto mb-3">
-                          {feature.label === "TONIGHT'S CONVERSATION" ? <Heart size={24} className="text-coral" /> : <Calendar size={24} className="text-coral" />}
-                        </div>
-                        <p className="font-display text-lg text-charcoal/80">{feature.title.split(' ').slice(0, 3).join(' ')}...</p>
-                      </div>
-                    </div>
-                  </GlowTiltCard>
-                )}
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
+                  {feature.label === 'CLARITY CHECK' ? (
+                    <AnimatedClarityCheck />
+                  ) : feature.label === "TONIGHT'S CONVERSATION" ? (
+                    <AnimatedConversation />
+                  ) : (
+                    <AnimatedDayPlan />
+                  )}
+                </div>
               </div>
             </motion.div>
           );
@@ -1707,9 +1684,11 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Stats Counter Bar — scroll-driven count-up */}
-      <section ref={statsRef} className="py-16 md:py-20 bg-gradient-to-r from-coral/5 via-white to-coral/5 relative overflow-hidden">
-        <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(600px_at_20%_50%,rgba(232,93,62,0.04),transparent_70%)]" />
+      {/* Stats Counter Bar — dramatic count-up strip */}
+      <section ref={statsRef} className="py-16 md:py-20 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
+        <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(800px_at_50%_50%,rgba(232,93,62,0.06),transparent_70%)]" />
+        <div aria-hidden="true" className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+        <div aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
         <motion.div
           className="max-w-7xl mx-auto px-5 md:px-12 relative"
           style={shouldReduceMotion ? undefined : {
@@ -1720,22 +1699,23 @@ export default function LandingPage() {
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             {[
-              { value: 2500, suffix: '+', label: 'Reports analyzed this term', icon: '📊' },
-              { value: 95, suffix: '%', label: 'Parents find it helpful', icon: '⭐' },
-              { value: 50, suffix: '+', label: 'School boards supported', icon: '🎓' },
+              { value: 2500, suffix: '+', label: 'Reports analyzed this term' },
+              { value: 95, suffix: '%', label: 'Parents find it helpful' },
+              { value: 50, suffix: '+', label: 'School boards supported' },
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
-                className="text-center"
+                className="text-center relative"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
                 whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="font-display text-[44px] md:text-[56px] font-semibold text-coral leading-none mb-2">
+                <div className="font-display text-[48px] md:text-[64px] font-semibold leading-none mb-3" style={{ color: '#E85D3E', textShadow: '0 0 30px rgba(232,93,62,0.3), 0 0 60px rgba(232,93,62,0.1)' }}>
                   <CountUp value={stat.value} suffix={stat.suffix} />
                 </div>
-                <p className="font-body text-sm md:text-base text-charcoal/60 max-w-[200px] mx-auto">{stat.label}</p>
+                <p className="font-body text-sm md:text-base text-white/50 max-w-[200px] mx-auto">{stat.label}</p>
+                {i < 2 && <div className="hidden md:block absolute right-[-1.5rem] top-1/2 -translate-y-1/2 w-[1px] h-12 bg-white/[0.06]" />}
               </motion.div>
             ))}
           </div>
@@ -1743,7 +1723,8 @@ export default function LandingPage() {
       </section>
 
       {/* Role Entry */}
-      <section ref={portalRef} className="py-20 md:py-28 bg-charcoal relative">
+      <section ref={portalRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
+        <div aria-hidden="true" className="absolute top-1/4 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.6), transparent 70%)', filter: 'blur(60px)' }} />
         <motion.div
           className="max-w-7xl mx-auto px-5 md:px-12"
           style={shouldReduceMotion ? undefined : {
@@ -1783,7 +1764,7 @@ export default function LandingPage() {
                 <GlowTiltCard className="h-full">
                   <Link
                     to={role.link}
-                    className="flex h-full min-h-[360px] flex-col bg-dark-surface border border-white/[0.08] rounded-2xl p-8 group scroll-mt-28 hover:border-coral/25 transition-colors duration-300"
+                    className="flex h-full min-h-[360px] flex-col bg-white/[0.04] border border-white/[0.07] rounded-2xl p-8 group scroll-mt-28 hover:bg-white/[0.06] hover:border-coral/25 transition-all duration-500 backdrop-blur-sm"
                   >
                     <div className="mb-5 flex items-center justify-between">
                       <div>{role.icon}</div>
@@ -1814,7 +1795,8 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section id="stories" ref={testimonialRef} className="py-20 md:py-28 bg-cream relative">
+      <section id="stories" ref={testimonialRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#12121a' }}>
+        <div aria-hidden="true" className="absolute bottom-0 left-1/3 w-[500px] h-[500px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(167,189,165,0.5), transparent 70%)', filter: 'blur(70px)' }} />
         <motion.div
           className="max-w-7xl mx-auto px-5 md:px-12"
           style={shouldReduceMotion ? undefined : {
@@ -1823,7 +1805,7 @@ export default function LandingPage() {
           }}
         >
           <motion.h2
-            className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12"
+            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-12"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
             whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
             viewport={{ once: true }}
@@ -1853,16 +1835,16 @@ export default function LandingPage() {
                         className="h-full"
                       >
                       <GlowTiltCard key={`${testimonialIdx}-${t.name}`} className="h-full">
-                        <div className="bg-white rounded-2xl shadow-card p-8 h-full flex flex-col relative">
-                          <span aria-hidden="true" className="absolute top-4 left-6 text-5xl font-display text-coral/10 leading-none select-none">"</span>
-                          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-6 flex-1 relative z-[1]">"{t.text}"</p>
+                        <div className="bg-white/[0.04] border border-white/[0.07] backdrop-blur-sm rounded-2xl p-8 h-full flex flex-col relative">
+                          <span aria-hidden="true" className="absolute top-4 left-6 text-5xl font-display text-coral/15 leading-none select-none">"</span>
+                          <p className="font-display text-lg md:text-xl text-white/85 italic leading-relaxed mb-6 flex-1 relative z-[1]">"{t.text}"</p>
                           <div className="flex items-center gap-3">
                             <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-display font-semibold shrink-0 ${avatarColors[testimonials.indexOf(t) % avatarColors.length]}`}>
                               {getInitials(t.name)}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-body font-medium text-charcoal truncate">{t.name}</p>
-                              <p className="font-body text-sm text-medium-gray truncate">{t.role}</p>
+                              <p className="font-body font-medium text-white truncate">{t.name}</p>
+                              <p className="font-body text-sm text-white/50 truncate">{t.role}</p>
                             </div>
                             <div className="ml-auto flex gap-0.5 shrink-0">
                               {Array.from({ length: 5 }).map((_, si) => (
@@ -1872,7 +1854,7 @@ export default function LandingPage() {
                                   whileInView={shouldReduceMotion ? undefined : { scale: 1, opacity: 1 }}
                                   viewport={{ once: true }}
                                   transition={{ delay: si * 0.08 + 0.1, type: 'spring', stiffness: 400, damping: 12 }}
-                                  className={`text-sm ${si < t.stars ? 'text-amber' : 'text-light-gray'}`}
+                                  className={`text-sm ${si < t.stars ? 'text-amber' : 'text-white/15'}`}
                                 >
                                   ★
                                 </motion.span>
@@ -1890,7 +1872,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-center gap-3 mt-8">
               <button
                 onClick={() => changeTestimonial(testimonialIdx - 1)}
-                className="w-10 h-10 rounded-full bg-white border border-light-gray flex items-center justify-center hover:bg-cream transition-colors"
+                className="w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.1] flex items-center justify-center text-white/60 hover:bg-white/[0.1] hover:text-white transition-colors"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -1903,12 +1885,12 @@ export default function LandingPage() {
                     opacity: i === testimonialIdx ? 1 : 0.45,
                   }}
                   transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${i === testimonialIdx ? 'bg-coral shadow-[0_0_8px_rgba(232,93,62,0.4)]' : 'bg-light-gray'}`}
+                  className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${i === testimonialIdx ? 'bg-coral shadow-[0_0_8px_rgba(232,93,62,0.4)]' : 'bg-white/20'}`}
                 />
               ))}
               <button
                 onClick={() => changeTestimonial(testimonialIdx + 1)}
-                className="w-10 h-10 rounded-full bg-white border border-light-gray flex items-center justify-center hover:bg-cream transition-colors"
+                className="w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.1] flex items-center justify-center text-white/60 hover:bg-white/[0.1] hover:text-white transition-colors"
               >
                 <ChevronRight size={16} />
               </button>
@@ -1918,7 +1900,8 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section ref={faqRef} className="py-20 md:py-28 bg-white relative">
+      <section ref={faqRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
+        <div aria-hidden="true" className="absolute top-1/2 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.5), transparent 70%)', filter: 'blur(60px)' }} />
         <motion.div
           className="max-w-3xl mx-auto px-5 md:px-12"
           style={shouldReduceMotion ? undefined : {
@@ -1927,7 +1910,7 @@ export default function LandingPage() {
           }}
         >
           <motion.h2
-            className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12"
+            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-12"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
             whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
             viewport={{ once: true }}
@@ -1935,7 +1918,7 @@ export default function LandingPage() {
           >
             Common questions
           </motion.h2>
-          <div className="space-y-0">
+          <div className="space-y-3">
             {faqs.map((faq, i) => {
               const itemReveal = [
                 { opacity: 0, x: -40 },
@@ -1951,13 +1934,13 @@ export default function LandingPage() {
                 whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, y: 0, scale: 1, rotate: 0, clipPath: 'inset(0 0 0% 0)' }}
                 viewport={{ once: true, margin: '-30px' }}
                 transition={{ duration: 0.5, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-                className="border-b border-light-gray"
+                className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden backdrop-blur-sm hover:bg-white/[0.05] transition-colors duration-300"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full py-5 flex items-center justify-between text-left group"
+                  className="w-full px-6 py-5 flex items-center justify-between text-left group"
                 >
-                  <span className="font-display text-lg md:text-xl font-medium text-charcoal pr-4 group-hover:text-coral transition-colors duration-300">{faq.q}</span>
+                  <span className="font-display text-lg md:text-xl font-medium text-white pr-4 group-hover:text-coral transition-colors duration-300">{faq.q}</span>
                   <motion.span
                     animate={{ rotate: openFaq === i ? 45 : 0 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
@@ -1972,7 +1955,7 @@ export default function LandingPage() {
                   transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
-                  <p className="font-body text-charcoal/70 pb-5 leading-relaxed max-w-xl">{faq.a}</p>
+                  <p className="font-body text-white/60 px-6 pb-5 leading-relaxed max-w-xl">{faq.a}</p>
                   </motion.div>
               </motion.div>
             );
