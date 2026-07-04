@@ -992,7 +992,6 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [valuePropIdx, setValuePropIdx] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [imageIndex, setImageIndex] = useState(0);
   const valueProps = ['next move', 'insight', 'confidence', 'connection'];
   const testimonialResumeTimer = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -1134,14 +1133,6 @@ export default function LandingPage() {
     return () => window.clearInterval(timer);
   }, [shouldReduceMotion, valueProps.length]);
 
-  useEffect(() => {
-    if (shouldReduceMotion) return;
-    const timer = window.setInterval(() => {
-      setImageIndex(i => (i + 1) % heroImages.length);
-    }, 5500);
-    return () => window.clearInterval(timer);
-  }, [shouldReduceMotion]);
-
   const pauseTestimonials = () => {
     if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
     setTestimonialPaused(true);
@@ -1235,26 +1226,22 @@ export default function LandingPage() {
         ref={heroRef}
         className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden bg-charcoal"
       >
-        {/* Image slideshow — full-bleed crossfade + Ken Burns slow zoom */}
+        {/* Video background — cinematic classroom scene, loops seamless */}
         <div className="absolute inset-0 overflow-hidden z-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={imageIndex}
-              className="absolute inset-0"
-              initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 1.04 }}
-              animate={{ opacity: 1, scale: shouldReduceMotion ? 1 : 1.12 }}
-              exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 1.14 }}
-              transition={{
-                opacity: { duration: 1.2, ease: 'easeInOut' },
-                scale: { duration: 6, ease: 'easeOut' },
-              }}
-              style={{
-                backgroundImage: `url(${heroImages[imageIndex]})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            />
-          </AnimatePresence>
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            poster={heroImages[0]}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              animation: shouldReduceMotion ? 'none' : 'hero-zoom 15s ease-in-out infinite alternate',
+            }}
+          >
+            <source src="https://assets.mixkit.co/videos/28315/28315-720.mp4" type="video/mp4" />
+          </video>
         </div>
 
         {/* Gradient overlays for readability — darkened for text contrast */}
