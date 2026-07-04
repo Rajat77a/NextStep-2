@@ -386,8 +386,8 @@ function AnimatedClarityCheck() {
                     </motion.div>
                   </motion.div>
                 ))}
-              </motion.div>
-            )}
+                  </motion.div>
+                )}
           </AnimatePresence>
         </div>
       </div>
@@ -395,6 +395,7 @@ function AnimatedClarityCheck() {
     </div>
   );
 }
+
 
 function SimulatedCursor({ x, y, clicking }: { x: number; y: number; clicking: boolean }) {
   const shouldReduceMotion = useReducedMotion();
@@ -1016,6 +1017,26 @@ export default function LandingPage() {
   const parallaxShape1 = useTransform(scrollYProgress, [0, 1], ['0px', '-80px']);
   const parallaxShape2 = useTransform(scrollYProgress, [0, 1], ['0px', '120px']);
   const parallaxShape3 = useTransform(scrollYProgress, [0, 1], ['0px', '-40px']);
+  // Scroll-linked step card transforms — continuous, not triggered
+  const stepStyles = shouldReduceMotion ? [] : [
+    {
+      opacity: useTransform(howItWorksProgress, [0, 0.2, 0.4], [0, 1, 1]),
+      rotateY: useTransform(howItWorksProgress, [0, 0.3], [-22, 0]),
+      x: useTransform(howItWorksProgress, [0, 0.3], [-45, 0]),
+      scale: useTransform(howItWorksProgress, [0, 0.3], [0.88, 1]),
+    },
+    {
+      opacity: useTransform(howItWorksProgress, [0.25, 0.45, 0.65], [0, 1, 1]),
+      y: useTransform(howItWorksProgress, [0.3, 0.6], [35, 0]),
+      scale: useTransform(howItWorksProgress, [0.3, 0.6], [0.85, 1]),
+    },
+    {
+      opacity: useTransform(howItWorksProgress, [0.55, 0.75, 0.95], [0, 1, 1]),
+      rotateY: useTransform(howItWorksProgress, [0.6, 0.9], [22, 0]),
+      x: useTransform(howItWorksProgress, [0.6, 0.9], [45, 0]),
+      scale: useTransform(howItWorksProgress, [0.6, 0.9], [0.88, 1]),
+    },
+  ];
   const ambientGradient = useTransform(
     pageProgress,
     [0, 0.3, 0.6, 1],
@@ -1396,28 +1417,32 @@ export default function LandingPage() {
               <motion.div
                 key={step.num}
                 className="text-center md:text-left group relative"
-                initial={shouldReduceMotion ? false : { opacity: 0, rotateY: i === 0 ? 12 : i === 2 ? -12 : 0, y: 24, scale: 0.96 }}
-                whileInView={shouldReduceMotion ? undefined : { opacity: 1, rotateY: 0, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.7, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+                style={stepStyles.length > 0 ? stepStyles[i] : undefined}
               >
-                <span
+                <motion.span
                   className="font-display text-[88px] md:text-[104px] font-semibold leading-none inline-block transition-all duration-500 group-hover:scale-105 group-hover:text-coral"
                   style={{ color: 'rgba(232, 93, 62, 0.75)', textShadow: '0 10px 24px rgba(232,93,62,0.20)' }}
+                  initial={shouldReduceMotion ? false : { rotateZ: i === 1 ? 0 : 8, scale: 0.85 }}
+                  whileInView={shouldReduceMotion ? undefined : { rotateZ: 0, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {step.num}
-                </span>
+                </motion.span>
                 <div className="flex items-center gap-3 mt-2 mb-3">
                   <motion.span
+                    initial={shouldReduceMotion ? false : { scale: 0, rotate: -45 }}
+                    whileInView={shouldReduceMotion ? undefined : { scale: 1, rotate: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ type: 'spring', stiffness: 250, damping: 12, delay: i * 0.12 + 0.2 }}
                     whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 15 }}
                   >
                     {step.icon}
                   </motion.span>
                   <h3 className="font-display text-2xl font-medium text-charcoal">{step.title}</h3>
                 </div>
                 <p className="font-body text-charcoal/70 leading-relaxed">{step.desc}</p>
-              </motion.div>
+            </motion.div>
             ))}
           </div>
         </div>
@@ -1430,13 +1455,19 @@ export default function LandingPage() {
             { label: 'CLARITY CHECK', title: "Know what's worth worrying about", desc: "Our AI flags each subject as green, yellow, or red — with gentle, advisory language. No predictions about your child's future. Just clear, actionable insights.", bullets: ['Board-specific grade interpretation', 'Soft, non-judgmental language', 'Teacher comment analysis'], bg: 'cream' },
             { label: "TONIGHT'S CONVERSATION", title: 'Talk to your child with confidence', desc: 'Get a personalized conversation script that opens dialogue instead of interrogation. Connection-focused phrasing that strengthens your relationship.', bullets: ['Age-appropriate language', 'Connection over evaluation', 'Copy-paste ready scripts'], bg: 'white' },
             { label: '30-DAY PLAN', title: 'Small habits, real progress', desc: 'A concrete, week-by-week action plan tied directly to what was flagged. Not generic advice — targeted steps that address the specific areas from the report card.', bullets: ['Daily and weekly actions', 'Progress tracking', 'Evidence-based suggestions'], bg: 'cream' },
-          ].map((feature, i) => (
+          ].map((feature, i) => {
+            const featureEntrance = [
+              { initial: { opacity: 0, x: -50, scale: 0.94 }, whileInView: { opacity: 1, x: 0, scale: 1 } },
+              { initial: { opacity: 0, scale: 0.9, rotateY: 8 }, whileInView: { opacity: 1, scale: 1, rotateY: 0 } },
+              { initial: { opacity: 0, y: 50, skewX: '-3deg' }, whileInView: { opacity: 1, y: 0, skewX: '0deg' } },
+            ];
+            return (
             <motion.div
               key={feature.label}
-              initial={shouldReduceMotion ? false : { y: 30 }}
-              whileInView={shouldReduceMotion ? undefined : { y: 0 }}
+              initial={shouldReduceMotion ? false : featureEntrance[i].initial}
+              whileInView={shouldReduceMotion ? undefined : featureEntrance[i].whileInView}
               viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center ${i % 2 !== 0 ? 'md:[direction:rtl]' : ''}`}>
                 <div className={`${i % 2 !== 0 ? 'md:[direction:ltr]' : ''}`}>
@@ -1445,7 +1476,7 @@ export default function LandingPage() {
                     initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
                     whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
                   >
                     {feature.label}
                   </motion.p>
@@ -1454,29 +1485,40 @@ export default function LandingPage() {
                     initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
                     whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
                   >
                     {feature.title}
                   </motion.h3>
                   <motion.p
                     className="font-body text-lg text-charcoal/70 leading-relaxed mb-6"
-                    initial={shouldReduceMotion ? false : { y: 12 }}
+                    initial={shouldReduceMotion ? false : { y: 15 }}
                     whileInView={shouldReduceMotion ? undefined : { y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   >
                     {feature.desc}
                   </motion.p>
-                  <ul className="space-y-3">
+                  <motion.ul
+                    className="space-y-3"
+                    initial={shouldReduceMotion ? false : 'hidden'}
+                    whileInView={shouldReduceMotion ? undefined : 'visible'}
+                    viewport={{ once: true, margin: '-40px' }}
+                    variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+                  >
                     {feature.bullets.map(b => (
-                      <li key={b} className="flex items-center gap-3">
+                      <motion.li
+                        key={b}
+                        variants={shouldReduceMotion ? undefined : { hidden: { opacity: 0, x: -15 }, visible: { opacity: 1, x: 0 } }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="flex items-center gap-3"
+                      >
                       <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber to-coral flex items-center justify-center flex-shrink-0 shadow-sm">
                           <Star size={10} className="text-white" fill="white" />
                         </span>
                         <span className="font-body text-charcoal/80">{b}</span>
-                      </li>
+                      </motion.li>
                     ))}
-                  </ul>
+                  </motion.ul>
                 </div>
                 {feature.label === 'CLARITY CHECK' ? (
                   <AnimatedClarityCheck />
@@ -1498,7 +1540,8 @@ export default function LandingPage() {
                 )}
               </div>
             </motion.div>
-          ))}
+          );
+          })}
         </div>
       </section>
 
@@ -1527,10 +1570,10 @@ export default function LandingPage() {
             {portalCards.map((role, i) => (
               <motion.div
                 key={role.title}
-                initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.94, y: 16 }}
-                whileInView={shouldReduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
+                initial={shouldReduceMotion ? false : i === 0 ? { opacity: 0, x: -80, rotate: -6, scale: 0.9 } : i === 1 ? { opacity: 0, y: 60, rotate: 3, scale: 0.88 } : { opacity: 0, x: 80, rotate: -4, scale: 0.9 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
                 viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.7, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
               >
               <TiltCard className="h-full" tiltDegree={5} liftY={-6}>
                 <GlowTiltCard className="h-full">
@@ -1558,8 +1601,8 @@ export default function LandingPage() {
                       {role.cta} <ArrowRight size={14} />
                     </span>
                   </Link>
-              </GlowTiltCard>
-            </TiltCard>
+                </GlowTiltCard>
+              </TiltCard>
             </motion.div>
             ))}
           </div>
@@ -1592,6 +1635,13 @@ export default function LandingPage() {
                   {[0, 1].map((offset) => {
                     const t = testimonials[(testimonialIdx + offset) % testimonials.length];
                     return (
+                      <motion.div
+                        initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.92, y: 20 }}
+                        whileInView={shouldReduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ type: 'spring', stiffness: 180, damping: 15, delay: offset * 0.1 }}
+                        className="h-full"
+                      >
                       <GlowTiltCard key={`${testimonialIdx}-${t.name}`} className="h-full">
                         <div className="bg-white rounded-2xl shadow-card p-8 h-full flex flex-col relative">
                           <span aria-hidden="true" className="absolute top-4 left-6 text-5xl font-display text-coral/10 leading-none select-none">"</span>
@@ -1621,6 +1671,7 @@ export default function LandingPage() {
                           </div>
                         </div>
                       </GlowTiltCard>
+                      </motion.div>
                     );
                   })}
                 </motion.div>
@@ -1669,8 +1720,23 @@ export default function LandingPage() {
             Common questions
           </motion.h2>
           <div className="space-y-0">
-            {faqs.map((faq, i) => (
-              <div key={i} className="border-b border-light-gray">
+            {faqs.map((faq, i) => {
+              const itemReveal = [
+                { opacity: 0, x: -40 },
+                { opacity: 0, scale: 0.95 },
+                { opacity: 0, x: 40 },
+                { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
+                { opacity: 0, y: 25, rotate: -1 },
+              ];
+              return (
+              <motion.div
+                key={i}
+                initial={shouldReduceMotion ? false : itemReveal[i]}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, y: 0, scale: 1, rotate: 0, clipPath: 'inset(0 0 0% 0)' }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{ duration: 0.5, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                className="border-b border-light-gray"
+              >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full py-5 flex items-center justify-between text-left group"
@@ -1691,9 +1757,10 @@ export default function LandingPage() {
                   className="overflow-hidden"
                 >
                   <p className="font-body text-charcoal/70 pb-5 leading-relaxed max-w-xl">{faq.a}</p>
-                </motion.div>
-              </div>
-            ))}
+                  </motion.div>
+              </motion.div>
+            );
+            })}
           </div>
         </div>
       </section>
