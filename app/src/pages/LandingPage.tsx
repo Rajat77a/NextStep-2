@@ -824,31 +824,22 @@ function AnimatedDayPlan() {
         setPhase('week1');
       }, 1400));
     } else if (phase === 'week1') {
-      moveCursor(40, 35);
       timers.current.push(window.setTimeout(() => {
-        triggerClick();
         setPhase('week2');
-      }, 700));
+      }, 800));
     } else if (phase === 'week2') {
-      moveCursor(40, 87);
       timers.current.push(window.setTimeout(() => {
-        triggerClick();
         setPhase('week3');
-      }, 700));
+      }, 800));
     } else if (phase === 'week3') {
-      moveCursor(40, 139);
       timers.current.push(window.setTimeout(() => {
-        triggerClick();
         setPhase('week4');
-      }, 700));
+      }, 800));
     } else if (phase === 'week4') {
-      moveCursor(40, 191);
       timers.current.push(window.setTimeout(() => {
-        triggerClick();
         setPhase('done');
-      }, 700));
+      }, 800));
     } else if (phase === 'done') {
-      moveCursor(140, 315);
       timers.current.push(window.setTimeout(() => setPhase('idle'), 3000));
     }
     return clearTimers;
@@ -1166,30 +1157,30 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen" style={{ background: '#0a0a0f' }}>
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-cream/90 backdrop-blur-xl border-b border-light-gray shadow-subtle' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#0e0e14]/90 backdrop-blur-xl border-b border-white/[0.06] shadow-subtle' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
           <Link to="/" className="flex items-baseline gap-0.5">
-            <span className="font-display text-xl md:text-2xl font-semibold text-charcoal tracking-tight">NextStep</span>
+            <span className="font-display text-xl md:text-2xl font-semibold text-white tracking-tight">NextStep</span>
             <span className="text-coral text-[10px] font-body font-bold">•</span>
-            <span className="font-body text-[11px] font-semibold text-charcoal tracking-wider">AI</span>
+            <span className="font-body text-[11px] font-semibold text-white/60 tracking-wider">AI</span>
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
-            <a href="#how-it-works" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">How It Works</a>
-            <a href="#parents" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">Clarity Check</a>
-            <a href="#stories" className="landing-nav-link nav-text text-medium-gray transition-colors duration-200">Parent Stories</a>
+            <a href="#how-it-works" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-200">How It Works</a>
+            <a href="#parents" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-200">Clarity Check</a>
+            <a href="#stories" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-200">Parent Stories</a>
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/login" className="btn-text px-5 py-2.5 rounded-lg text-charcoal hover:bg-white/60 transition-colors">Log In</Link>
+            <Link to="/login" className="btn-text px-5 py-2.5 rounded-lg text-white/70 hover:bg-white/[0.06] transition-colors">Log In</Link>
             <MagneticWrap>
               <Link to="/signup" className="btn-text px-5 py-2.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">Get Started</Link>
             </MagneticWrap>
           </div>
 
-          <button onClick={() => setMobileMenu(!mobileMenu)} className="lg:hidden p-2">
+          <button onClick={() => setMobileMenu(!mobileMenu)} className="lg:hidden p-2 text-white/60 hover:text-white transition-colors">
             {mobileMenu ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
