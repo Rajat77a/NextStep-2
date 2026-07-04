@@ -388,14 +388,21 @@ function AnimatedClarityCheck() {
                   </motion.div>
                 ))}
                 {phase === 'done' && (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
-                    className="font-body text-xs text-coral text-center pt-2"
+                  <motion.div
+                    initial={{ scale: 0, y: 8 }}
+                    animate={{ scale: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 250, damping: 14 }}
+                    className="flex justify-center pt-3"
                   >
-                    ✓ Clarity check complete
-                  </motion.p>
+                    <motion.span
+                      animate={{ boxShadow: ['0 0 0px rgba(232,93,62,0)', '0 0 12px rgba(232,93,62,0.2)', '0 0 0px rgba(232,93,62,0)'] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-coral/10 to-coral/5 border border-coral/15 px-3 py-1"
+                    >
+                      <Star size={10} className="text-coral" />
+                      <span className="font-body text-[10px] font-semibold text-coral tracking-wide">All clear</span>
+                    </motion.span>
+                  </motion.div>
                 )}
               </motion.div>
             )}
@@ -764,14 +771,21 @@ function AnimatedConversation() {
                 )}
 
                 {phase === 'done' && (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
-                    className="font-body text-xs text-coral text-center pt-1"
+                  <motion.div
+                    initial={{ scale: 0, y: 8 }}
+                    animate={{ scale: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 250, damping: 14 }}
+                    className="flex justify-center pt-2"
                   >
-                    ✓ Script ready for tonight
-                  </motion.p>
+                    <motion.span
+                      animate={{ boxShadow: ['0 0 0px rgba(232,93,62,0)', '0 0 12px rgba(232,93,62,0.2)', '0 0 0px rgba(232,93,62,0)'] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-coral/10 to-coral/5 border border-coral/15 px-3 py-1"
+                    >
+                      <MessageCircle size={10} className="text-coral" />
+                      <span className="font-body text-[10px] font-semibold text-coral tracking-wide">Ready to talk</span>
+                    </motion.span>
+                  </motion.div>
                 )}
               </motion.div>
             )}
@@ -992,14 +1006,21 @@ function AnimatedDayPlan() {
                   );
                 })}
                 {phase === 'done' && (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 12 }}
-                    className="font-body text-xs text-coral text-center pt-2"
+                  <motion.div
+                    initial={{ scale: 0, y: 8 }}
+                    animate={{ scale: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 250, damping: 14 }}
+                    className="flex justify-center pt-2"
                   >
-                    ✓ 4-week plan ready
-                  </motion.p>
+                    <motion.span
+                      animate={{ boxShadow: ['0 0 0px rgba(232,93,62,0)', '0 0 12px rgba(232,93,62,0.2)', '0 0 0px rgba(232,93,62,0)'] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-coral/10 to-coral/5 border border-coral/15 px-3 py-1"
+                    >
+                      <Calendar size={10} className="text-coral" />
+                      <span className="font-body text-[10px] font-semibold text-coral tracking-wide">4 weeks set</span>
+                    </motion.span>
+                  </motion.div>
                 )}
               </motion.div>
             )}
