@@ -85,6 +85,12 @@ const heroImages = [
   'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1920&h=1080&fit=crop',
 ];
 
+const HERO_VIDEOS = [
+  { src: 'https://assets.mixkit.co/videos/28315/28315-720.mp4', poster: heroImages[0] },
+  { src: 'https://assets.mixkit.co/videos/4790/4790-720.mp4', poster: heroImages[1] },
+  { src: 'https://assets.mixkit.co/videos/50125/50125-720.mp4', poster: heroImages[2] },
+];
+
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement | null>(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
@@ -991,6 +997,7 @@ export default function LandingPage() {
   const [testimonialPaused, setTestimonialPaused] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [valuePropIdx, setValuePropIdx] = useState(0);
+  const [heroVideoIdx, setHeroVideoIdx] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const valueProps = ['next move', 'insight', 'confidence', 'connection'];
   const testimonialResumeTimer = useRef<number | null>(null);
@@ -1133,6 +1140,17 @@ export default function LandingPage() {
     return () => window.clearInterval(timer);
   }, [shouldReduceMotion, valueProps.length]);
 
+  // Preload next hero video for seamless crossfade
+  useEffect(() => {
+    const nextIdx = (heroVideoIdx + 1) % HERO_VIDEOS.length;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'video';
+    link.href = HERO_VIDEOS[nextIdx].src;
+    document.head.appendChild(link);
+    return () => { if (link.parentNode) link.parentNode.removeChild(link); };
+  }, [heroVideoIdx]);
+
   const pauseTestimonials = () => {
     if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
     setTestimonialPaused(true);
@@ -1226,22 +1244,29 @@ export default function LandingPage() {
         ref={heroRef}
         className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden bg-charcoal"
       >
-        {/* Video background — cinematic classroom scene, loops seamless */}
+        {/* Video background — cinematic crossfade playlist (classroom, mother-daughter, father-son) */}
         <div className="absolute inset-0 overflow-hidden z-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            poster={heroImages[0]}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{
-              animation: shouldReduceMotion ? 'none' : 'hero-zoom 15s ease-in-out infinite alternate',
-            }}
-          >
-            <source src="https://assets.mixkit.co/videos/28315/28315-720.mp4" type="video/mp4" />
-          </video>
+          <AnimatePresence>
+            <motion.video
+              key={heroVideoIdx}
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+              poster={HERO_VIDEOS[heroVideoIdx].poster}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{
+                animation: shouldReduceMotion ? 'none' : 'hero-zoom 15s ease-in-out infinite alternate',
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.5, ease: 'easeInOut' }}
+              onEnded={() => setHeroVideoIdx(prev => (prev + 1) % HERO_VIDEOS.length)}
+            >
+              <source src={HERO_VIDEOS[heroVideoIdx].src} type="video/mp4" />
+            </motion.video>
+          </AnimatePresence>
         </div>
 
         {/* Gradient overlays for readability — darkened for text contrast */}
