@@ -77,6 +77,14 @@ const portalCards = [
   },
 ];
 
+const heroImages = [
+  'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&h=1080&fit=crop',
+  'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920&h=1080&fit=crop',
+  'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1920&h=1080&fit=crop',
+  'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1920&h=1080&fit=crop',
+  'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1920&h=1080&fit=crop',
+];
+
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement | null>(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
@@ -993,6 +1001,7 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [valuePropIdx, setValuePropIdx] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
   const valueProps = ['next move', 'insight', 'confidence', 'connection'];
   const testimonialResumeTimer = useRef<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -1037,25 +1046,46 @@ export default function LandingPage() {
   const floatOffset3 = useTransform(pageProgress, [0, 1], ['0px', '-60px']);
   const floatOffset4 = useTransform(pageProgress, [0, 1], ['0px', '100px']);
 
-  const stepStyles = shouldReduceMotion ? [] : [
-    {
-      opacity: useTransform(howItWorksProgress, [0, 0.2, 0.4], [0, 1, 1]),
-      rotateY: useTransform(howItWorksProgress, [0, 0.3], [-22, 0]),
-      x: useTransform(howItWorksProgress, [0, 0.3], [-45, 0]),
-      scale: useTransform(howItWorksProgress, [0, 0.3], [0.88, 1]),
-    },
-    {
-      opacity: useTransform(howItWorksProgress, [0.25, 0.45, 0.65], [0, 1, 1]),
-      y: useTransform(howItWorksProgress, [0.3, 0.6], [35, 0]),
-      scale: useTransform(howItWorksProgress, [0.3, 0.6], [0.85, 1]),
-    },
-    {
-      opacity: useTransform(howItWorksProgress, [0.55, 0.75, 0.95], [0, 1, 1]),
-      rotateY: useTransform(howItWorksProgress, [0.6, 0.9], [22, 0]),
-      x: useTransform(howItWorksProgress, [0.6, 0.9], [45, 0]),
-      scale: useTransform(howItWorksProgress, [0.6, 0.9], [0.88, 1]),
-    },
-  ];
+  // Hero exit transforms
+  const heroExitOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const heroExitBlur = useTransform(scrollYProgress, [0, 1], ['blur(0px)', 'blur(6px)']);
+  const heroExitScale = useTransform(scrollYProgress, [0, 1], [1, 0.97]);
+
+  // Section-scoped exit refs
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLElement>(null);
+  const portalRef = useRef<HTMLElement>(null);
+  const testimonialRef = useRef<HTMLElement>(null);
+  const faqRef = useRef<HTMLElement>(null);
+
+  const { scrollYProgress: featuresProgress } = useScroll({ target: featuresRef, offset: ['start end', 'end start'] });
+  const { scrollYProgress: statsProgress } = useScroll({ target: statsRef, offset: ['start end', 'end start'] });
+  const { scrollYProgress: portalProgress } = useScroll({ target: portalRef, offset: ['start end', 'end start'] });
+  const { scrollYProgress: testimonialProgress } = useScroll({ target: testimonialRef, offset: ['start end', 'end start'] });
+  const { scrollYProgress: faqProgress } = useScroll({ target: faqRef, offset: ['start end', 'end start'] });
+
+  // Unique exit transforms per section (maps 0.7→1.0 progress to exit values)
+  const featuresExitOpacity = useTransform(featuresProgress, [0.7, 1], [1, 0]);
+  const featuresExitX = useTransform(featuresProgress, [0.7, 1], ['0px', '-40px']);
+
+  const statsExitOpacity = useTransform(statsProgress, [0.7, 1], [1, 0]);
+  const statsExitScale = useTransform(statsProgress, [0.7, 1], [1, 0.92]);
+  const statsExitFilter = useTransform(statsProgress, [0.7, 1], ['blur(0px)', 'blur(4px)']);
+
+  const portalExitOpacity = useTransform(portalProgress, [0.7, 1], [1, 0]);
+  const portalExitRotateY = useTransform(portalProgress, [0.7, 1], [0, -8]);
+  const portalExitScale = useTransform(portalProgress, [0.7, 1], [1, 0.94]);
+
+  const testimonialExitOpacity = useTransform(testimonialProgress, [0.7, 1], [1, 0]);
+  const testimonialExitScale = useTransform(testimonialProgress, [0.7, 1], [1, 0.95]);
+
+  const howItWorksExitOpacity = useTransform(howItWorksProgress, [0.7, 1], [1, 0]);
+  const howItWorksExitY = useTransform(howItWorksProgress, [0.7, 1], ['0px', '60px']);
+  const howItWorksExitScale = useTransform(howItWorksProgress, [0.7, 1], [1, 0.95]);
+
+  const faqExitOpacity = useTransform(faqProgress, [0.7, 1], [1, 0]);
+  const faqExitY = useTransform(faqProgress, [0.7, 1], ['0px', '-30px']);
+
   const ambientGradient = useTransform(
     pageProgress,
     [0, 0.3, 0.6, 1],
@@ -1112,6 +1142,14 @@ export default function LandingPage() {
     }, 3200);
     return () => window.clearInterval(timer);
   }, [shouldReduceMotion, valueProps.length]);
+
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const timer = window.setInterval(() => {
+      setImageIndex(i => (i + 1) % heroImages.length);
+    }, 5500);
+    return () => window.clearInterval(timer);
+  }, [shouldReduceMotion]);
 
   const pauseTestimonials = () => {
     if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
@@ -1204,40 +1242,67 @@ export default function LandingPage() {
       {/* Hero Section */}
       <motion.section
         ref={heroRef}
-        className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden"
+        className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden bg-charcoal"
       >
+        {/* Image slideshow — full-bleed crossfade + Ken Burns slow zoom */}
+        <div className="absolute inset-0 overflow-hidden z-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={imageIndex}
+              className="absolute inset-0"
+              initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 1.04 }}
+              animate={{ opacity: 1, scale: shouldReduceMotion ? 1 : 1.12 }}
+              exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 1.14 }}
+              transition={{
+                opacity: { duration: 1.2, ease: 'easeInOut' },
+                scale: { duration: 6, ease: 'easeOut' },
+              }}
+              style={{
+                backgroundImage: `url(${heroImages[imageIndex]})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+          </AnimatePresence>
+        </div>
+
+        {/* Gradient overlays for readability */}
+        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-charcoal/70 via-charcoal/30 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-charcoal/40 to-transparent pointer-events-none" />
+
+        {/* Parallax depth shapes on top of images */}
         {!shouldReduceMotion && (
           <>
             <motion.div
               aria-hidden="true"
-              className="absolute w-[340px] h-[340px] rounded-full pointer-events-none opacity-30"
+              className="absolute w-[340px] h-[340px] rounded-full pointer-events-none opacity-40"
               style={{
                 y: parallaxShape1,
                 top: '10%',
                 right: '8%',
-                background: 'radial-gradient(circle, rgba(167, 189, 165, 0.25), transparent 65%)',
+                background: 'radial-gradient(circle, rgba(167, 189, 165, 0.15), transparent 65%)',
                 willChange: 'transform',
               }}
             />
             <motion.div
               aria-hidden="true"
-              className="absolute w-[200px] h-[200px] rounded-full pointer-events-none opacity-20"
+              className="absolute w-[200px] h-[200px] rounded-full pointer-events-none opacity-30"
               style={{
                 y: parallaxShape2,
                 bottom: '5%',
                 left: '3%',
-                background: 'radial-gradient(circle, rgba(232, 93, 62, 0.12), transparent 65%)',
+                background: 'radial-gradient(circle, rgba(232, 93, 62, 0.08), transparent 65%)',
                 willChange: 'transform',
               }}
             />
             <motion.div
               aria-hidden="true"
-              className="absolute w-[120px] h-[120px] pointer-events-none opacity-10"
+              className="absolute w-[120px] h-[120px] pointer-events-none opacity-15"
               style={{
                 y: parallaxShape3,
                 top: '30%',
                 left: '55%',
-                border: '2px solid rgba(232,93,62,0.15)',
+                border: '2px solid rgba(232,93,62,0.1)',
                 borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%',
                 willChange: 'transform',
               }}
@@ -1247,7 +1312,7 @@ export default function LandingPage() {
               className="absolute inset-0 pointer-events-none"
               style={{
                 y: heroBgY,
-                background: 'radial-gradient(circle at 78% 24%, rgba(232, 93, 62, 0.08), transparent 34%)',
+                background: 'radial-gradient(circle at 78% 24%, rgba(232, 93, 62, 0.06), transparent 34%)',
                 willChange: 'transform',
               }}
             />
@@ -1272,7 +1337,7 @@ export default function LandingPage() {
                   height: orb.size,
                   top: orb.top,
                   left: orb.left,
-                  background: `radial-gradient(circle, rgba(232, 93, 62, 0.06), transparent 65%)`,
+                  background: `radial-gradient(circle, rgba(232, 93, 62, 0.05), transparent 65%)`,
                 }}
                 animate={{
                   y: [0, -28, 8, -18, 0],
@@ -1289,114 +1354,125 @@ export default function LandingPage() {
             ))}
           </>
         )}
-        <div className="max-w-7xl mx-auto px-5 md:px-12 w-full">
-          <div className="grid lg:grid-cols-[55%_45%] gap-12 lg:gap-8 items-center">
-            <div>
-              <motion.p
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-                className="label-text text-coral mb-4"
-              >
-                Report Card Clarity for Every Parent
-              </motion.p>
-              <motion.h1
-                initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
-                className="font-display text-[40px] md:text-[72px] font-medium text-charcoal leading-[1.0] tracking-tight mb-6"
-              >
-                Turn your child's report card into your{' '}
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={valueProps[valuePropIdx]}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -16 }}
-                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    className="inline-block font-semibold text-transparent bg-clip-text leading-[1.2]"
-                    style={{
-                      backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, var(--charcoal) 50% 100%)',
-                      backgroundSize: '200% 100%',
-                      backgroundPosition: '0% 0',
-                    }}
-                  >
-                    {valueProps[valuePropIdx]}
-                  </motion.span>
-                </AnimatePresence>
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.55 }}
-                className="font-body text-lg md:text-xl text-charcoal/70 max-w-[480px] mb-8 leading-relaxed"
-              >
-                Upload a report card. Get a clear, honest breakdown of what matters — plus the exact words to use with your child and their teacher.
-              </motion.p>
+
+        {/* Exit wrapper — blur + fade + scale as user scrolls past */}
+        <motion.div
+          className="relative z-[3] w-full"
+          style={shouldReduceMotion ? undefined : {
+            opacity: heroExitOpacity,
+            scale: heroExitScale,
+            filter: heroExitBlur,
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-5 md:px-12 w-full">
+            <div className="grid lg:grid-cols-[55%_45%] gap-12 lg:gap-8 items-center">
+              <div>
+                <motion.p
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+                  className="label-text text-coral mb-4"
+                >
+                  Report Card Clarity for Every Parent
+                </motion.p>
+                <motion.h1
+                  initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
+                  className="font-display text-[40px] md:text-[72px] font-medium text-white leading-[1.0] tracking-tight mb-6"
+                >
+                  Turn your child's report card into your{' '}
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={valueProps[valuePropIdx]}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -16 }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      className="inline-block font-semibold text-transparent bg-clip-text leading-[1.2]"
+                      style={{
+                        backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, white 50% 100%)',
+                        backgroundSize: '200% 100%',
+                        backgroundPosition: '0% 0',
+                      }}
+                    >
+                      {valueProps[valuePropIdx]}
+                    </motion.span>
+                  </AnimatePresence>
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.55 }}
+                  className="font-body text-lg md:text-xl text-white/70 max-w-[480px] mb-8 leading-relaxed"
+                >
+                  Upload a report card. Get a clear, honest breakdown of what matters — plus the exact words to use with your child and their teacher.
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.7 }}
+                  className="flex flex-wrap gap-4 mb-8"
+                >
+                  <MagneticWrap>
+                    <Link to="/signup" className="relative btn-text px-7 py-3.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2 overflow-hidden group backdrop-blur-sm bg-coral/90">
+                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
+                      Upload a Report Card <ArrowRight size={16} />
+                    </Link>
+                  </MagneticWrap>
+                  <MagneticWrap>
+                    <a href="#how-it-works" className="btn-text px-7 py-3.5 rounded-[10px] border-[1.5px] border-white/40 text-white hover:bg-white hover:text-charcoal transition-all duration-250 backdrop-blur-sm">
+                      See How It Works
+                    </a>
+                  </MagneticWrap>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+                  className="flex items-center gap-3"
+                >
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div key={i} className="w-7 h-7 rounded-full bg-white/15 border-2 border-charcoal/40 flex items-center justify-center text-[9px] font-body font-bold text-white">
+                        {String.fromCharCode(64 + i)}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="font-body text-sm text-white/60">Join <CountUp value={2500} suffix="+" /> parents getting clarity this term</p>
+                </motion.div>
+              </div>
+
               <motion.div
-                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.7 }}
-                className="flex flex-wrap gap-4 mb-8"
+                initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.4 }}
+                className="relative"
               >
-                <MagneticWrap>
-                  <Link to="/signup" className="relative btn-text px-7 py-3.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2 overflow-hidden group">
-                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
-                    Upload a Report Card <ArrowRight size={16} />
-                  </Link>
-                </MagneticWrap>
-                <MagneticWrap>
-                  <a href="#how-it-works" className="btn-text px-7 py-3.5 rounded-[10px] border-[1.5px] border-charcoal text-charcoal hover:bg-charcoal hover:text-cream transition-all duration-250">
-                    See How It Works
-                  </a>
-                </MagneticWrap>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
-                className="flex items-center gap-3"
-              >
-                <div className="flex -space-x-2">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} className="w-7 h-7 rounded-full bg-coral/15 border-2 border-cream flex items-center justify-center text-[9px] font-body font-bold text-coral">
-                      {String.fromCharCode(64 + i)}
+                <GlowTiltCard>
+                  <div className="rounded-2xl overflow-hidden shadow-card bg-white/10 backdrop-blur-lg border border-white/15 aspect-[4/3] flex items-center justify-center relative">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-coral/[0.05] to-transparent" />
+                    <div className="text-center p-8 relative">
+                      <motion.div
+                        animate={shouldReduceMotion ? undefined : { scale: [1, 1.06, 1] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                        className="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center mx-auto mb-4"
+                      >
+                        <motion.span
+                          animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }}
+                          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          <Heart size={32} className="text-coral" />
+                        </motion.span>
+                      </motion.div>
+                      <p className="font-display text-2xl text-white mb-2">Every report card tells a story</p>
+                      <p className="font-body text-white/60">We help you read between the grades</p>
                     </div>
-                  ))}
-                </div>
-                <p className="font-body text-sm text-medium-gray">Join <CountUp value={2500} suffix="+" /> parents getting clarity this term</p>
+                  </div>
+                </GlowTiltCard>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
+                  className="absolute -bottom-6 -left-6 md:-left-10 bg-white/15 backdrop-blur-md border border-white/10 rounded-xl shadow-card-hover p-4 w-[200px]"
+                >
+                  <p className="label-text text-coral mb-2">Clarity Check</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sage" /><span className="font-body text-xs text-white/80">Math — On Track</span></div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber" /><span className="font-body text-xs text-white/80">Science — Watch</span></div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-coral" /><span className="font-body text-xs text-white/80">English — Address</span></div>
+                  </div>
+                </motion.div>
               </motion.div>
             </div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.4 }}
-              className="relative"
-            >
-              <GlowTiltCard>
-                <div className="rounded-2xl overflow-hidden shadow-card bg-gradient-to-br from-[#E8DDD0] to-[#D4C4B0] aspect-[4/3] flex items-center justify-center relative">
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-coral/[0.03] to-transparent" />
-                  <div className="text-center p-8 relative">
-                    <motion.div
-                      animate={shouldReduceMotion ? undefined : { scale: [1, 1.06, 1] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                      className="w-20 h-20 rounded-full bg-coral/15 flex items-center justify-center mx-auto mb-4"
-                    >
-                      <motion.span
-                        animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                      >
-                        <Heart size={32} className="text-coral" />
-                      </motion.span>
-                    </motion.div>
-                    <p className="font-display text-2xl text-charcoal mb-2">Every report card tells a story</p>
-                    <p className="font-body text-charcoal/60">We help you read between the grades</p>
-                  </div>
-                </div>
-              </GlowTiltCard>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
-                className="absolute -bottom-6 -left-6 md:-left-10 bg-white rounded-xl shadow-card-hover p-4 w-[200px]"
-              >
-                <p className="label-text text-coral mb-2">Clarity Check</p>
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sage" /><span className="font-body text-xs text-charcoal/70">Math — On Track</span></div>
-                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber" /><span className="font-body text-xs text-charcoal/70">Science — Watch</span></div>
-                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-coral" /><span className="font-body text-xs text-charcoal/70">English — Address</span></div>
-                </div>
-              </motion.div>
-            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </motion.section>
 
       {/* Parallax depth shapes — floating geometric orbs behind content */}
@@ -1451,7 +1527,14 @@ export default function LandingPage() {
 
       {/* How It Works */}
       <section id="how-it-works" ref={howItWorksRef} className="py-20 md:py-28 bg-white relative">
-        <div className="max-w-7xl mx-auto px-5 md:px-12">
+        <motion.div
+          className="max-w-7xl mx-auto px-5 md:px-12"
+          style={shouldReduceMotion ? undefined : {
+            opacity: howItWorksExitOpacity,
+            y: howItWorksExitY,
+            scale: howItWorksExitScale,
+          }}
+        >
           <motion.h2
             className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-4"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
@@ -1491,27 +1574,23 @@ export default function LandingPage() {
               { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} className="text-coral" /> },
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} className="text-coral" /> },
             ].map((step, i) => (
-              <motion.div
-                key={step.num}
-                className="text-center md:text-left group relative"
-                style={stepStyles.length > 0 ? stepStyles[i] : undefined}
-              >
+              <div key={step.num} className="text-center md:text-left group relative">
                 <motion.span
                   className="font-display text-[88px] md:text-[104px] font-semibold leading-none inline-block transition-all duration-500 group-hover:scale-105 group-hover:text-coral"
                   style={{ color: 'rgba(232, 93, 62, 0.75)', textShadow: '0 10px 24px rgba(232,93,62,0.20)' }}
-                  initial={shouldReduceMotion ? false : { rotateZ: i === 1 ? 0 : 8, scale: 0.85 }}
-                  whileInView={shouldReduceMotion ? undefined : { rotateZ: 0, scale: 1 }}
+                  initial={shouldReduceMotion ? false : { scale: 0.7, y: 12 }}
+                  whileInView={shouldReduceMotion ? undefined : { scale: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ type: 'spring', stiffness: 220, damping: 14, delay: i * 0.1 }}
                 >
                   {step.num}
                 </motion.span>
                 <div className="flex items-center gap-3 mt-2 mb-3">
                   <motion.span
-                    initial={shouldReduceMotion ? false : { scale: 0, rotate: -45 }}
+                    initial={shouldReduceMotion ? false : { scale: 0.3, rotate: -45 }}
                     whileInView={shouldReduceMotion ? undefined : { scale: 1, rotate: 0 }}
                     viewport={{ once: true }}
-                    transition={{ type: 'spring', stiffness: 250, damping: 12, delay: i * 0.12 + 0.2 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 12, delay: i * 0.1 + 0.12 }}
                     whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
                   >
                     {step.icon}
@@ -1519,15 +1598,21 @@ export default function LandingPage() {
                   <h3 className="font-display text-2xl font-medium text-charcoal">{step.title}</h3>
                 </div>
                 <p className="font-body text-charcoal/70 leading-relaxed">{step.desc}</p>
-            </motion.div>
+              </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Feature Highlights */}
-      <section id="parents" className="py-20 md:py-28 bg-cream">
-        <div className="max-w-7xl mx-auto px-5 md:px-12 space-y-24 md:space-y-32">
+      <section id="parents" ref={featuresRef} className="py-20 md:py-28 bg-cream relative">
+        <motion.div
+          className="max-w-7xl mx-auto px-5 md:px-12 space-y-24 md:space-y-32"
+          style={shouldReduceMotion ? undefined : {
+            opacity: featuresExitOpacity,
+            x: featuresExitX,
+          }}
+        >
           {[
             { label: 'CLARITY CHECK', title: "Know what's worth worrying about", desc: "Our AI flags each subject as green, yellow, or red — with gentle, advisory language. No predictions about your child's future. Just clear, actionable insights.", bullets: ['Board-specific grade interpretation', 'Soft, non-judgmental language', 'Teacher comment analysis'], bg: 'cream' },
             { label: "TONIGHT'S CONVERSATION", title: 'Talk to your child with confidence', desc: 'Get a personalized conversation script that opens dialogue instead of interrogation. Connection-focused phrasing that strengthens your relationship.', bullets: ['Age-appropriate language', 'Connection over evaluation', 'Copy-paste ready scripts'], bg: 'white' },
@@ -1618,14 +1703,21 @@ export default function LandingPage() {
               </div>
             </motion.div>
           );
-          })}
-        </div>
+                    })}
+        </motion.div>
       </section>
 
       {/* Stats Counter Bar — scroll-driven count-up */}
-      <section className="py-16 md:py-20 bg-gradient-to-r from-coral/5 via-white to-coral/5 relative overflow-hidden">
+      <section ref={statsRef} className="py-16 md:py-20 bg-gradient-to-r from-coral/5 via-white to-coral/5 relative overflow-hidden">
         <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(600px_at_20%_50%,rgba(232,93,62,0.04),transparent_70%)]" />
-        <div className="max-w-7xl mx-auto px-5 md:px-12 relative">
+        <motion.div
+          className="max-w-7xl mx-auto px-5 md:px-12 relative"
+          style={shouldReduceMotion ? undefined : {
+            opacity: statsExitOpacity,
+            scale: statsExitScale,
+            filter: statsExitFilter,
+          }}
+        >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             {[
               { value: 2500, suffix: '+', label: 'Reports analyzed this term', icon: '📊' },
@@ -1647,12 +1739,19 @@ export default function LandingPage() {
               </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Role Entry */}
-      <section className="py-20 md:py-28 bg-charcoal">
-        <div className="max-w-7xl mx-auto px-5 md:px-12">
+      <section ref={portalRef} className="py-20 md:py-28 bg-charcoal relative">
+        <motion.div
+          className="max-w-7xl mx-auto px-5 md:px-12"
+          style={shouldReduceMotion ? undefined : {
+            opacity: portalExitOpacity,
+            rotateY: portalExitRotateY,
+            scale: portalExitScale,
+          }}
+        >
           <motion.h2
             className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
@@ -1711,12 +1810,18 @@ export default function LandingPage() {
             </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Testimonials */}
-      <section id="stories" className="py-20 md:py-28 bg-cream">
-        <div className="max-w-7xl mx-auto px-5 md:px-12">
+      <section id="stories" ref={testimonialRef} className="py-20 md:py-28 bg-cream relative">
+        <motion.div
+          className="max-w-7xl mx-auto px-5 md:px-12"
+          style={shouldReduceMotion ? undefined : {
+            opacity: testimonialExitOpacity,
+            scale: testimonialExitScale,
+          }}
+        >
           <motion.h2
             className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
@@ -1809,12 +1914,18 @@ export default function LandingPage() {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* FAQ */}
-      <section className="py-20 md:py-28 bg-white">
-        <div className="max-w-3xl mx-auto px-5 md:px-12">
+      <section ref={faqRef} className="py-20 md:py-28 bg-white relative">
+        <motion.div
+          className="max-w-3xl mx-auto px-5 md:px-12"
+          style={shouldReduceMotion ? undefined : {
+            opacity: faqExitOpacity,
+            y: faqExitY,
+          }}
+        >
           <motion.h2
             className="font-display text-[32px] md:text-[56px] font-medium text-charcoal text-center mb-12"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
@@ -1867,7 +1978,7 @@ export default function LandingPage() {
             );
             })}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Back to Top */}
