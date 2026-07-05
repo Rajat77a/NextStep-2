@@ -19,6 +19,8 @@ module.exports = {
         coral: {
           DEFAULT: '#E85D3E',
           dark: '#D14E32',
+          '900': '#B83A20',
+          '950': '#9A2E18',
         },
         sage: '#7A9B8A',
         amber: '#D4A03A',

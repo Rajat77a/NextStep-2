@@ -1194,7 +1194,7 @@ export default function LandingPage() {
           <div className="hidden lg:flex items-center gap-3">
             <Link to="/login" className="btn-text px-5 py-2.5 rounded-lg text-white/70 hover:bg-white/[0.08] hover:text-white transition-all duration-300">Log In</Link>
             <MagneticWrap>
-              <Link to="/signup" className="relative btn-text px-6 py-2.5 rounded-[10px] bg-gradient-to-b from-coral to-coral-dark text-white shadow-[0_4px_20px_rgba(232,93,62,0.25)] hover:shadow-[0_6px_30px_rgba(232,93,62,0.4)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 overflow-hidden group">
+              <Link to="/signup" className="relative btn-text px-6 py-2.5 rounded-[10px] bg-gradient-to-b from-coral to-coral-900 text-white shadow-[0_4px_20px_rgba(232,93,62,0.25)] hover:shadow-[0_6px_30px_rgba(232,93,62,0.4)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 overflow-hidden group">
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
                 Get Started
               </Link>
@@ -1244,7 +1244,7 @@ export default function LandingPage() {
               <a href="#stories" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body hover:text-white transition-colors">Parent Stories</a>
               <div className="border-t border-white/10 pt-6 mt-2 flex flex-col gap-4">
                 <Link to="/login" onClick={() => setMobileMenu(false)} className="text-white text-lg font-body hover:text-coral transition-colors">Log In</Link>
-                <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3.5 rounded-[10px] bg-coral text-white text-center hover:bg-coral-dark transition-colors">Get Started</Link>
+                <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3.5 rounded-[10px] bg-coral-900 text-white text-center hover:bg-coral transition-colors">Get Started</Link>
               </div>
             </div>
           </motion.div>
@@ -1404,13 +1404,13 @@ export default function LandingPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -16 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                      className="inline-block font-semibold text-transparent bg-clip-text leading-[1.2]"
-                      style={{
-                        backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, white 50% 100%)',
-                        backgroundSize: '200% 100%',
-                        backgroundPosition: '0% 0',
-                        filter: 'drop-shadow(0 3px 15px rgba(0,0,0,0.5))',
-                      }}
+                  className="inline-block font-bold text-transparent bg-clip-text leading-[1.3]"
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, var(--coral) 0 35%, white 35% 100%)',
+                    backgroundSize: '200% 100%',
+                    backgroundPosition: '0% 0',
+                    filter: 'drop-shadow(0 3px 15px rgba(0,0,0,0.5))',
+                  }}
                     >
                       {valueProps[valuePropIdx]}
                     </motion.span>
@@ -1428,13 +1428,13 @@ export default function LandingPage() {
                   className="flex flex-wrap gap-4 mb-8"
                 >
                   <MagneticWrap>
-                    <Link to="/signup" className="relative btn-text px-8 py-4 rounded-[12px] bg-gradient-to-b from-coral to-coral-dark text-white shadow-[0_4px_25px_rgba(232,93,62,0.3)] hover:shadow-[0_8px_40px_rgba(232,93,62,0.45)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 inline-flex items-center gap-2.5 overflow-hidden group backdrop-blur-sm">
+                    <Link to="/signup" className="relative btn-text px-8 py-4 rounded-[12px] bg-gradient-to-b from-coral to-coral-900 text-white shadow-[0_4px_25px_rgba(232,93,62,0.3)] hover:shadow-[0_8px_40px_rgba(232,93,62,0.45)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 inline-flex items-center gap-2.5 overflow-hidden group">
                       <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
                       Upload a Report Card <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                   </MagneticWrap>
                   <MagneticWrap>
-                    <a href="#how-it-works" className="btn-text px-8 py-4 rounded-[12px] border-[1.5px] border-white/30 text-white/90 hover:bg-white hover:text-charcoal hover:border-white transition-all duration-300 backdrop-blur-sm">
+                    <a href="#how-it-works" className="btn-text px-8 py-4 rounded-[12px] border-[1.5px] border-white/30 text-white/90 hover:bg-white hover:text-charcoal hover:border-white transition-all duration-300">
                       See How It Works
                     </a>
                   </MagneticWrap>
@@ -1547,7 +1547,7 @@ export default function LandingPage() {
       </div>
 
       {/* How It Works */}
-      <section id="how-it-works" ref={howItWorksRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
+      <section id="how-it-works" ref={howItWorksRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
         {/* Subtle ambient glow */}
         <div aria-hidden="true" className="absolute top-1/2 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.04] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.8), transparent 70%)', filter: 'blur(80px)', transform: 'translate(-50%, -50%)' }} />
         <motion.div
@@ -1568,7 +1568,7 @@ export default function LandingPage() {
             Three steps to clarity
           </motion.h2>
           <motion.p
-            className="font-body text-white/50 text-center mb-16 max-w-xl mx-auto"
+            className="font-body text-white/50 text-center mb-12 md:mb-16 max-w-xl mx-auto"
             initial={shouldReduceMotion ? false : { y: 18 }}
             whileInView={shouldReduceMotion ? undefined : { y: 0 }}
             viewport={{ once: true }}
@@ -1607,7 +1607,7 @@ export default function LandingPage() {
       </section>
 
       {/* Feature Highlights */}
-      <section id="parents" ref={featuresRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#12121a' }}>
+      <section id="parents" ref={featuresRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#12121a' }}>
         <div aria-hidden="true" className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(167,189,165,0.6), transparent 70%)', filter: 'blur(80px)' }} />
         <motion.div
           className="max-w-7xl mx-auto px-5 md:px-12 space-y-24 md:space-y-32"
@@ -1702,7 +1702,7 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Counter Bar — dramatic count-up strip */}
-      <section ref={statsRef} className="py-20 md:py-24 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
+      <section ref={statsRef} className="py-16 md:py-24 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
         <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(800px_at_50%_50%,rgba(232,93,62,0.06),transparent_70%)]" />
         <motion.div
           aria-hidden="true"
@@ -1750,7 +1750,7 @@ export default function LandingPage() {
       </section>
 
       {/* Role Entry */}
-      <section ref={portalRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
+      <section ref={portalRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
         <div aria-hidden="true" className="absolute top-1/4 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.6), transparent 70%)', filter: 'blur(60px)' }} />
         <motion.div
           className="max-w-7xl mx-auto px-5 md:px-12"
@@ -1822,7 +1822,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section id="stories" ref={testimonialRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#12121a' }}>
+      <section id="stories" ref={testimonialRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#12121a' }}>
         <div aria-hidden="true" className="absolute bottom-0 left-1/3 w-[500px] h-[500px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(167,189,165,0.5), transparent 70%)', filter: 'blur(70px)' }} />
         <motion.div
           className="max-w-7xl mx-auto px-5 md:px-12"
@@ -1927,7 +1927,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section ref={faqRef} className="py-20 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
+      <section ref={faqRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
         <div aria-hidden="true" className="absolute top-1/2 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.5), transparent 70%)', filter: 'blur(60px)' }} />
         <motion.div
           className="max-w-3xl mx-auto px-5 md:px-12"
@@ -1999,7 +1999,7 @@ export default function LandingPage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full bg-gradient-to-b from-coral to-coral-dark text-white shadow-[0_4px_20px_rgba(232,93,62,0.3)] hover:shadow-[0_6px_30px_rgba(232,93,62,0.5)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center"
+            className="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full bg-gradient-to-b from-coral to-coral-900 text-white shadow-[0_4px_20px_rgba(232,93,62,0.3)] hover:shadow-[0_6px_30px_rgba(232,93,62,0.5)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center"
             aria-label="Back to top"
           >
             <ChevronUp size={18} />
@@ -2008,7 +2008,7 @@ export default function LandingPage() {
       </AnimatePresence>
 
       {/* Footer */}
-      <footer className="bg-charcoal pt-20 pb-12">
+      <footer className="bg-charcoal pt-16 md:pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
           <div className="grid md:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr] gap-10 mb-14">
             <div>
@@ -2060,7 +2060,7 @@ export default function LandingPage() {
                   className="flex-1 bg-white/[0.06] border border-white/10 rounded-lg px-3.5 py-2.5 font-body text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-coral/50 focus:bg-white/[0.08] transition-all duration-300"
                   aria-label="Email for newsletter"
                 />
-                <button className="shrink-0 bg-gradient-to-b from-coral to-coral-dark hover:from-coral-dark hover:to-coral-dark text-white rounded-lg px-4 py-2.5 transition-all duration-300 hover:shadow-[0_4px_15px_rgba(232,93,62,0.3)]" aria-label="Subscribe">
+                <button className="shrink-0 bg-gradient-to-b from-coral to-coral-900 hover:from-coral-900 hover:to-coral-900 text-white rounded-lg px-4 py-2.5 transition-all duration-300 hover:shadow-[0_4px_15px_rgba(232,93,62,0.3)]" aria-label="Subscribe">
                   <ArrowRight size={14} />
                 </button>
               </div>
