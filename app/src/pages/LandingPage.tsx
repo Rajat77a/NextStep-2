@@ -86,17 +86,25 @@ const heroImages = [
   'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1920&h=1080&fit=crop',
   'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1920&h=1080&fit=crop',
   'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1920&h=1080&fit=crop',
+  'https://images.unsplash.com/photo-1536337005238-94b997371b40?w=1920&h=1080&fit=crop',
+  'https://images.unsplash.com/photo-1476234251651-f353703a034d?w=1920&h=1080&fit=crop',
+  'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1920&h=1080&fit=crop',
+  'https://images.unsplash.com/photo-1591123120675-6f7f1aae0e5b?w=1920&h=1080&fit=crop',
 ];
 
 const HERO_VIDEOS = [
   { src: 'https://cdn.pixabay.com/video/2024/06/06/215475_large.mp4', poster: heroImages[0] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4', poster: heroImages[1] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215473_large.mp4', poster: heroImages[2] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215474_large.mp4', poster: heroImages[3] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215471_large.mp4', poster: heroImages[4] },
-  { src: 'https://cdn.pixabay.com/video/2015/09/27/846-140823862_large.mp4', poster: heroImages[5] },
-  { src: 'https://cdn.pixabay.com/video/2020/06/30/43459-436106182_large.mp4', poster: heroImages[6] },
-  { src: 'https://cdn.pixabay.com/video/2022/11/28/140807-776043760_large.mp4', poster: heroImages[7] },
+  { src: 'https://cdn.pixabay.com/video/2025/01/22/253998_large.mp4', poster: heroImages[1] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4', poster: heroImages[2] },
+  { src: 'https://cdn.pixabay.com/video/2024/10/22/237643_large.mp4', poster: heroImages[3] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215473_large.mp4', poster: heroImages[4] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215474_large.mp4', poster: heroImages[5] },
+  { src: 'https://cdn.pixabay.com/video/2020/01/31/31802-388997514_large.mp4', poster: heroImages[6] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215471_large.mp4', poster: heroImages[7] },
+  { src: 'https://cdn.pixabay.com/video/2025/04/01/269207_large.mp4', poster: heroImages[8] },
+  { src: 'https://cdn.pixabay.com/video/2015/09/27/846-140823862_large.mp4', poster: heroImages[9] },
+  { src: 'https://cdn.pixabay.com/video/2020/06/30/43459-436106182_large.mp4', poster: heroImages[10] },
+  { src: 'https://cdn.pixabay.com/video/2022/11/28/140807-776043760_large.mp4', poster: heroImages[11] },
 ];
 
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
