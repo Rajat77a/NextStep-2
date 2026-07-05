@@ -78,6 +78,7 @@ const portalCards = [
 ];
 
 const heroImages = [
+  'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&h=1080&fit=crop',
   'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920&h=1080&fit=crop',
   'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1920&h=1080&fit=crop',
   'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1920&h=1080&fit=crop',
@@ -85,8 +86,9 @@ const heroImages = [
 ];
 
 const HERO_VIDEOS = [
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4', poster: heroImages[0] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215471_large.mp4', poster: heroImages[1] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215475_large.mp4', poster: heroImages[0] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4', poster: heroImages[1] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215471_large.mp4', poster: heroImages[2] },
 ];
 
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
