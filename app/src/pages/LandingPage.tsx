@@ -1180,18 +1180,18 @@ export default function LandingPage() {
     setTimeout(() => {
       const el = document.getElementById(sectionId);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setTimeout(() => setNavTransition(false), 500);
-    }, 550);
+      setTimeout(() => setNavTransition(false), 400);
+    }, 400);
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a0f' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: '#0a0a0f' }}>
       {/* Page transition overlay — curtain rises from bottom, lowers to reveal */}
       <motion.div
         className="fixed inset-0 z-[100] bg-black pointer-events-none"
         initial={{ y: '100%' }}
         animate={{ y: navTransition ? '0%' : '100%' }}
-        transition={{ type: 'spring', stiffness: 100, damping: 25, mass: 0.8 }}
+        transition={{ type: 'spring', stiffness: 140, damping: 26, mass: 0.7 }}
       />
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0a0a0f]/92 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_40px_rgba(0,0,0,0.5)]' : 'bg-[#0a0a0f]/40 backdrop-blur-sm'}`}>
@@ -1223,12 +1223,6 @@ export default function LandingPage() {
           </button>
         </div>
       </nav>
-
-      {/* Scroll Progress Bar */}
-      <motion.div
-        className="fixed top-0 left-0 right-0 z-[60] h-[3px] bg-gradient-to-r from-coral to-coral-dark origin-left"
-        style={{ scaleX: pageProgress }}
-      />
 
       {/* Scroll-linked ambient gradient — Stripe-inspired living background */}
       <motion.div
