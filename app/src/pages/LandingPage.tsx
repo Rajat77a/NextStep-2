@@ -1186,12 +1186,12 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#0a0a0f' }}>
-      {/* Page transition overlay — curtain falls down from top, lifts up to reveal */}
+      {/* Page transition overlay — curtain rises from bottom, lowers to reveal */}
       <motion.div
         className="fixed inset-0 z-[100] bg-black pointer-events-none"
-        initial={{ y: '-100%' }}
-        animate={{ y: navTransition ? '0%' : '-100%' }}
-        transition={{ duration: 0.5, ease: [0.65, 0, 0.35, 1] }}
+        initial={{ y: '100%' }}
+        animate={{ y: navTransition ? '0%' : '100%' }}
+        transition={{ type: 'spring', stiffness: 100, damping: 25, mass: 0.8 }}
       />
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0a0a0f]/92 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_40px_rgba(0,0,0,0.5)]' : 'bg-[#0a0a0f]/40 backdrop-blur-sm'}`}>
