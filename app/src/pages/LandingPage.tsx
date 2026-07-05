@@ -86,9 +86,9 @@ const heroImages = [
 ];
 
 const HERO_VIDEOS = [
-  { src: 'https://assets.mixkit.co/videos/28315/28315-720.mp4', poster: heroImages[0] },
-  { src: 'https://assets.mixkit.co/videos/4790/4790-720.mp4', poster: heroImages[1] },
-  { src: 'https://assets.mixkit.co/videos/50125/50125-720.mp4', poster: heroImages[2] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215470_large.mp4', poster: heroImages[0] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4', poster: heroImages[1] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215475_large.mp4', poster: heroImages[2] },
 ];
 
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
@@ -116,6 +116,27 @@ function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
   }, [isInView, shouldReduceMotion, value]);
 
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
+
+function GrainOverlay({ zIndex = 1, className = '' }: { zIndex?: number; className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`absolute inset-0 pointer-events-none overflow-hidden ${className}`}
+      style={{ zIndex }}
+    >
+      <div
+        className="w-full h-full"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")`,
+          backgroundSize: '256px 256px',
+          opacity: 0.1,
+          mixBlendMode: 'overlay',
+          animation: 'grain-shift 0.4s steps(8) infinite',
+        }}
+      />
+    </div>
+  );
 }
 
 function GlowTiltCard({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -1372,6 +1393,9 @@ export default function LandingPage() {
           </>
         )}
 
+        {/* Cinematic grain overlay — tactile film texture */}
+        <GrainOverlay zIndex={2} />
+
         {/* Exit wrapper — blur + fade + scale as user scrolls past */}
         <motion.div
           className="relative z-[3] w-full"
@@ -1548,8 +1572,10 @@ export default function LandingPage() {
       <section id="how-it-works" ref={howItWorksRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
         {/* Subtle ambient glow */}
         <div aria-hidden="true" className="absolute top-1/2 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.04] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.8), transparent 70%)', filter: 'blur(80px)', transform: 'translate(-50%, -50%)' }} />
+        {/* Cinematic grain */}
+        <GrainOverlay zIndex={0} />
         <motion.div
-          className="max-w-7xl mx-auto px-5 md:px-12 relative"
+          className="max-w-7xl mx-auto px-5 md:px-12 relative z-10"
           style={shouldReduceMotion ? undefined : {
             opacity: howItWorksExitOpacity,
             y: howItWorksExitY,
@@ -1607,101 +1633,98 @@ export default function LandingPage() {
       {/* Feature Highlights */}
       <section id="parents" ref={featuresRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#12121a' }}>
         <div aria-hidden="true" className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(167,189,165,0.6), transparent 70%)', filter: 'blur(80px)' }} />
+        <GrainOverlay zIndex={0} />
         <motion.div
-          className="max-w-7xl mx-auto px-5 md:px-12 space-y-24 md:space-y-32"
+          className="max-w-7xl mx-auto px-5 md:px-12 relative z-10"
           style={shouldReduceMotion ? undefined : {
             opacity: featuresExitOpacity,
             x: featuresExitX,
           }}
         >
-          {[
-            { label: 'CLARITY CHECK', title: "Know what's worth worrying about", desc: "Our AI flags each subject as green, yellow, or red — with gentle, advisory language. No predictions about your child's future. Just clear, actionable insights.", bullets: ['Board-specific grade interpretation', 'Soft, non-judgmental language', 'Teacher comment analysis'] },
-            { label: "TONIGHT'S CONVERSATION", title: 'Talk to your child with confidence', desc: 'Get a personalized conversation script that opens dialogue instead of interrogation. Connection-focused phrasing that strengthens your relationship.', bullets: ['Age-appropriate language', 'Connection over evaluation', 'Copy-paste ready scripts'] },
-            { label: '30-DAY PLAN', title: 'Small habits, real progress', desc: 'A concrete, week-by-week action plan tied directly to what was flagged. Not generic advice — targeted steps that address the specific areas from the report card.', bullets: ['Daily and weekly actions', 'Progress tracking', 'Evidence-based suggestions'] },
-          ].map((feature, i) => {
-            const featureEntrance = [
-              { initial: { opacity: 0, x: -50, scale: 0.94 }, whileInView: { opacity: 1, x: 0, scale: 1 } },
-              { initial: { opacity: 0, scale: 0.9, rotateY: 8 }, whileInView: { opacity: 1, scale: 1, rotateY: 0 } },
-              { initial: { opacity: 0, y: 50, skewX: '-3deg' }, whileInView: { opacity: 1, y: 0, skewX: '0deg' } },
-            ];
-            return (
+          {/* Section heading */}
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="text-center mb-16"
+          >
+            <p className="label-text text-coral mb-3">Built for Families</p>
+            <h2 className="font-display text-[32px] md:text-[48px] font-medium text-white">
+              Tools that make a difference
+            </h2>
+          </motion.div>
+
+          {/* Bento grid — asymmetric 2-col layout */}
+          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-5 md:gap-6 auto-rows-auto">
+            {/* Clarity Check — large card spanning full height */}
             <motion.div
-              key={feature.label}
-              initial={shouldReduceMotion ? false : featureEntrance[i].initial}
-              whileInView={shouldReduceMotion ? undefined : featureEntrance[i].whileInView}
+              initial={shouldReduceMotion ? false : { opacity: 0, x: -60, scale: 0.94 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, scale: 1 }}
               viewport={{ once: true, margin: '-80px' }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:row-span-2"
             >
-              <div className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center ${i % 2 !== 0 ? 'md:[direction:rtl]' : ''}`}>
-                <div className={`${i % 2 !== 0 ? 'md:[direction:ltr]' : ''}`}>
-                  <motion.p
-                    className="label-text text-coral mb-3"
-                    initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
-                    whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    {feature.label}
-                  </motion.p>
-                  <motion.h3
-                    className="font-display text-[28px] md:text-[42px] font-normal text-white leading-tight mb-4"
-                    initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
-                    whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    {feature.title}
-                  </motion.h3>
-                  <motion.p
-                    className="font-body text-lg text-white/60 leading-relaxed mb-6"
-                    initial={shouldReduceMotion ? false : { y: 15 }}
-                    whileInView={shouldReduceMotion ? undefined : { y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    {feature.desc}
-                  </motion.p>
-                  <motion.ul
-                    className="space-y-3"
-                    initial={shouldReduceMotion ? false : 'hidden'}
-                    whileInView={shouldReduceMotion ? undefined : 'visible'}
-                    viewport={{ once: true, margin: '-40px' }}
-                    variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
-                  >
-                    {feature.bullets.map(b => (
-                      <motion.li
-                        key={b}
-                        variants={shouldReduceMotion ? undefined : { hidden: { opacity: 0, x: -15 }, visible: { opacity: 1, x: 0 } }}
-                        transition={{ duration: 0.3, ease: 'easeOut' }}
-                        className="flex items-center gap-3"
-                      >
-                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-amber to-coral flex items-center justify-center flex-shrink-0 shadow-sm">
-                          <Star size={10} className="text-white" fill="white" />
-                        </span>
-                        <span className="font-body text-white/70">{b}</span>
-                      </motion.li>
-                    ))}
-                  </motion.ul>
+              <div className="glass-card-premium h-full p-5 md:p-8 flex flex-col">
+                <p className="label-text text-coral mb-2">01 — Clarity Check</p>
+                <h3 className="font-display text-[24px] md:text-[32px] font-medium text-white mb-3 leading-tight">Know what's worth worrying about</h3>
+                <p className="font-body text-white/50 text-sm leading-relaxed mb-5 max-w-lg">
+                  Board-specific grade interpretation with gentle, actionable flags — no predictions, just clarity.
+                </p>
+                <div className="flex-1 min-h-0">
+                  <AnimatedClarityCheck />
                 </div>
-                <div className="glass-card-premium overflow-hidden">
-                  {feature.label === 'CLARITY CHECK' ? (
-                    <AnimatedClarityCheck />
-                  ) : feature.label === "TONIGHT'S CONVERSATION" ? (
-                    <AnimatedConversation />
-                  ) : (
-                    <AnimatedDayPlan />
-                  )}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {['Board-specific', 'Gentle language', 'Comment analysis'].map(b => (
+                    <span key={b} className="flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] px-3 py-1.5 font-body text-xs text-white/50">
+                      <Star size={8} className="text-coral shrink-0" fill="#E85D3E" /> {b}
+                    </span>
+                  ))}
                 </div>
               </div>
             </motion.div>
-          );
-                    })}
+
+            {/* Tonight's Script — top right */}
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, x: 60, scale: 0.94 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, scale: 1 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="glass-card-premium h-full p-5 md:p-8 flex flex-col">
+                <p className="label-text text-coral mb-2">02 — Tonight's Script</p>
+                <h3 className="font-display text-xl md:text-2xl font-medium text-white mb-2">Talk to your child with confidence</h3>
+                <p className="font-body text-white/50 text-xs md:text-sm leading-relaxed mb-4">Connection-focused phrasing that opens dialogue, not interrogation.</p>
+                <div className="flex-1 min-h-0">
+                  <AnimatedConversation />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 30-Day Plan — bottom right */}
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, x: 60, scale: 0.94 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, scale: 1 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="glass-card-premium h-full p-5 md:p-8 flex flex-col">
+                <p className="label-text text-coral mb-2">03 — 30-Day Plan</p>
+                <h3 className="font-display text-xl md:text-2xl font-medium text-white mb-2">Small habits, real progress</h3>
+                <p className="font-body text-white/50 text-xs md:text-sm leading-relaxed mb-4">Targeted weekly steps tied to the specific areas flagged.</p>
+                <div className="flex-1 min-h-0">
+                  <AnimatedDayPlan />
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
       </section>
 
       {/* Stats Counter Bar — dramatic count-up strip */}
       <section ref={statsRef} className="py-16 md:py-24 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
         <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(800px_at_50%_50%,rgba(232,93,62,0.06),transparent_70%)]" />
+        <GrainOverlay zIndex={0} />
         <motion.div
           aria-hidden="true"
           className="absolute inset-0 opacity-[0.03]"
@@ -1750,8 +1773,9 @@ export default function LandingPage() {
       {/* Role Entry */}
       <section ref={portalRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
         <div aria-hidden="true" className="absolute top-1/4 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.6), transparent 70%)', filter: 'blur(60px)' }} />
+        <GrainOverlay zIndex={0} />
         <motion.div
-          className="max-w-7xl mx-auto px-5 md:px-12"
+          className="max-w-7xl mx-auto px-5 md:px-12 relative z-10"
           style={shouldReduceMotion ? undefined : {
             opacity: portalExitOpacity,
             rotateY: portalExitRotateY,
@@ -1822,8 +1846,9 @@ export default function LandingPage() {
       {/* Testimonials */}
       <section id="stories" ref={testimonialRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#12121a' }}>
         <div aria-hidden="true" className="absolute bottom-0 left-1/3 w-[500px] h-[500px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(167,189,165,0.5), transparent 70%)', filter: 'blur(70px)' }} />
+        <GrainOverlay zIndex={0} />
         <motion.div
-          className="max-w-7xl mx-auto px-5 md:px-12"
+          className="max-w-7xl mx-auto px-5 md:px-12 relative z-10"
           style={shouldReduceMotion ? undefined : {
             opacity: testimonialExitOpacity,
             scale: testimonialExitScale,
@@ -1927,8 +1952,9 @@ export default function LandingPage() {
       {/* FAQ */}
       <section ref={faqRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
         <div aria-hidden="true" className="absolute top-1/2 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.5), transparent 70%)', filter: 'blur(60px)' }} />
+        <GrainOverlay zIndex={0} />
         <motion.div
-          className="max-w-3xl mx-auto px-5 md:px-12"
+          className="max-w-3xl mx-auto px-5 md:px-12 relative z-10"
           style={shouldReduceMotion ? undefined : {
             opacity: faqExitOpacity,
             y: faqExitY,
