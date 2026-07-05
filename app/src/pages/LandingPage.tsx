@@ -1140,8 +1140,9 @@ export default function LandingPage() {
     return () => window.clearInterval(timer);
   }, [shouldReduceMotion, valueProps.length]);
 
-  // Preload next hero video for seamless crossfade
+  // Auto-advance hero video every 6s with preload for seamless crossfade
   useEffect(() => {
+    if (shouldReduceMotion) return;
     const nextIdx = (heroVideoIdx + 1) % HERO_VIDEOS.length;
     const link = document.createElement('link');
     link.rel = 'preload';
@@ -1149,7 +1150,15 @@ export default function LandingPage() {
     link.href = HERO_VIDEOS[nextIdx].src;
     document.head.appendChild(link);
     return () => { if (link.parentNode) link.parentNode.removeChild(link); };
-  }, [heroVideoIdx]);
+  }, [heroVideoIdx, shouldReduceMotion]);
+
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const timer = window.setInterval(() => {
+      setHeroVideoIdx(prev => (prev + 1) % HERO_VIDEOS.length);
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, [shouldReduceMotion]);
 
   const pauseTestimonials = () => {
     if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
@@ -1168,7 +1177,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ background: '#0a0a0f' }}>
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0e0e14]/85 backdrop-blur-2xl border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.3)]' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0a0a0f]/92 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_40px_rgba(0,0,0,0.5)]' : 'bg-[#0a0a0f]/40 backdrop-blur-sm'}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
           <Link to="/" className="flex items-baseline gap-1 group">
             <span className="font-display text-xl md:text-2xl font-semibold text-white tracking-tight group-hover:text-coral transition-colors duration-300">NextStep</span>
@@ -1259,23 +1268,24 @@ export default function LandingPage() {
               poster={HERO_VIDEOS[heroVideoIdx].poster}
               className="absolute inset-0 w-full h-full object-cover"
               style={{
-                animation: shouldReduceMotion ? 'none' : 'hero-zoom 18s ease-in-out infinite alternate',
+                animation: shouldReduceMotion ? 'none' : 'hero-zoom 12s ease-in-out infinite alternate',
               }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1.5, ease: 'easeInOut' }}
-              onEnded={() => setHeroVideoIdx(prev => (prev + 1) % HERO_VIDEOS.length)}
+              transition={{ duration: 1.2, ease: 'easeInOut' }}
             >
               <source src={HERO_VIDEOS[heroVideoIdx].src} type="video/mp4" />
             </motion.video>
           </AnimatePresence>
         </div>
 
-        {/* Gradient overlays — deeper, richer falloff */}
-        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#0a0a0f]/95 via-[#0a0a0f]/50 via-40% to-transparent pointer-events-none" />
-        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0a0a0f]/80 via-transparent to-transparent pointer-events-none" />
+        {/* Cinematic gradient overlays — heavy dark falloff for premium text readability */}
+        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#0a0a0f]/98 via-[#0a0a0f]/60 via-50% to-transparent pointer-events-none" />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0a0a0f]/90 via-[#0a0a0f]/30 via-60% to-transparent pointer-events-none" />
         <div className="absolute inset-0 z-[1] bg-gradient-to-b from-[#0a0a0f]/30 via-transparent to-transparent pointer-events-none" />
+        {/* Bottom edge fade to transition smoothly into next section */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 z-[1] bg-gradient-to-t from-[#0e0e14] via-[#0e0e14]/80 to-transparent pointer-events-none" />
 
         {/* Parallax depth shapes on top of images */}
         {!shouldReduceMotion && (
@@ -1373,18 +1383,18 @@ export default function LandingPage() {
         >
           <div className="max-w-7xl mx-auto px-5 md:px-12 w-full">
             <div className="grid lg:grid-cols-[55%_45%] gap-12 lg:gap-8 items-center">
-              <div className="md:bg-[#0a0a0f]/40 md:backdrop-blur-[2px] md:rounded-2xl md:p-10 md:-ml-10 md:border md:border-white/[0.04]">
+              <div className="md:bg-[#0a0a0f]/70 md:backdrop-blur-lg md:rounded-2xl md:p-10 md:-ml-10 md:border md:border-white/[0.08] md:shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
                 <motion.p
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-                  className="label-text text-coral mb-4"
-                  style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
+                    className="label-text text-coral mb-4"
+                  style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
                 >
                   Report Card Clarity for Every Parent
                 </motion.p>
                 <motion.h1
                   initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
                   className="font-display text-[40px] md:text-[72px] font-medium text-white leading-[1.0] tracking-tight mb-6"
-                  style={{ filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.4))' }}
+                  style={{ filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.5))' }}
                 >
                   Turn your child's report card into your{' '}
                   <AnimatePresence mode="wait">
@@ -1399,7 +1409,7 @@ export default function LandingPage() {
                         backgroundImage: 'linear-gradient(90deg, var(--coral) 0 50%, white 50% 100%)',
                         backgroundSize: '200% 100%',
                         backgroundPosition: '0% 0',
-                        filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.4))',
+                        filter: 'drop-shadow(0 3px 15px rgba(0,0,0,0.5))',
                       }}
                     >
                       {valueProps[valuePropIdx]}
@@ -1408,8 +1418,8 @@ export default function LandingPage() {
                 </motion.h1>
                 <motion.p
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.55 }}
-                  className="font-body text-lg md:text-xl text-white/85 max-w-[480px] mb-8 leading-relaxed"
-                  style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
+                  className="font-body text-lg md:text-xl text-white/90 max-w-[480px] mb-8 leading-relaxed"
+                  style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
                 >
                   Upload a report card. Get a clear, honest breakdown of what matters — plus the exact words to use with your child and their teacher.
                 </motion.p>
@@ -1440,7 +1450,7 @@ export default function LandingPage() {
                       </div>
                     ))}
                   </div>
-                  <p className="font-body text-sm text-white/60">Join <CountUp value={2500} suffix="+" /> parents getting clarity this term</p>
+                  <p className="font-body text-sm text-white/80">Join <CountUp value={2500} suffix="+" /> parents getting clarity this term</p>
                 </motion.div>
               </div>
 
