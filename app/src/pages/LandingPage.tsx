@@ -519,7 +519,7 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
       >
         <div
           dir="ltr"
-          className="smooth-float rounded-2xl shadow-card bg-white p-6 md:p-7 text-left"
+          className="smooth-float rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] bg-white/95 backdrop-blur-sm border border-white/20 p-6 md:p-7 text-left"
         >
           {children}
         </div>
@@ -1168,24 +1168,27 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ background: '#0a0a0f' }}>
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#0e0e14]/90 backdrop-blur-xl border-b border-white/[0.06] shadow-subtle' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0e0e14]/85 backdrop-blur-2xl border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.3)]' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
-          <Link to="/" className="flex items-baseline gap-0.5">
-            <span className="font-display text-xl md:text-2xl font-semibold text-white tracking-tight">NextStep</span>
-            <span className="text-coral text-[10px] font-body font-bold">•</span>
+          <Link to="/" className="flex items-baseline gap-1 group">
+            <span className="font-display text-xl md:text-2xl font-semibold text-white tracking-tight group-hover:text-coral transition-colors duration-300">NextStep</span>
+            <span className="text-coral text-[10px] font-body font-bold">●</span>
             <span className="font-body text-[11px] font-semibold text-white/60 tracking-wider">AI</span>
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
-            <a href="#how-it-works" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-200">How It Works</a>
-            <a href="#parents" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-200">Clarity Check</a>
-            <a href="#stories" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-200">Parent Stories</a>
+            <a href="#how-it-works" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">How It Works</a>
+            <a href="#parents" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">Features</a>
+            <a href="#stories" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">Testimonials</a>
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/login" className="btn-text px-5 py-2.5 rounded-lg text-white/70 hover:bg-white/[0.06] transition-colors">Log In</Link>
+            <Link to="/login" className="btn-text px-5 py-2.5 rounded-lg text-white/70 hover:bg-white/[0.08] hover:text-white transition-all duration-300">Log In</Link>
             <MagneticWrap>
-              <Link to="/signup" className="btn-text px-5 py-2.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">Get Started</Link>
+              <Link to="/signup" className="relative btn-text px-6 py-2.5 rounded-[10px] bg-gradient-to-b from-coral to-coral-dark text-white shadow-[0_4px_20px_rgba(232,93,62,0.25)] hover:shadow-[0_6px_30px_rgba(232,93,62,0.4)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 overflow-hidden group">
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
+                Get Started
+              </Link>
             </MagneticWrap>
           </div>
 
@@ -1244,7 +1247,7 @@ export default function LandingPage() {
         ref={heroRef}
         className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden bg-charcoal"
       >
-        {/* Video background — cinematic crossfade playlist (classroom, mother-daughter, father-son) */}
+        {/* Video background — cinematic crossfade playlist */}
         <div className="absolute inset-0 overflow-hidden z-0">
           <AnimatePresence>
             <motion.video
@@ -1256,7 +1259,7 @@ export default function LandingPage() {
               poster={HERO_VIDEOS[heroVideoIdx].poster}
               className="absolute inset-0 w-full h-full object-cover"
               style={{
-                animation: shouldReduceMotion ? 'none' : 'hero-zoom 15s ease-in-out infinite alternate',
+                animation: shouldReduceMotion ? 'none' : 'hero-zoom 18s ease-in-out infinite alternate',
               }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1269,9 +1272,10 @@ export default function LandingPage() {
           </AnimatePresence>
         </div>
 
-        {/* Gradient overlays for readability — darkened for text contrast */}
-        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#0a0a0f]/95 via-[#0a0a0f]/60 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0a0a0f]/70 to-transparent pointer-events-none" />
+        {/* Gradient overlays — deeper, richer falloff */}
+        <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#0a0a0f]/95 via-[#0a0a0f]/50 via-40% to-transparent pointer-events-none" />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0a0a0f]/80 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 z-[1] bg-gradient-to-b from-[#0a0a0f]/30 via-transparent to-transparent pointer-events-none" />
 
         {/* Parallax depth shapes on top of images */}
         {!shouldReduceMotion && (
@@ -1414,13 +1418,13 @@ export default function LandingPage() {
                   className="flex flex-wrap gap-4 mb-8"
                 >
                   <MagneticWrap>
-                    <Link to="/signup" className="relative btn-text px-7 py-3.5 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2 overflow-hidden group backdrop-blur-sm bg-coral/90">
+                    <Link to="/signup" className="relative btn-text px-8 py-4 rounded-[12px] bg-gradient-to-b from-coral to-coral-dark text-white shadow-[0_4px_25px_rgba(232,93,62,0.3)] hover:shadow-[0_8px_40px_rgba(232,93,62,0.45)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 inline-flex items-center gap-2.5 overflow-hidden group backdrop-blur-sm">
                       <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
-                      Upload a Report Card <ArrowRight size={16} />
+                      Upload a Report Card <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                   </MagneticWrap>
                   <MagneticWrap>
-                    <a href="#how-it-works" className="btn-text px-7 py-3.5 rounded-[10px] border-[1.5px] border-white/40 text-white hover:bg-white hover:text-charcoal transition-all duration-250 backdrop-blur-sm">
+                    <a href="#how-it-works" className="btn-text px-8 py-4 rounded-[12px] border-[1.5px] border-white/30 text-white/90 hover:bg-white hover:text-charcoal hover:border-white transition-all duration-300 backdrop-blur-sm">
                       See How It Works
                     </a>
                   </MagneticWrap>
@@ -1445,13 +1449,13 @@ export default function LandingPage() {
                 className="relative"
               >
                 <GlowTiltCard>
-                  <div className="rounded-2xl overflow-hidden shadow-card bg-white/10 backdrop-blur-lg border border-white/15 aspect-[4/3] flex items-center justify-center relative">
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-coral/[0.05] to-transparent" />
-                    <div className="text-center p-8 relative">
+                  <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-white/[0.08] backdrop-blur-xl border border-white/20 aspect-[4/3] flex items-center justify-center relative">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-coral/[0.08] via-transparent to-sage/[0.04]" />
+                    <div className="text-center p-8 relative z-[1]">
                       <motion.div
                         animate={shouldReduceMotion ? undefined : { scale: [1, 1.06, 1] }}
                         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                        className="w-20 h-20 rounded-full bg-white/15 flex items-center justify-center mx-auto mb-4"
+                        className="w-20 h-20 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center mx-auto mb-4"
                       >
                         <motion.span
                           animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }}
@@ -1460,20 +1464,20 @@ export default function LandingPage() {
                           <Heart size={32} className="text-coral" />
                         </motion.span>
                       </motion.div>
-                      <p className="font-display text-2xl text-white mb-2">Every report card tells a story</p>
-                      <p className="font-body text-white/60">We help you read between the grades</p>
+                      <p className="font-display text-2xl text-white mb-2 drop-shadow-lg">Every report card tells a story</p>
+                      <p className="font-body text-white/70">We help you read between the grades</p>
                     </div>
                   </div>
                 </GlowTiltCard>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
-                  className="absolute -bottom-6 -left-6 md:-left-10 bg-white/15 backdrop-blur-md border border-white/10 rounded-xl shadow-card-hover p-4 w-[200px]"
+                  className="absolute -bottom-6 -left-6 md:-left-10 bg-white/20 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] p-4 w-[200px]"
                 >
                   <p className="label-text text-coral mb-2">Clarity Check</p>
                   <div className="space-y-1.5">
-                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sage" /><span className="font-body text-xs text-white/80">Math — On Track</span></div>
-                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber" /><span className="font-body text-xs text-white/80">Science — Watch</span></div>
-                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-coral" /><span className="font-body text-xs text-white/80">English — Address</span></div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sage shadow-[0_0_6px_rgba(122,155,138,0.4)]" /><span className="font-body text-xs text-white/80">Math — On Track</span></div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber shadow-[0_0_6px_rgba(212,160,58,0.4)]" /><span className="font-body text-xs text-white/80">Science — Watch</span></div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-coral shadow-[0_0_6px_rgba(232,93,62,0.4)]" /><span className="font-body text-xs text-white/80">English — Address</span></div>
                   </div>
                 </motion.div>
               </motion.div>
@@ -1569,7 +1573,7 @@ export default function LandingPage() {
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} /> },
             ].map((step, i) => (
               <div key={step.num} className="group relative">
-                <div className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-8 h-full backdrop-blur-sm hover:bg-white/[0.07] hover:border-white/[0.12] transition-all duration-500">
+                <div className="glass-card-premium p-8 h-full hover:bg-white/[0.07] transition-all duration-500">
                   <div className="flex items-center gap-4 mb-5">
                     <span className="font-display text-[44px] md:text-[52px] font-semibold leading-none text-white/15 group-hover:text-coral/40 transition-colors duration-500">{step.num}</span>
                     <motion.span
@@ -1578,7 +1582,7 @@ export default function LandingPage() {
                       viewport={{ once: true }}
                       transition={{ type: 'spring', stiffness: 200, damping: 12, delay: i * 0.1 + 0.12 }}
                       whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
-                      className="w-12 h-12 rounded-xl bg-coral/15 flex items-center justify-center text-coral shrink-0"
+                      className="w-12 h-12 rounded-xl bg-gradient-to-br from-coral/20 to-coral/10 flex items-center justify-center text-coral shrink-0 shadow-[0_2px_12px_rgba(232,93,62,0.1)]"
                     >
                       {step.icon}
                     </motion.span>
@@ -1671,7 +1675,7 @@ export default function LandingPage() {
                     ))}
                   </motion.ul>
                 </div>
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
+                <div className="glass-card-premium overflow-hidden">
                   {feature.label === 'CLARITY CHECK' ? (
                     <AnimatedClarityCheck />
                   ) : feature.label === "TONIGHT'S CONVERSATION" ? (
@@ -1688,10 +1692,20 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Counter Bar — dramatic count-up strip */}
-      <section ref={statsRef} className="py-16 md:py-20 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
+      <section ref={statsRef} className="py-20 md:py-24 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
         <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(800px_at_50%_50%,rgba(232,93,62,0.06),transparent_70%)]" />
-        <div aria-hidden="true" className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-        <div aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+        <motion.div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-[0.03]"
+          animate={{ backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          style={{
+            background: 'radial-gradient(600px at 30% 40%, rgba(232,93,62,0.8), transparent 70%), radial-gradient(500px at 70% 60%, rgba(122,155,138,0.6), transparent 70%)',
+            backgroundSize: '200% 200%',
+          }}
+        />
+        <div aria-hidden="true" className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-coral/20 to-transparent" />
+        <div aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-coral/20 to-transparent" />
         <motion.div
           className="max-w-7xl mx-auto px-5 md:px-12 relative"
           style={shouldReduceMotion ? undefined : {
@@ -1714,7 +1728,7 @@ export default function LandingPage() {
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="font-display text-[48px] md:text-[64px] font-semibold leading-none mb-3" style={{ color: '#E85D3E', textShadow: '0 0 30px rgba(232,93,62,0.3), 0 0 60px rgba(232,93,62,0.1)' }}>
+                <div className="font-display text-[52px] md:text-[72px] font-semibold leading-none mb-3" style={{ color: '#E85D3E', textShadow: '0 0 30px rgba(232,93,62,0.3), 0 0 60px rgba(232,93,62,0.1), 0 0 100px rgba(232,93,62,0.05)' }}>
                   <CountUp value={stat.value} suffix={stat.suffix} />
                 </div>
                 <p className="font-body text-sm md:text-base text-white/50 max-w-[200px] mx-auto">{stat.label}</p>
@@ -1767,17 +1781,17 @@ export default function LandingPage() {
                 <GlowTiltCard className="h-full">
                   <Link
                     to={role.link}
-                    className="flex h-full min-h-[360px] flex-col bg-white/[0.04] border border-white/[0.07] rounded-2xl p-8 group scroll-mt-28 hover:bg-white/[0.06] hover:border-coral/25 transition-all duration-500 backdrop-blur-sm"
+                    className="glass-card-premium flex h-full min-h-[380px] flex-col p-8 group scroll-mt-28 hover:bg-white/[0.07] transition-all duration-500"
                   >
                     <div className="mb-5 flex items-center justify-between">
-                      <div>{role.icon}</div>
+                      <div className="group-hover:scale-110 transition-transform duration-300">{role.icon}</div>
                       <span className="font-body text-xs font-semibold tracking-[0.22em] text-white/20">0{i + 1}</span>
                     </div>
                     <h3 className="font-display text-2xl font-medium text-white mb-3">{role.title}</h3>
                     <p className="font-body text-white/60 leading-relaxed min-h-[84px]">{role.desc}</p>
                     <div className="my-6 grid gap-2">
                       {role.points.map(point => (
-                        <div key={point} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <div key={point} className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 group-hover:bg-white/[0.05] transition-colors duration-300">
                           <span className="w-5 h-5 rounded-full bg-gradient-to-br from-sage to-sage/70 flex items-center justify-center flex-shrink-0 shadow-sm">
                             <Star size={9} className="text-white" fill="white" />
                           </span>
@@ -1786,7 +1800,7 @@ export default function LandingPage() {
                       ))}
                     </div>
                     <span className="mt-auto font-body text-sm font-semibold text-coral inline-flex items-center gap-2 group-hover:gap-4 transition-all duration-300">
-                      {role.cta} <ArrowRight size={14} />
+                      {role.cta} <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </Link>
                 </GlowTiltCard>
@@ -1838,11 +1852,11 @@ export default function LandingPage() {
                         className="h-full"
                       >
                       <GlowTiltCard key={`${testimonialIdx}-${t.name}`} className="h-full">
-                        <div className="bg-white/[0.04] border border-white/[0.07] backdrop-blur-sm rounded-2xl p-8 h-full flex flex-col relative">
-                          <span aria-hidden="true" className="absolute top-4 left-6 text-5xl font-display text-coral/15 leading-none select-none">"</span>
+                        <div className="glass-card-premium p-8 h-full flex flex-col">
+                          <span aria-hidden="true" className="absolute top-4 left-6 text-6xl font-display text-coral/10 leading-none select-none">"</span>
                           <p className="font-display text-lg md:text-xl text-white/85 italic leading-relaxed mb-6 flex-1 relative z-[1]">"{t.text}"</p>
                           <div className="flex items-center gap-3">
-                            <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-display font-semibold shrink-0 ${avatarColors[testimonials.indexOf(t) % avatarColors.length]}`}>
+                            <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-display font-semibold shrink-0 shadow-md ${avatarColors[testimonials.indexOf(t) % avatarColors.length]}`}>
                               {getInitials(t.name)}
                             </div>
                             <div className="min-w-0">
@@ -1857,7 +1871,7 @@ export default function LandingPage() {
                                   whileInView={shouldReduceMotion ? undefined : { scale: 1, opacity: 1 }}
                                   viewport={{ once: true }}
                                   transition={{ delay: si * 0.08 + 0.1, type: 'spring', stiffness: 400, damping: 12 }}
-                                  className={`text-sm ${si < t.stars ? 'text-amber' : 'text-white/15'}`}
+                                  className={`text-sm ${si < t.stars ? 'text-amber drop-shadow-[0_0_4px_rgba(212,160,58,0.3)]' : 'text-white/15'}`}
                                 >
                                   ★
                                 </motion.span>
@@ -1937,7 +1951,7 @@ export default function LandingPage() {
                 whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, y: 0, scale: 1, rotate: 0, clipPath: 'inset(0 0 0% 0)' }}
                 viewport={{ once: true, margin: '-30px' }}
                 transition={{ duration: 0.5, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-                className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden backdrop-blur-sm hover:bg-white/[0.05] transition-colors duration-300"
+                className="glass-card-premium rounded-xl hover:bg-white/[0.06] transition-all duration-300"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -1947,7 +1961,7 @@ export default function LandingPage() {
                   <motion.span
                     animate={{ rotate: openFaq === i ? 45 : 0 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className="text-coral text-xl flex-shrink-0 w-6 h-6 flex items-center justify-center"
+                    className="text-coral text-xl flex-shrink-0 w-7 h-7 rounded-full bg-coral/10 flex items-center justify-center group-hover:bg-coral/20 transition-colors duration-300"
                   >
                     +
                   </motion.span>
@@ -1975,7 +1989,7 @@ export default function LandingPage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed bottom-8 right-8 z-50 w-11 h-11 rounded-full bg-coral text-white shadow-modal flex items-center justify-center hover:bg-coral-dark transition-colors"
+            className="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full bg-gradient-to-b from-coral to-coral-dark text-white shadow-[0_4px_20px_rgba(232,93,62,0.3)] hover:shadow-[0_6px_30px_rgba(232,93,62,0.5)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center"
             aria-label="Back to top"
           >
             <ChevronUp size={18} />
@@ -1984,38 +1998,46 @@ export default function LandingPage() {
       </AnimatePresence>
 
       {/* Footer */}
-      <footer className="bg-charcoal pt-16 pb-10">
+      <footer className="bg-charcoal pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-5 md:px-12">
-          <div className="grid md:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr] gap-8 mb-12">
+          <div className="grid md:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr] gap-10 mb-14">
             <div>
-              <span className="font-display text-2xl font-semibold text-white tracking-tight">NextStep<span className="text-coral">.AI</span></span>
-              <p className="font-body text-sm text-white/50 mt-3 leading-relaxed max-w-[220px]">Turn your child's report card into your next move.</p>
-              <div className="flex items-center gap-3 mt-5">
-                <span className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral transition-all cursor-default" aria-label="Email"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+              <span className="font-display text-2xl font-semibold text-white tracking-tight">NextStep<span className="text-gradient-coral">.AI</span></span>
+              <p className="font-body text-sm text-white/50 mt-3 leading-relaxed max-w-[240px]">Turn your child's report card into your next move.</p>
+              <div className="flex items-center gap-3 mt-6">
+                <span className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral hover:shadow-[0_0_20px_rgba(232,93,62,0.15)] transition-all duration-300 cursor-default" aria-label="Email">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                </span>
+                <span className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-white/40 hover:bg-sage/20 hover:text-sage hover:shadow-[0_0_20px_rgba(122,155,138,0.15)] transition-all duration-300 cursor-default" aria-label="Twitter">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+                </span>
+                <span className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-white/40 hover:bg-coral/20 hover:text-coral hover:shadow-[0_0_20px_rgba(232,93,62,0.15)] transition-all duration-300 cursor-default" aria-label="LinkedIn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+                </span>
               </div>
             </div>
             <div>
               <p className="label-text text-white/40 mb-4">Product</p>
-              <ul className="space-y-2.5">
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">For Parents</span></li>
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">For Teachers</span></li>
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">For Schools</span></li>
+              <ul className="space-y-3">
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">For Parents</span></li>
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">For Teachers</span></li>
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">For Schools</span></li>
               </ul>
             </div>
             <div>
               <p className="label-text text-white/40 mb-4">Company</p>
-              <ul className="space-y-2.5">
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">About</span></li>
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Blog</span></li>
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Support</span></li>
+              <ul className="space-y-3">
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">About</span></li>
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">Blog</span></li>
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">Support</span></li>
               </ul>
             </div>
             <div>
               <p className="label-text text-white/40 mb-4">Legal</p>
-              <ul className="space-y-2.5">
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Privacy</span></li>
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Terms</span></li>
-                <li><span className="font-body text-sm text-white/60 hover:text-white transition-colors cursor-default">Data Security</span></li>
+              <ul className="space-y-3">
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">Privacy</span></li>
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">Terms</span></li>
+                <li><span className="font-body text-sm text-white/60 hover:text-white hover:translate-x-1 transition-all duration-200 inline-block cursor-default">Data Security</span></li>
               </ul>
             </div>
             <div>
@@ -2025,16 +2047,16 @@ export default function LandingPage() {
                 <input
                   type="email"
                   placeholder="you@email.com"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 font-body text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-coral/50 transition-colors"
+                  className="flex-1 bg-white/[0.06] border border-white/10 rounded-lg px-3.5 py-2.5 font-body text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-coral/50 focus:bg-white/[0.08] transition-all duration-300"
                   aria-label="Email for newsletter"
                 />
-                <button className="shrink-0 bg-coral hover:bg-coral-dark text-white rounded-lg px-3 py-2 transition-colors" aria-label="Subscribe">
+                <button className="shrink-0 bg-gradient-to-b from-coral to-coral-dark hover:from-coral-dark hover:to-coral-dark text-white rounded-lg px-4 py-2.5 transition-all duration-300 hover:shadow-[0_4px_15px_rgba(232,93,62,0.3)]" aria-label="Subscribe">
                   <ArrowRight size={14} />
                 </button>
               </div>
             </div>
           </div>
-          <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="border-t border-white/[0.08] pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="font-body text-sm text-white/40">© 2026 NextStep.AI. All rights reserved.</p>
             <p className="font-body text-xs text-white/30">Your child's data is private and secure.</p>
           </div>

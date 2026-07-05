@@ -212,6 +212,17 @@
   100% { background-position: 0% 50%; }
 }
 
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(232,93,62,0.15); }
+  50% { border-color: rgba(232,93,62,0.35); }
+}
+
+@keyframes orb-drift-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -15px) scale(1.05); }
+  66% { transform: translate(-12px, 10px) scale(0.95); }
+}
+
 @keyframes star-fill {
   0% { width: 0; }
   100% { width: var(--star-width); }
@@ -221,6 +232,71 @@
 .drift-2 { animation: drift 16s ease-in-out infinite reverse; }
 .drift-3 { animation: drift 14s ease-in-out infinite; animation-delay: -5s; }
 .shimmer { animation: shimmer 4s ease-in-out infinite; }
+.orb-drift { animation: orb-drift-slow 18s ease-in-out infinite; }
+
+.glass-card {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 1rem;
+}
+
+.glass-card:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(232,93,62,0.2);
+}
+
+.glass-card-premium {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(232,93,62,0.15), transparent 40%, rgba(122,155,138,0.1) 70%, transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.glass-card-premium:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.text-gradient-coral {
+  background: linear-gradient(135deg, #E85D3E 0%, #F08B72 50%, #E85D3E 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-rotate 4s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(232,93,62,0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(232,93,62,0.5);
+}
 
 /* === AE-Grade Cinematic Effects === */
 
