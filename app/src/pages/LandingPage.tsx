@@ -94,12 +94,9 @@ const heroImages = [
 
 const HERO_VIDEOS = [
   { src: 'https://cdn.pixabay.com/video/2024/06/06/215475_large.mp4', poster: heroImages[0] },
-  { src: 'https://cdn.pixabay.com/video/2025/01/22/253998_large.mp4', poster: heroImages[1] },
   { src: 'https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4', poster: heroImages[2] },
-  { src: 'https://cdn.pixabay.com/video/2024/10/22/237643_large.mp4', poster: heroImages[3] },
   { src: 'https://cdn.pixabay.com/video/2024/06/06/215473_large.mp4', poster: heroImages[4] },
   { src: 'https://cdn.pixabay.com/video/2024/06/06/215474_large.mp4', poster: heroImages[5] },
-  { src: 'https://cdn.pixabay.com/video/2020/01/31/31802-388997514_large.mp4', poster: heroImages[6] },
   { src: 'https://cdn.pixabay.com/video/2024/06/06/215471_large.mp4', poster: heroImages[7] },
   { src: 'https://cdn.pixabay.com/video/2025/04/01/269207_large.mp4', poster: heroImages[8] },
   { src: 'https://cdn.pixabay.com/video/2015/09/27/846-140823862_large.mp4', poster: heroImages[9] },
