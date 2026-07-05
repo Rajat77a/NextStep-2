@@ -1404,13 +1404,11 @@ export default function LandingPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -16 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className="inline-block font-bold text-transparent bg-clip-text leading-[1.3]"
-                  style={{
-                    backgroundImage: 'linear-gradient(90deg, var(--coral) 0 35%, white 35% 100%)',
-                    backgroundSize: '200% 100%',
-                    backgroundPosition: '0% 0',
-                    filter: 'drop-shadow(0 3px 15px rgba(0,0,0,0.5))',
-                  }}
+                      className="value-fill-text font-bold leading-[1.3]"
+                      data-text={valueProps[valuePropIdx]}
+                      style={{
+                        filter: 'drop-shadow(0 3px 15px rgba(0,0,0,0.5))',
+                      }}
                     >
                       {valueProps[valuePropIdx]}
                     </motion.span>
