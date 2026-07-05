@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight, Upload, Brain, FileText, Heart,
@@ -1174,12 +1174,17 @@ export default function LandingPage() {
     setTestimonialIdx((idx + testimonials.length) % testimonials.length);
   };
 
+  const navigate = useNavigate();
   const [navTransition, setNavTransition] = useState(false);
-  const navigateWithTransition = (sectionId: string) => {
+  const navigateWithTransition = (target: string) => {
     setNavTransition(true);
     setTimeout(() => {
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (target.startsWith('/')) {
+        navigate(target);
+      } else {
+        const el = document.getElementById(target);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       setTimeout(() => setNavTransition(false), 400);
     }, 400);
   };
@@ -1196,7 +1201,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0a0a0f]/92 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_40px_rgba(0,0,0,0.5)]' : 'bg-[#0a0a0f]/40 backdrop-blur-sm'}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
-          <Link to="/" className="flex items-baseline gap-1 group">
+          <Link to="/" onClick={(e) => { e.preventDefault(); navigateWithTransition('/'); }} className="flex items-baseline gap-1 group">
             <span className="font-display text-xl md:text-2xl font-semibold text-white tracking-tight group-hover:text-coral transition-colors duration-300">NextStep</span>
             <span className="text-coral text-[10px] font-body font-bold">●</span>
             <span className="font-body text-[11px] font-semibold text-white/60 tracking-wider">AI</span>
@@ -1209,9 +1214,9 @@ export default function LandingPage() {
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/login" className="btn-text px-5 py-2.5 rounded-lg text-white/70 hover:bg-white/[0.08] hover:text-white transition-all duration-300">Log In</Link>
+            <Link to="/login" onClick={(e) => { e.preventDefault(); navigateWithTransition('/login'); }} className="btn-text px-5 py-2.5 rounded-lg text-white/70 hover:bg-white/[0.08] hover:text-white transition-all duration-300">Log In</Link>
             <MagneticWrap>
-              <Link to="/signup" className="relative btn-text px-6 py-2.5 rounded-[10px] bg-gradient-to-b from-coral to-coral-900 text-white shadow-[0_4px_20px_rgba(232,93,62,0.25)] hover:shadow-[0_6px_30px_rgba(232,93,62,0.4)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 overflow-hidden group">
+              <Link to="/signup" onClick={(e) => { e.preventDefault(); navigateWithTransition('/signup'); }} className="relative btn-text px-6 py-2.5 rounded-[10px] bg-gradient-to-b from-coral to-coral-900 text-white shadow-[0_4px_20px_rgba(232,93,62,0.25)] hover:shadow-[0_6px_30px_rgba(232,93,62,0.4)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 overflow-hidden group">
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
                 Get Started
               </Link>
@@ -1254,8 +1259,8 @@ export default function LandingPage() {
               <a href="#parents" onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigateWithTransition('parents'); }} className="text-white/80 text-lg font-body hover:text-white transition-colors">Clarity Check</a>
               <a href="#stories" onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigateWithTransition('stories'); }} className="text-white/80 text-lg font-body hover:text-white transition-colors">Parent Stories</a>
               <div className="border-t border-white/10 pt-6 mt-2 flex flex-col gap-4">
-                <Link to="/login" onClick={() => setMobileMenu(false)} className="text-white text-lg font-body hover:text-coral transition-colors">Log In</Link>
-                <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3.5 rounded-[10px] bg-coral-900 text-white text-center hover:bg-coral transition-colors">Get Started</Link>
+                <Link to="/login" onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigateWithTransition('/login'); }} className="text-white text-lg font-body hover:text-coral transition-colors">Log In</Link>
+                <Link to="/signup" onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigateWithTransition('/signup'); }} className="btn-text px-5 py-3.5 rounded-[10px] bg-coral-900 text-white text-center hover:bg-coral transition-colors">Get Started</Link>
               </div>
             </div>
           </motion.div>
@@ -1437,7 +1442,7 @@ export default function LandingPage() {
                   className="flex flex-wrap gap-4 mb-8"
                 >
                   <MagneticWrap>
-                    <Link to="/signup" className="relative btn-text px-8 py-4 rounded-[12px] bg-gradient-to-b from-coral to-coral-900 text-white shadow-[0_4px_25px_rgba(232,93,62,0.3)] hover:shadow-[0_8px_40px_rgba(232,93,62,0.45)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 inline-flex items-center gap-2.5 overflow-hidden group">
+                    <Link to="/signup" onClick={(e) => { e.preventDefault(); navigateWithTransition('/signup'); }} className="relative btn-text px-8 py-4 rounded-[12px] bg-gradient-to-b from-coral to-coral-900 text-white shadow-[0_4px_25px_rgba(232,93,62,0.3)] hover:shadow-[0_8px_40px_rgba(232,93,62,0.45)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 inline-flex items-center gap-2.5 overflow-hidden group">
                       <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
                       Upload a Report Card <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
                     </Link>
@@ -1831,6 +1836,7 @@ export default function LandingPage() {
                 <GlowTiltCard className="h-full">
                   <Link
                     to={role.link}
+                    onClick={(e) => { e.preventDefault(); navigateWithTransition(role.link); }}
                     className="glass-card-premium flex h-full min-h-[380px] flex-col p-8 group scroll-mt-28 hover:bg-white/[0.07] transition-all duration-500"
                   >
                     <div className="mb-5 flex items-center justify-between">
