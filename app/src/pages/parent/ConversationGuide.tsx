@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { ArrowLeft, Heart, Check, Copy, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getReportCards, getClarityCheck, getStudent } from '@/api/data';
@@ -58,7 +58,7 @@ export default function ConversationGuide() {
       <div className="max-w-3xl mx-auto px-5 md:px-12 py-8 text-center">
         <h2 className="font-display text-2xl text-charcoal mb-4">No Conversation Available</h2>
         <p className="font-body text-medium-gray mb-6">Upload a report card first to generate a conversation guide.</p>
-        <Link to="/parent/upload" className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all">Upload Report Card</Link>
+        <TransitionLink to="/parent/upload" className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all">Upload Report Card</TransitionLink>
       </div>
     );
   }
@@ -76,9 +76,9 @@ export default function ConversationGuide() {
     <div className="max-w-3xl mx-auto px-5 md:px-12 py-6 md:py-8">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <Link to="/parent/clarity" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
+        <TransitionLink to="/parent/clarity" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
           <ArrowLeft size={14} /> Back to Clarity Check
-        </Link>
+        </TransitionLink>
         <div className="flex items-start justify-between">
           <div>
             <h2 className="font-display text-2xl md:text-4xl text-charcoal">Tonight's Conversation</h2>

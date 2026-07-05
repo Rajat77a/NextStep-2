@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { Upload, MessageCircle, HelpCircle, Calendar, TrendingUp, ArrowRight, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getStudents, getReportCards, getClarityCheck, getPlanProgress } from '@/api/data';
@@ -146,9 +146,9 @@ export default function ParentDashboard() {
                 <FileText size={40} className="mx-auto text-light-gray mb-3" />
                 <p className="font-body text-medium-gray">No report cards yet</p>
                 <motion.div whileTap={{ scale: 0.95 }} className="inline-block">
-                  <Link to="/parent/upload" className="inline-flex items-center gap-1.5 text-coral font-body text-sm font-semibold mt-2 px-3 py-1.5 rounded-lg hover:bg-coral/10 transition-colors">
+                  <TransitionLink to="/parent/upload" className="inline-flex items-center gap-1.5 text-coral font-body text-sm font-semibold mt-2 px-3 py-1.5 rounded-lg hover:bg-coral/10 transition-colors">
                     Upload your first <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                  </Link>
+                  </TransitionLink>
                 </motion.div>
               </div>
             ) : (
@@ -158,7 +158,7 @@ export default function ParentDashboard() {
                   const fc = { green: grades.filter(g => g.flag === 'green').length, yellow: grades.filter(g => g.flag === 'yellow').length, red: grades.filter(g => g.flag === 'red').length };
                   return (
                     <motion.div key={card.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.15 + ci * 0.06 }} whileTap={{ scale: 0.98 }}>
-                      <Link to="/parent/clarity" state={{ reportCardId: card.id }} className="block p-4 rounded-xl border border-light-gray hover:shadow-card-hover hover:-translate-y-0.5 hover:border-coral/30 hover:bg-coral/[0.01] transition-all duration-300">
+                      <TransitionLink to="/parent/clarity" state={{ reportCardId: card.id }} className="block p-4 rounded-xl border border-light-gray hover:shadow-card-hover hover:-translate-y-0.5 hover:border-coral/30 hover:bg-coral/[0.01] transition-all duration-300">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-body font-medium text-charcoal">{card.term}</span>
                           <span className="font-body text-xs text-medium-gray">{new Date(card.createdAt).toLocaleDateString()}</span>
@@ -168,7 +168,7 @@ export default function ParentDashboard() {
                         {fc.yellow > 0 && <span className="px-2 py-0.5 bg-amber/10 text-amber rounded-full font-body text-[10px] font-semibold">{fc.yellow} Watch</span>}
                         {fc.red > 0 && <span className="px-2 py-0.5 bg-coral/10 text-coral rounded-full font-body text-[10px] font-semibold">{fc.red} Address</span>}
                       </div>
-                    </Link>
+                    </TransitionLink>
                     </motion.div>
                   );
                 })}
@@ -187,14 +187,14 @@ export default function ParentDashboard() {
                 { icon: <Calendar size={18} />, label: '30-Day Home Plan', desc: 'Personalized action plan', to: '/parent/plan' },
               ].map((action, ai) => (
                 <motion.div key={action.to} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.2 + ai * 0.06 }} whileTap={{ scale: 0.97 }}>
-                  <Link to={action.to} className="flex items-center gap-3 p-4 rounded-xl border border-light-gray hover:border-coral/40 hover:bg-coral/[0.03] hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 group">
+                  <TransitionLink to={action.to} className="flex items-center gap-3 p-4 rounded-xl border border-light-gray hover:border-coral/40 hover:bg-coral/[0.03] hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 group">
                     <span className="text-coral group-hover:scale-110 group-hover:rotate-[-8deg] transition-all duration-300">{action.icon}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-body font-medium text-charcoal text-sm">{action.label}</p>
                       <p className="font-body text-xs text-medium-gray">{action.desc}</p>
                     </div>
                     <ArrowRight size={14} className="text-medium-gray group-hover:text-coral group-hover:translate-x-1.5 transition-all duration-300" />
-                  </Link>
+                  </TransitionLink>
                 </motion.div>
               ))}
             </div>
@@ -221,9 +221,9 @@ export default function ParentDashboard() {
                 ))}
               </div>
               <motion.div whileTap={{ scale: 0.96 }}>
-                <Link to="/parent/clarity" className="inline-flex items-center gap-1.5 text-coral font-body text-sm font-semibold mt-4 px-3 py-1.5 rounded-lg hover:bg-coral/10 transition-colors group">
+                <TransitionLink to="/parent/clarity" className="inline-flex items-center gap-1.5 text-coral font-body text-sm font-semibold mt-4 px-3 py-1.5 rounded-lg hover:bg-coral/10 transition-colors group">
                   View Full Analysis <ArrowRight size={14} className="group-hover:translate-x-1.5 transition-transform duration-300" />
-                </Link>
+                </TransitionLink>
               </motion.div>
             </motion.div>
           )}
@@ -245,9 +245,9 @@ export default function ParentDashboard() {
                 </div>
               </div>
               <motion.div whileTap={{ scale: 0.96 }}>
-                <Link to="/parent/plan" className="inline-flex items-center gap-1.5 text-coral font-body text-sm font-semibold mt-4 px-3 py-1.5 rounded-lg hover:bg-coral/10 transition-colors group">
+                <TransitionLink to="/parent/plan" className="inline-flex items-center gap-1.5 text-coral font-body text-sm font-semibold mt-4 px-3 py-1.5 rounded-lg hover:bg-coral/10 transition-colors group">
                   Continue Plan <ArrowRight size={14} className="group-hover:translate-x-1.5 transition-transform duration-300" />
-                </Link>
+                </TransitionLink>
               </motion.div>
             </motion.div>
           )}

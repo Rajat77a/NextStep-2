@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { ArrowLeft, User, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -31,9 +31,9 @@ export default function ParentSettings() {
   return (
     <div className="max-w-2xl mx-auto px-5 md:px-12 py-6 md:py-8">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <Link to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
+        <TransitionLink to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
           <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
+        </TransitionLink>
         <h2 className="font-display text-2xl md:text-4xl text-charcoal mb-6">Account Settings</h2>
       </motion.div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Upload, X, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -77,9 +77,9 @@ export default function StudentRoster() {
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <Link to="/admin" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
+        <TransitionLink to="/admin" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
           <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
+        </TransitionLink>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h2 className="font-display text-2xl md:text-4xl text-charcoal">Student Roster</h2>
           <div className="flex gap-3">

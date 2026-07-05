@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { ArrowLeft, Check, Info, Trophy } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getReportCards, getClarityCheck, getPlanProgress, updateActionItem } from '@/api/data';
@@ -46,7 +46,7 @@ export default function DayPlan() {
       <div className="max-w-3xl mx-auto px-5 md:px-12 py-8 text-center">
         <h2 className="font-display text-2xl text-charcoal mb-4">No Plan Available</h2>
         <p className="font-body text-medium-gray mb-6">Upload a report card first to generate a 30-day plan.</p>
-        <Link to="/parent/upload" className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all">Upload Report Card</Link>
+        <TransitionLink to="/parent/upload" className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all">Upload Report Card</TransitionLink>
       </div>
     );
   }
@@ -61,9 +61,9 @@ export default function DayPlan() {
     <div className="max-w-3xl mx-auto px-5 md:px-12 py-6 md:py-8">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <Link to="/parent/clarity" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
+        <TransitionLink to="/parent/clarity" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
           <ArrowLeft size={14} /> Back to Clarity Check
-        </Link>
+        </TransitionLink>
         <h2 className="font-display text-2xl md:text-4xl text-charcoal">30-Day Home Plan</h2>
         <p className="font-body text-medium-gray mt-1">Small, concrete habits tailored to the report card</p>
       </motion.div>

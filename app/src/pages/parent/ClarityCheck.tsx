@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { ArrowLeft, AlertCircle, ChevronDown, ChevronUp, ArrowRight, MessageCircle, HelpCircle, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getReportCards, getClarityCheck } from '@/api/data';
@@ -67,7 +68,7 @@ export default function ClarityCheck() {
       <div className="max-w-4xl mx-auto px-5 md:px-12 py-8 text-center">
         <h2 className="font-display text-2xl text-charcoal mb-4">No Report Cards Yet</h2>
         <p className="font-body text-medium-gray mb-6">Upload a report card to see your Clarity Check.</p>
-        <Link to="/parent/upload" className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all">Upload Report Card <ArrowRight size={14} /></Link>
+        <TransitionLink to="/parent/upload" className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all">Upload Report Card <ArrowRight size={14} /></TransitionLink>
       </div>
     );
   }
@@ -76,9 +77,9 @@ export default function ClarityCheck() {
     <div className="max-w-4xl mx-auto px-5 md:px-12 py-6 md:py-8">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <Link to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
+        <TransitionLink to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
           <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
+        </TransitionLink>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="font-display text-2xl md:text-4xl text-charcoal">Clarity Check</h2>
@@ -166,15 +167,15 @@ export default function ClarityCheck() {
         <h4 className="font-display text-xl text-charcoal mb-2">Ready for the next step?</h4>
         <p className="font-body text-medium-gray mb-6">We have a personalized plan ready for you.</p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link to="/parent/conversation" className="btn-text px-5 py-3 rounded-[10px] bg-white text-charcoal border border-light-gray hover:border-coral hover:text-coral transition-all inline-flex items-center gap-2">
+          <TransitionLink to="/parent/conversation" className="btn-text px-5 py-3 rounded-[10px] bg-white text-charcoal border border-light-gray hover:border-coral hover:text-coral transition-all inline-flex items-center gap-2">
             <MessageCircle size={16} /> Conversation Guide
-          </Link>
-          <Link to="/parent/questions" className="btn-text px-5 py-3 rounded-[10px] bg-white text-charcoal border border-light-gray hover:border-coral hover:text-coral transition-all inline-flex items-center gap-2">
+          </TransitionLink>
+          <TransitionLink to="/parent/questions" className="btn-text px-5 py-3 rounded-[10px] bg-white text-charcoal border border-light-gray hover:border-coral hover:text-coral transition-all inline-flex items-center gap-2">
             <HelpCircle size={16} /> Teacher Questions
-          </Link>
-          <Link to="/parent/plan" className="btn-text px-5 py-3 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all inline-flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
+          </TransitionLink>
+          <TransitionLink to="/parent/plan" className="btn-text px-5 py-3 rounded-[10px] bg-coral text-white hover:bg-coral-dark transition-all inline-flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
             <Calendar size={16} /> 30-Day Plan
-          </Link>
+          </TransitionLink>
         </div>
       </motion.div>
     </div>

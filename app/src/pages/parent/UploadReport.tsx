@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePageTransition } from '@/contexts/PageTransitionContext';
 import {
   Upload,
   Check,
@@ -66,6 +67,7 @@ function buildPlanProgressItems(analysis: AIReportAnalysis) {
 
 export default function UploadReport() {
   const navigate = useNavigate();
+  const { navigateWithTransition } = usePageTransition();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { user } = useAuth();
 
@@ -224,7 +226,7 @@ export default function UploadReport() {
     <div className="max-w-2xl mx-auto px-5 md:px-12 py-6 md:py-8">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
         <button
-          onClick={() => (step > 1 ? setStep(step - 1) : navigate('/parent'))}
+          onClick={() => (step > 1 ? setStep(step - 1) : navigateWithTransition('/parent'))}
           className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-6"
         >
           <ArrowLeft size={14} />

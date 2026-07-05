@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
 import { Users, FileText, AlertTriangle, BarChart3, ArrowRight, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -358,12 +358,12 @@ export default function TeacherDashboard() {
               </div>
 
               <motion.div whileTap={{ scale: 0.96 }}>
-                <Link
+                <TransitionLink
                   to="/teacher/patterns"
                   className="inline-flex items-center gap-1.5 text-coral font-body text-sm font-semibold mt-4 px-3 py-1.5 rounded-lg hover:bg-coral/10 transition-colors group"
                 >
                   View class patterns <ArrowRight size={14} className="group-hover:translate-x-1.5 transition-transform duration-300" />
-                </Link>
+                </TransitionLink>
               </motion.div>
             </motion.div>
           </div>

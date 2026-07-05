@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, X, Check, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -154,12 +154,12 @@ export default function TeacherManagement() {
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <Link
+        <TransitionLink
           to="/admin"
           className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"
         >
           <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
+        </TransitionLink>
 
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-2xl md:text-4xl text-charcoal">

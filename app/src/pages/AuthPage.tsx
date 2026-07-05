@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import TransitionLink from '@/components/shared/TransitionLink'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Mail, User, Chrome, Heart, Users, Building, Home, Search } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
@@ -233,7 +234,7 @@ export default function AuthPage({ initialMode = 'login' }: { initialMode?: Mode
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         className="fixed top-6 left-6 z-20"
       >
-        <Link
+        <TransitionLink
           to="/"
           className="group flex items-center gap-2.5 py-2 pl-2.5 pr-4 rounded-full bg-white/95 border border-light-gray/70 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
         >
@@ -241,7 +242,7 @@ export default function AuthPage({ initialMode = 'login' }: { initialMode?: Mode
             <Home size={14} className="text-coral" />
           </span>
           <span className="font-body text-sm font-semibold text-charcoal/80 group-hover:text-charcoal transition-colors duration-300">Home</span>
-        </Link>
+        </TransitionLink>
       </motion.div>
 
       <motion.div
@@ -251,11 +252,11 @@ export default function AuthPage({ initialMode = 'login' }: { initialMode?: Mode
         className="w-full max-w-[420px] relative z-10"
       >
         {/* Logo */}
-        <Link to="/" className="flex items-baseline gap-0.5 justify-center mb-6">
+        <TransitionLink to="/" className="flex items-baseline gap-0.5 justify-center mb-6">
           <span className="font-display text-3xl font-semibold text-charcoal tracking-tight">NextStep</span>
           <span className="text-coral text-xs font-body font-bold">●</span>
           <span className="font-body text-sm font-semibold text-charcoal tracking-wider">AI</span>
-        </Link>
+        </TransitionLink>
 
         {/* 3D Toggle */}
         <motion.div

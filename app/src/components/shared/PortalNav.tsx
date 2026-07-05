@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Upload, ClipboardCheck, MessageCircle,
@@ -7,6 +7,8 @@ import {
   Settings, LogOut, Bell, School, BarChart3, X,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageTransition } from '@/contexts/PageTransitionContext';
+import TransitionLink from '@/components/shared/TransitionLink';
 
 interface NavItem { label: string; path: string; icon: React.ReactNode }
 
@@ -35,7 +37,7 @@ const adminNav: NavItem[] = [
 export default function PortalNav() {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
+  const { navigateWithTransition } = usePageTransition();
   const [expanded, setExpanded] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
@@ -66,7 +68,7 @@ export default function PortalNav() {
         style={{ boxShadow: '2px 0 20px rgba(0,0,0,0.25)' }}
       >
         {/* Logo */}
-        <Link
+        <TransitionLink
           to={portalPrefix}
           className="flex items-center gap-3 h-[64px] px-[14px] shrink-0 border-b border-white/[0.06]"
         >
@@ -86,7 +88,7 @@ export default function PortalNav() {
               </motion.span>
             )}
           </AnimatePresence>
-        </Link>
+        </TransitionLink>
 
         {/* Nav Items */}
         <nav className="flex-1 py-3 flex flex-col overflow-y-auto overflow-x-visible">
@@ -100,7 +102,7 @@ export default function PortalNav() {
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[24px] rounded-r-full bg-coral"
                   />
                 )}
-                <Link
+                <TransitionLink
                   to={item.path}
                   className="flex items-center gap-3 h-[46px] mx-2 px-3 rounded-lg
                              transition-colors duration-150 group select-none"
@@ -139,7 +141,7 @@ export default function PortalNav() {
                                        border-4 border-transparent border-r-[#2a2a32]" />
                     </span>
                   )}
-                </Link>
+                </TransitionLink>
               </div>
             );
           })}
@@ -170,7 +172,7 @@ export default function PortalNav() {
 
           {/* Settings */}
           <button
-            onClick={() => navigate(`/${user.role}/settings`)}
+            onClick={() => navigateWithTransition(`/${user.role}/settings`)}
             className="w-full flex items-center gap-3 h-[46px] px-3 rounded-lg
                        text-white/35 hover:text-white/75 transition-colors duration-150 group"
           >
@@ -269,14 +271,14 @@ export default function PortalNav() {
       <header className="md:hidden fixed top-0 left-0 right-0 z-50 h-14
                          bg-[#1a1a1f] flex items-center justify-between px-4
                          border-b border-white/[0.06]">
-        <Link to={portalPrefix} className="flex items-center gap-2">
+        <TransitionLink to={portalPrefix} className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-coral flex items-center justify-center shadow-md shadow-coral/30">
             <span className="font-display font-bold text-white text-xs">N</span>
           </div>
           <span className="font-display font-semibold text-white text-[15px]">
             NextStep<span className="text-coral">.</span>AI
           </span>
-        </Link>
+        </TransitionLink>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setNotifOpen(o => !o)}
@@ -285,7 +287,7 @@ export default function PortalNav() {
             <Bell size={18} />
           </button>
           <button
-            onClick={() => navigate(`/${user.role}/settings`)}
+            onClick={() => navigateWithTransition(`/${user.role}/settings`)}
             className="w-8 h-8 rounded-full bg-coral/90 flex items-center justify-center shadow-md shadow-coral/30"
           >
             <span className="text-white font-semibold text-[11px]">{initials}</span>
@@ -303,7 +305,7 @@ export default function PortalNav() {
         {navItems.slice(0, 5).map(item => {
           const active = isActive(item);
           return (
-            <Link
+            <TransitionLink
               key={item.path}
               to={item.path}
               className="flex flex-col items-center justify-center gap-1 flex-1 py-2 relative"
@@ -323,7 +325,7 @@ export default function PortalNav() {
               <span className={`text-[9px] font-medium ${active ? 'text-coral' : 'text-white/30'}`}>
                 {item.label.split(' ')[0]}
               </span>
-            </Link>
+            </TransitionLink>
           );
         })}
       </nav>

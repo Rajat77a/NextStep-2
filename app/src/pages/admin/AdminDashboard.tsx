@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
 import { Users, UserCheck, BookOpen, FileText, AlertTriangle, Plus, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -177,16 +177,16 @@ export default function AdminDashboard() {
             <h3 className="font-display text-lg text-charcoal mb-4">Quick Actions</h3>
             <div className="space-y-2">
               <motion.div whileTap={{ scale: 0.97 }}>
-                <Link to="/admin/students" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 group">
+                <TransitionLink to="/admin/students" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 group">
                   <Plus size={16} className="text-coral group-hover:scale-110 group-hover:rotate-90 transition-all duration-300" />
                   <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Add Students</span>
-                </Link>
+                </TransitionLink>
               </motion.div>
               <motion.div whileTap={{ scale: 0.97 }}>
-                <Link to="/admin/teachers" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 group">
+                <TransitionLink to="/admin/teachers" className="flex items-center gap-3 p-3 rounded-xl hover:bg-cream/50 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 group">
                   <UserPlus size={16} className="text-coral group-hover:scale-110 transition-transform duration-300" />
                   <span className="font-body text-sm text-charcoal group-hover:text-coral transition-colors">Invite Teacher</span>
-                </Link>
+                </TransitionLink>
               </motion.div>
             </div>
           </div>
