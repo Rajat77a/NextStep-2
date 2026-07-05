@@ -1180,18 +1180,18 @@ export default function LandingPage() {
     setTimeout(() => {
       const el = document.getElementById(sectionId);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setTimeout(() => setNavTransition(false), 400);
-    }, 400);
+      setTimeout(() => setNavTransition(false), 500);
+    }, 550);
   };
 
   return (
     <div className="min-h-screen" style={{ background: '#0a0a0f' }}>
-      {/* Page transition overlay — fade in/out on nav click */}
+      {/* Page transition overlay — curtain falls down from top, lifts up to reveal */}
       <motion.div
         className="fixed inset-0 z-[100] bg-black pointer-events-none"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: navTransition ? 1 : 0 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ y: '-100%' }}
+        animate={{ y: navTransition ? '0%' : '-100%' }}
+        transition={{ duration: 0.5, ease: [0.65, 0, 0.35, 1] }}
       />
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0a0a0f]/92 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_40px_rgba(0,0,0,0.5)]' : 'bg-[#0a0a0f]/40 backdrop-blur-sm'}`}>
