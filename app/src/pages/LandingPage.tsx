@@ -1174,8 +1174,25 @@ export default function LandingPage() {
     setTestimonialIdx((idx + testimonials.length) % testimonials.length);
   };
 
+  const [navTransition, setNavTransition] = useState(false);
+  const navigateWithTransition = (sectionId: string) => {
+    setNavTransition(true);
+    setTimeout(() => {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => setNavTransition(false), 400);
+    }, 400);
+  };
+
   return (
     <div className="min-h-screen" style={{ background: '#0a0a0f' }}>
+      {/* Page transition overlay — fade in/out on nav click */}
+      <motion.div
+        className="fixed inset-0 z-[100] bg-black pointer-events-none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: navTransition ? 1 : 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      />
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0a0a0f]/92 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_40px_rgba(0,0,0,0.5)]' : 'bg-[#0a0a0f]/40 backdrop-blur-sm'}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
@@ -1186,9 +1203,9 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
-            <a href="#how-it-works" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">How It Works</a>
-            <a href="#parents" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">Features</a>
-            <a href="#stories" className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">Testimonials</a>
+            <a href="#how-it-works" onClick={(e) => { e.preventDefault(); navigateWithTransition('how-it-works'); }} className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">How It Works</a>
+            <a href="#parents" onClick={(e) => { e.preventDefault(); navigateWithTransition('parents'); }} className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">Features</a>
+            <a href="#stories" onClick={(e) => { e.preventDefault(); navigateWithTransition('stories'); }} className="landing-nav-link nav-text text-white/50 hover:text-white transition-colors duration-300">Testimonials</a>
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
@@ -1239,9 +1256,9 @@ export default function LandingPage() {
             className="fixed inset-y-0 right-0 z-40 bg-charcoal w-full max-w-sm pt-24 px-8 lg:hidden shadow-2xl"
           >
             <div className="flex flex-col gap-6">
-              <a href="#how-it-works" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body hover:text-white transition-colors">How It Works</a>
-              <a href="#parents" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body hover:text-white transition-colors">Clarity Check</a>
-              <a href="#stories" onClick={() => setMobileMenu(false)} className="text-white/80 text-lg font-body hover:text-white transition-colors">Parent Stories</a>
+              <a href="#how-it-works" onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigateWithTransition('how-it-works'); }} className="text-white/80 text-lg font-body hover:text-white transition-colors">How It Works</a>
+              <a href="#parents" onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigateWithTransition('parents'); }} className="text-white/80 text-lg font-body hover:text-white transition-colors">Clarity Check</a>
+              <a href="#stories" onClick={(e) => { e.preventDefault(); setMobileMenu(false); navigateWithTransition('stories'); }} className="text-white/80 text-lg font-body hover:text-white transition-colors">Parent Stories</a>
               <div className="border-t border-white/10 pt-6 mt-2 flex flex-col gap-4">
                 <Link to="/login" onClick={() => setMobileMenu(false)} className="text-white text-lg font-body hover:text-coral transition-colors">Log In</Link>
                 <Link to="/signup" onClick={() => setMobileMenu(false)} className="btn-text px-5 py-3.5 rounded-[10px] bg-coral-900 text-white text-center hover:bg-coral transition-colors">Get Started</Link>
@@ -1432,7 +1449,7 @@ export default function LandingPage() {
                     </Link>
                   </MagneticWrap>
                   <MagneticWrap>
-                    <a href="#how-it-works" className="btn-text px-8 py-4 rounded-[12px] border-[1.5px] border-white/30 text-white/90 hover:bg-white hover:text-charcoal hover:border-white transition-all duration-300">
+                    <a href="#how-it-works" onClick={(e) => { e.preventDefault(); navigateWithTransition('how-it-works'); }} className="btn-text px-8 py-4 rounded-[12px] border-[1.5px] border-white/30 text-white/90 hover:bg-white hover:text-charcoal hover:border-white transition-all duration-300">
                       See How It Works
                     </a>
                   </MagneticWrap>
@@ -1556,14 +1573,23 @@ export default function LandingPage() {
             scale: howItWorksExitScale,
           }}
         >
+          <motion.p
+            className="label-text text-coral/70 text-center mb-3 tracking-[0.15em]"
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            How It Works
+          </motion.p>
           <motion.h2
-            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4"
+            className="font-display text-[32px] md:text-[60px] font-medium text-white text-center mb-3 leading-tight"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
             whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
             viewport={{ once: true }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           >
-            Three steps to clarity
+            Three steps to <span className="text-gradient-coral">clarity</span>
           </motion.h2>
           <motion.p
             className="font-body text-white/50 text-center mb-12 md:mb-16 max-w-xl mx-auto"
@@ -1614,6 +1640,26 @@ export default function LandingPage() {
             x: featuresExitX,
           }}
         >
+          <div className="text-center mb-4">
+            <motion.p
+              className="label-text text-sage/70 text-center mb-3 tracking-[0.15em]"
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              Features
+            </motion.p>
+            <motion.h2
+              className="font-display text-[32px] md:text-[60px] font-medium mb-3 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-sage"
+              initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
+              whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            >
+              Tools that make a difference
+            </motion.h2>
+          </div>
           {[
             { label: 'CLARITY CHECK', title: "Know what's worth worrying about", desc: "Our AI flags each subject as green, yellow, or red — with gentle, advisory language. No predictions about your child's future. Just clear, actionable insights.", bullets: ['Board-specific grade interpretation', 'Soft, non-judgmental language', 'Teacher comment analysis'] },
             { label: "TONIGHT'S CONVERSATION", title: 'Talk to your child with confidence', desc: 'Get a personalized conversation script that opens dialogue instead of interrogation. Connection-focused phrasing that strengthens your relationship.', bullets: ['Age-appropriate language', 'Connection over evaluation', 'Copy-paste ready scripts'] },
@@ -1758,8 +1804,17 @@ export default function LandingPage() {
             scale: portalExitScale,
           }}
         >
+          <motion.p
+            className="label-text text-coral/70 text-center mb-3 tracking-[0.15em]"
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Portal
+          </motion.p>
           <motion.h2
-            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-4"
+            className="font-body text-[32px] md:text-[56px] font-light text-center mb-3 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-coral to-coral/50"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
             whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
             viewport={{ once: true }}
@@ -1829,8 +1884,17 @@ export default function LandingPage() {
             scale: testimonialExitScale,
           }}
         >
+          <motion.p
+            className="label-text text-sage/70 text-center mb-3 tracking-[0.15em]"
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Stories
+          </motion.p>
           <motion.h2
-            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-12"
+            className="font-display text-[32px] md:text-[56px] font-medium text-center mb-12 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-sage to-white"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
             whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
             viewport={{ once: true }}
@@ -1925,7 +1989,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section ref={faqRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
+      <section id="faq" ref={faqRef} className="py-16 md:py-28 relative overflow-hidden" style={{ background: '#0e0e14' }}>
         <div aria-hidden="true" className="absolute top-1/2 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.03] pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(232,93,62,0.5), transparent 70%)', filter: 'blur(60px)' }} />
         <motion.div
           className="max-w-3xl mx-auto px-5 md:px-12"
@@ -1934,8 +1998,17 @@ export default function LandingPage() {
             y: faqExitY,
           }}
         >
+          <motion.p
+            className="label-text text-coral/70 text-center mb-3 tracking-[0.15em]"
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            FAQ
+          </motion.p>
           <motion.h2
-            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-12"
+            className="font-display text-[30px] md:text-[44px] font-semibold text-center mb-12 leading-tight text-sage"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
             whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
             viewport={{ once: true }}
