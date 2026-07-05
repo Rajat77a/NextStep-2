@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import PortalNav from '@/components/shared/PortalNav';
+import { PageTransitionProvider } from '@/contexts/PageTransitionContext';
 
 // Landing
 import LandingPage from '@/pages/LandingPage';
@@ -58,41 +59,43 @@ export default function App() {
   const { user } = useAuth();
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <AuthPage initialMode="login" />} />
-        <Route path="/signup" element={user ? <Navigate to={`/${user.role}`} replace /> : <AuthPage initialMode="signup" />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
+    <PageTransitionProvider>
+      <AnimatePresence mode="wait">
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <AuthPage initialMode="login" />} />
+          <Route path="/signup" element={user ? <Navigate to={`/${user.role}`} replace /> : <AuthPage initialMode="signup" />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
 
-        {/* Parent Portal */}
-        <Route path="/parent" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />
-        <Route path="/parent/upload" element={<ProtectedRoute allowedRoles={['parent']}><UploadReport /></ProtectedRoute>} />
-        <Route path="/parent/clarity" element={<ProtectedRoute allowedRoles={['parent']}><ClarityCheck /></ProtectedRoute>} />
-        <Route path="/parent/conversation" element={<ProtectedRoute allowedRoles={['parent']}><ConversationGuide /></ProtectedRoute>} />
-        <Route path="/parent/questions" element={<ProtectedRoute allowedRoles={['parent']}><TeacherQuestions /></ProtectedRoute>} />
-        <Route path="/parent/plan" element={<ProtectedRoute allowedRoles={['parent']}><DayPlan /></ProtectedRoute>} />
-        <Route path="/parent/progress" element={<ProtectedRoute allowedRoles={['parent']}><ProgressTracking /></ProtectedRoute>} />
-        <Route path="/parent/settings" element={<ProtectedRoute allowedRoles={['parent']}><ParentSettings /></ProtectedRoute>} />
+          {/* Parent Portal */}
+          <Route path="/parent" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />
+          <Route path="/parent/upload" element={<ProtectedRoute allowedRoles={['parent']}><UploadReport /></ProtectedRoute>} />
+          <Route path="/parent/clarity" element={<ProtectedRoute allowedRoles={['parent']}><ClarityCheck /></ProtectedRoute>} />
+          <Route path="/parent/conversation" element={<ProtectedRoute allowedRoles={['parent']}><ConversationGuide /></ProtectedRoute>} />
+          <Route path="/parent/questions" element={<ProtectedRoute allowedRoles={['parent']}><TeacherQuestions /></ProtectedRoute>} />
+          <Route path="/parent/plan" element={<ProtectedRoute allowedRoles={['parent']}><DayPlan /></ProtectedRoute>} />
+          <Route path="/parent/progress" element={<ProtectedRoute allowedRoles={['parent']}><ProgressTracking /></ProtectedRoute>} />
+          <Route path="/parent/settings" element={<ProtectedRoute allowedRoles={['parent']}><ParentSettings /></ProtectedRoute>} />
 
-        {/* Teacher Portal */}
-        <Route path="/teacher" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
-        <Route path="/teacher/classes" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherClasses /></ProtectedRoute>} />
-        <Route path="/teacher/patterns" element={<ProtectedRoute allowedRoles={['teacher']}><ClassPatterns /></ProtectedRoute>} />
-        <Route path="/teacher/settings" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherSettings /></ProtectedRoute>} />
+          {/* Teacher Portal */}
+          <Route path="/teacher" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
+          <Route path="/teacher/classes" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherClasses /></ProtectedRoute>} />
+          <Route path="/teacher/patterns" element={<ProtectedRoute allowedRoles={['teacher']}><ClassPatterns /></ProtectedRoute>} />
+          <Route path="/teacher/settings" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherSettings /></ProtectedRoute>} />
 
-        {/* Admin Portal */}
-        <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/admin/classes" element={<ProtectedRoute allowedRoles={['admin']}><ClassManagement /></ProtectedRoute>} />
-        <Route path="/admin/students" element={<ProtectedRoute allowedRoles={['admin']}><StudentRoster /></ProtectedRoute>} />
-        <Route path="/admin/teachers" element={<ProtectedRoute allowedRoles={['admin']}><TeacherManagement /></ProtectedRoute>} />
-        <Route path="/admin/subscription" element={<ProtectedRoute allowedRoles={['admin']}><SubscriptionPage /></ProtectedRoute>} />
-        <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
+          {/* Admin Portal */}
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/classes" element={<ProtectedRoute allowedRoles={['admin']}><ClassManagement /></ProtectedRoute>} />
+          <Route path="/admin/students" element={<ProtectedRoute allowedRoles={['admin']}><StudentRoster /></ProtectedRoute>} />
+          <Route path="/admin/teachers" element={<ProtectedRoute allowedRoles={['admin']}><TeacherManagement /></ProtectedRoute>} />
+          <Route path="/admin/subscription" element={<ProtectedRoute allowedRoles={['admin']}><SubscriptionPage /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
+    </PageTransitionProvider>
   );
 }

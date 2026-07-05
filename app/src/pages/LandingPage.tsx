@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight, Upload, Brain, FileText, Heart,
   Users, Building, ChevronLeft, ChevronRight, ChevronUp, Menu, X, Check, Star, Calendar, MessageCircle,
 } from 'lucide-react';
 import TiltCard from '@/components/shared/TiltCard';
+import { usePageTransition } from '@/contexts/PageTransitionContext';
 
 const testimonials = [
   { name: 'Meera Krishnan', role: 'Parent of Grade 5 student', text: 'The AI analysis helped me understand what my daughter\'s teacher was really trying to say. The conversation guide made our talk so much more productive.', stars: 5 },
@@ -1187,30 +1188,10 @@ export default function LandingPage() {
     setTestimonialIdx((idx + testimonials.length) % testimonials.length);
   };
 
-  const navigate = useNavigate();
-  const [navTransition, setNavTransition] = useState(false);
-  const navigateWithTransition = (target: string) => {
-    setNavTransition(true);
-    setTimeout(() => {
-      if (target.startsWith('/')) {
-        navigate(target);
-      } else {
-        const el = document.getElementById(target);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      setTimeout(() => setNavTransition(false), 400);
-    }, 400);
-  };
+  const { navigateWithTransition } = usePageTransition();
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: '#0a0a0f' }}>
-      {/* Page transition overlay — curtain rises from bottom, lowers to reveal */}
-      <motion.div
-        className="fixed inset-0 z-[100] bg-black pointer-events-none"
-        initial={{ y: '100%' }}
-        animate={{ y: navTransition ? '0%' : '100%' }}
-        transition={{ type: 'spring', stiffness: 140, damping: 26, mass: 0.7 }}
-      />
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0a0a0f]/92 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_40px_rgba(0,0,0,0.5)]' : 'bg-[#0a0a0f]/40 backdrop-blur-sm'}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
