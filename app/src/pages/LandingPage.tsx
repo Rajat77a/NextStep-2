@@ -86,9 +86,9 @@ const heroImages = [
 ];
 
 const HERO_VIDEOS = [
-  { src: 'https://assets.mixkit.co/videos/28315/28315-720.mp4', poster: heroImages[0] },
-  { src: 'https://assets.mixkit.co/videos/4790/4790-720.mp4', poster: heroImages[1] },
-  { src: 'https://assets.mixkit.co/videos/50125/50125-720.mp4', poster: heroImages[2] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215470_large.mp4', poster: heroImages[0] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4', poster: heroImages[1] },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215475_large.mp4', poster: heroImages[2] },
 ];
 
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
