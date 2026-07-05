@@ -1583,13 +1583,13 @@ export default function LandingPage() {
             How It Works
           </motion.p>
           <motion.h2
-            className="font-display text-[32px] md:text-[60px] font-medium text-white text-center mb-3 leading-tight"
+            className="font-display text-[32px] md:text-[56px] font-medium text-white text-center mb-3 leading-tight"
             initial={shouldReduceMotion ? false : { clipPath: 'inset(0 100% 0 0)' }}
             whileInView={shouldReduceMotion ? undefined : { clipPath: 'inset(0 0% 0 0)' }}
             viewport={{ once: true }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           >
-            Three steps to <span className="text-gradient-coral">clarity</span>
+            Three steps to clarity
           </motion.h2>
           <motion.p
             className="font-body text-white/50 text-center mb-12 md:mb-16 max-w-xl mx-auto"
@@ -1607,19 +1607,12 @@ export default function LandingPage() {
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} /> },
             ].map((step, i) => (
               <div key={step.num} className="group relative">
-                <div className="glass-card-premium p-8 h-full hover:bg-white/[0.07] transition-all duration-500">
+                <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-8 h-full hover:border-white/[0.15] transition-all duration-500">
                   <div className="flex items-center gap-4 mb-5">
-                    <span className="font-display text-[44px] md:text-[52px] font-semibold leading-none text-white/15 group-hover:text-coral/40 transition-colors duration-500">{step.num}</span>
-                    <motion.span
-                      initial={shouldReduceMotion ? false : { scale: 0.3, rotate: -45 }}
-                      whileInView={shouldReduceMotion ? undefined : { scale: 1, rotate: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 12, delay: i * 0.1 + 0.12 }}
-                      whileHover={shouldReduceMotion ? undefined : { rotate: -8, scale: 1.15 }}
-                      className="w-12 h-12 rounded-xl bg-gradient-to-br from-coral/20 to-coral/10 flex items-center justify-center text-coral shrink-0 shadow-[0_2px_12px_rgba(232,93,62,0.1)]"
-                    >
+                    <span className="font-display text-[40px] md:text-[48px] font-semibold leading-none text-white/20">{step.num}</span>
+                    <span className="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center text-white/50">
                       {step.icon}
-                    </motion.span>
+                    </span>
                   </div>
                   <h3 className="font-display text-2xl font-medium text-white mb-3">{step.title}</h3>
                   <p className="font-body text-white/60 leading-relaxed">{step.desc}</p>
