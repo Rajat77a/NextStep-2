@@ -3,7 +3,17 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils"'
+
+type RechartsPayloadItem = {
+  type?: string;
+  dataKey?: string;
+  name?: string;
+  value?: string | number;
+  payload?: Record<string, unknown>;
+  color?: string;
+  fill?: string;
+}
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
@@ -180,7 +190,7 @@ function ChartTooltipContent({
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
         {payload
-          .filter((item: any) => item.type !== "none")
+          .filter((item: RechartsPayloadItem) => item.type !== "none")
           .map((item: any, index: number) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
@@ -278,8 +288,8 @@ function ChartLegendContent({
       )}
     >
       {payload
-        .filter((item: any) => item.type !== "none")
-        .map((item: any) => {
+        .filter((item: RechartsPayloadItem) => item.type !== "none")
+        .map((item: RechartsPayloadItem) => {
           const key = `${nameKey || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
 

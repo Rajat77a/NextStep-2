@@ -1,39 +1,40 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import * as React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import PortalNav from '@/components/shared/PortalNav';
 import { PageTransitionProvider } from '@/contexts/PageTransitionContext';
 
 // Landing
-import LandingPage from '@/pages/LandingPage';
+const LandingPage = React.lazy(() => import('@/pages/LandingPage'));
 
 // Auth
-import AuthPage from '@/pages/AuthPage';
-import AuthCallback from '@/pages/AuthCallback';
+const AuthPage = React.lazy(() => import('@/pages/AuthPage'));
+const AuthCallback = React.lazy(() => import('@/pages/AuthCallback'));
 
 // Parent Portal
-import ParentDashboard from '@/pages/parent/ParentDashboard';
-import UploadReport from '@/pages/parent/UploadReport';
-import ClarityCheck from '@/pages/parent/ClarityCheck';
-import ConversationGuide from '@/pages/parent/ConversationGuide';
-import TeacherQuestions from '@/pages/parent/TeacherQuestions';
-import DayPlan from '@/pages/parent/DayPlan';
-import ProgressTracking from '@/pages/parent/ProgressTracking';
-import ParentSettings from '@/pages/parent/ParentSettings';
+const ParentDashboard = React.lazy(() => import('@/pages/parent/ParentDashboard'));
+const UploadReport = React.lazy(() => import('@/pages/parent/UploadReport'));
+const ClarityCheck = React.lazy(() => import('@/pages/parent/ClarityCheck'));
+const ConversationGuide = React.lazy(() => import('@/pages/parent/ConversationGuide'));
+const TeacherQuestions = React.lazy(() => import('@/pages/parent/TeacherQuestions'));
+const DayPlan = React.lazy(() => import('@/pages/parent/DayPlan'));
+const ProgressTracking = React.lazy(() => import('@/pages/parent/ProgressTracking'));
+const ParentSettings = React.lazy(() => import('@/pages/parent/ParentSettings'));
 
 // Teacher Portal
-import TeacherDashboard from '@/pages/teacher/TeacherDashboard';
-import TeacherClasses from '@/pages/teacher/TeacherClasses';
-import ClassPatterns from '@/pages/teacher/ClassPatterns';
-import TeacherSettings from '@/pages/teacher/TeacherSettings';
+const TeacherDashboard = React.lazy(() => import('@/pages/teacher/TeacherDashboard'));
+const TeacherClasses = React.lazy(() => import('@/pages/teacher/TeacherClasses'));
+const ClassPatterns = React.lazy(() => import('@/pages/teacher/ClassPatterns'));
+const TeacherSettings = React.lazy(() => import('@/pages/teacher/TeacherSettings'));
 
 // Admin Portal
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import ClassManagement from '@/pages/admin/ClassManagement';
-import StudentRoster from '@/pages/admin/StudentRoster';
-import TeacherManagement from '@/pages/admin/TeacherManagement';
-import SubscriptionPage from '@/pages/admin/SubscriptionPage';
-import AdminSettings from '@/pages/admin/AdminSettings';
+const AdminDashboard = React.lazy(() => import('@/pages/admin/AdminDashboard'));
+const ClassManagement = React.lazy(() => import('@/pages/admin/ClassManagement'));
+const StudentRoster = React.lazy(() => import('@/pages/admin/StudentRoster'));
+const TeacherManagement = React.lazy(() => import('@/pages/admin/TeacherManagement'));
+const SubscriptionPage = React.lazy(() => import('@/pages/admin/SubscriptionPage'));
+const AdminSettings = React.lazy(() => import('@/pages/admin/AdminSettings'));
 
 function PortalLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -14,7 +14,24 @@ import type {
   ApiError,
   DashboardSummary,
   AIReportAnalysis,
+  UploadMethod,
+  BoardType,
+  ReportStatus,
 } from '@/types';
+
+type SupabaseReportCardRow = {
+  id: string;
+  student_id: string;
+  class_id: string | null;
+  term: string;
+  uploaded_by: string;
+  upload_source: UploadMethod | null;
+  board_type: BoardType | null;
+  created_at: string;
+  status: ReportStatus | null;
+  raw_text: string | null;
+  ai_response: AIReportAnalysis | null;
+};
 
 function createApiError(code: number, message: string): ApiError {
   return { code, message };
@@ -375,8 +392,8 @@ export async function bulkUploadStudents(
       });
 
       added++;
-    } catch (error: any) {
-      errors.push(`${row.fullName}: ${error.message}`);
+    } catch (error) {
+      errors.push(`${row.fullName}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -402,7 +419,7 @@ export async function uploadReportCard(data: {
     .insert({
       student_id: data.studentId,
       uploaded_by: supaUserId,
-      upload_source: data.uploadMethod || 'self_uploaded',
+      upload_source: data.uploadMethod || 'parent',
       board_type: data.boardType,
       term: data.term,
       raw_text: data.raw_text ?? null,
@@ -420,10 +437,10 @@ export async function uploadReportCard(data: {
     classId: row.class_id ?? 'parent-local-class',
     term: row.term,
     uploadedBy: row.uploaded_by,
-    uploadMethod: (row.upload_source as any) || 'parent',
-    boardType: row.board_type as any,
+    uploadMethod: (row.upload_source as UploadMethod) || 'parent',
+    boardType: (row.board_type as BoardType) || 'CBSE',
     createdAt: row.created_at,
-    status: row.status as any,
+    status: (row.status as ReportStatus) || 'processing',
     raw_text: row.raw_text ?? undefined,
     ai_response: row.ai_response ?? undefined,
   };
@@ -454,7 +471,7 @@ export async function getReportCards(filters?: {
         .select('id')
         .eq('user_id', supaUserId);
 
-            const studentIds = (myStudents ?? []).map((s: any) => s.id);
+            const studentIds = (myStudents ?? []).map((s: { id: string }) => s.id);
       if (studentIds.length > 0) {
         query = query.in('student_id', studentIds);
       }
@@ -469,10 +486,10 @@ export async function getReportCards(filters?: {
         classId: row.class_id ?? 'parent-local-class',
         term: row.term,
         uploadedBy: row.uploaded_by,
-        uploadMethod: (row.upload_source as any) || 'parent',
-        boardType: row.board_type as any,
+        uploadMethod: (row.upload_source as UploadMethod) || 'parent',
+        boardType: (row.board_type as BoardType) || 'CBSE',
         createdAt: row.created_at,
-        status: row.status as any,
+        status: (row.status as ReportStatus) || 'processing',
         raw_text: row.raw_text ?? undefined,
         ai_response: row.ai_response ?? undefined,
       }));
@@ -533,10 +550,10 @@ export async function updateReportCardAiResponse(
     classId: data.class_id ?? 'parent-local-class',
     term: data.term,
     uploadedBy: data.uploaded_by,
-    uploadMethod: (data.upload_source as any) || 'parent',
-    boardType: data.board_type as any,
+    uploadMethod: (data.upload_source as UploadMethod) || 'parent',
+    boardType: (data.board_type as BoardType) || 'CBSE',
     createdAt: data.created_at,
-    status: data.status as any,
+    status: (data.status as ReportStatus) || 'processing',
     raw_text: data.raw_text ?? undefined,
     ai_response: data.ai_response ?? undefined,
   };
