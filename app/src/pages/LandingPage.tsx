@@ -1222,29 +1222,21 @@ export default function LandingPage() {
         ref={heroRef}
         className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden bg-charcoal"
       >
-        {/* Ambient background — subtle depth instead of stock video */}
-        <div className="absolute inset-0 z-0 bg-[#0a0a0f]" />
-        <motion.div
-          aria-hidden="true"
-          className="absolute inset-0 z-0 pointer-events-none"
-          style={{ background: heroGlowBackground }}
-        />
-        <div
-          aria-hidden="true"
-          className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full opacity-[0.04] pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(232,93,62,0.4), transparent 70%)',
-            filter: 'blur(80px)',
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="absolute bottom-1/4 -right-32 w-[400px] h-[400px] rounded-full opacity-[0.03] pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(167,189,165,0.4), transparent 70%)',
-            filter: 'blur(70px)',
-          }}
-        />
+        {/* Video background — single relevant parent-child studying clip, no playlist, no zoom */}
+        <div className="absolute inset-0 overflow-hidden z-0">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080' viewBox='0 0 1 1'%3E%3Crect fill='%230a0a0f'/%3E%3C/svg%3E"
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+            style={{ filter: 'blur(2px)' }}
+          >
+            <source src="https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4" type="video/mp4" />
+          </video>
+        </div>
 
         {/* Cinematic gradient overlays — heavy dark falloff for premium text readability */}
         <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#0a0a0f]/98 via-[#0a0a0f]/60 via-50% to-transparent pointer-events-none" />
