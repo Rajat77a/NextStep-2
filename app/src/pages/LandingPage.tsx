@@ -522,7 +522,13 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
 }
 
 function AmbientHeroCard() {
-  const shouldReduceMotion = useReducedMotion();
+  const grades = [
+    { subject: 'Mathematics', grade: 'A', color: 'text-sage' },
+    { subject: 'Science', grade: 'B+', color: 'text-amber' },
+    { subject: 'English', grade: 'A-', color: 'text-sage' },
+    { subject: 'Social Studies', grade: 'B', color: 'text-amber' },
+    { subject: 'Hindi', grade: 'A', color: 'text-sage' },
+  ];
 
   return (
     <motion.div
@@ -531,55 +537,32 @@ function AmbientHeroCard() {
       transition={{ duration: 0.7, delay: 0.4 }}
       className="relative"
     >
-      <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.3)] bg-[#0e0e14] border border-white/[0.06] aspect-[4/3] relative">
-        {!shouldReduceMotion && (
-          <>
-            <motion.div
-              aria-hidden="true"
-              className="absolute rounded-full"
-              style={{
-                width: 200, height: 200,
-                top: '5%', right: '-10%',
-                background: 'radial-gradient(circle, rgba(232,93,62,0.08), transparent 70%)',
-              }}
-              animate={{ y: [0, -15, 10, -5, 0], x: [0, 10, -8, 5, 0] }}
-              transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-              aria-hidden="true"
-              className="absolute rounded-full"
-              style={{
-                width: 140, height: 140,
-                bottom: '10%', left: '-5%',
-                background: 'radial-gradient(circle, rgba(167,189,165,0.06), transparent 70%)',
-              }}
-              animate={{ y: [0, 12, -8, 6, 0], x: [0, -8, 10, -4, 0] }}
-              transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-            />
-          </>
-        )}
-
-        <div className="relative z-[1] flex flex-col items-center justify-center h-full p-8 text-center">
-          <motion.div
-            animate={shouldReduceMotion ? undefined : { y: [0, -6, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <div className="w-14 h-14 rounded-xl bg-[#1a1a22] border border-white/[0.06] flex items-center justify-center mx-auto mb-5 shadow-sm">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E85D3E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                <line x1="8" y1="7" x2="16" y2="7" />
-                <line x1="8" y1="11" x2="14" y2="11" />
-              </svg>
+      <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.3)] bg-[#0e0e14] border border-white/[0.06]">
+        <div className="p-6 md:p-7">
+          <div className="flex items-center justify-between mb-5 pb-4 border-b border-white/[0.06]">
+            <div>
+              <p className="label-text text-white/40 mb-0.5">Term 2</p>
+              <p className="font-display text-lg text-white font-medium">Progress Report</p>
             </div>
-          </motion.div>
+            <span className="font-body text-xs text-white/30">Grade 6</span>
+          </div>
 
-          <p className="font-display text-xl md:text-2xl text-white mb-2 leading-snug">
-            Every report card<br />tells a story
-          </p>
-          <p className="font-body text-sm text-white/50 max-w-[200px]">
-            We help you read between the grades
-          </p>
+          <div className="space-y-3">
+            {grades.map((row) => (
+              <div
+                key={row.subject}
+                className="flex items-center justify-between group"
+              >
+                <span className="font-body text-sm text-white/70 group-hover:text-white transition-colors duration-200">{row.subject}</span>
+                <span className={`font-display text-base font-semibold ${row.color}`}>{row.grade}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-white/[0.06] flex items-center justify-between">
+            <span className="font-body text-xs text-white/30">GPA</span>
+            <span className="font-display text-sm font-semibold text-white">3.6 / 4.0</span>
+          </div>
         </div>
       </div>
     </motion.div>
