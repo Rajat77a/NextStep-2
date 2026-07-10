@@ -3,11 +3,10 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
 import { Users, UserCheck, BookOpen, FileText, AlertTriangle, Plus, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getAdminDashboard, getClasses, getUserById } from '@/api/data';
-import { storage } from '@/api/storage';
+import { getAdminDashboard, getClasses, getStudents, getReportCards, getSubjectGrades } from '@/api/data';
 import CountUp from '@/components/shared/CountUp';
 import SparkleBurst from '@/components/shared/SparkleBurst';
-import type { DashboardSummary, Class } from '@/types';
+import type { DashboardSummary, Class, Student } from '@/types';
 
 const springEasing = [0.22, 1, 0.36, 1] as const;
 
@@ -23,29 +22,58 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [classes, setClasses] = useState<Class[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [teacherNames, setTeacherNames] = useState<Record<string, string>>({});
+  const [schoolName, setSchoolName] = useState('');
+  const [flagMap, setFlagMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function load() {
       if (!user) return;
-      const s = await getAdminDashboard();
+      const [s, c, allStudents] = await Promise.all([
+        getAdminDashboard(),
+        getClasses(),
+        getStudents(),
+      ]);
       setSummary(s);
-      const c = await getClasses();
       setClasses(c);
+      setStudents(allStudents);
+
+      if (user.schoolId) {
+        const { getMySchool } = await import('@/api/data');
+        const school = await getMySchool();
+        if (school) setSchoolName(`${school.name} — ${school.boardType}`);
+      }
+
+      const flagEntries = await Promise.all(
+        allStudents.map(async (st) => [st.id, await getStudentFlag(st.id)] as [string, string])
+      );
+      setFlagMap(Object.fromEntries(flagEntries));
+
+      // Load teacher names from profiles
+      const teacherIds = [...new Set(c.map(cls => cls.teacherId).filter(Boolean))];
+      const nameMap: Record<string, string> = {};
+      await Promise.all(teacherIds.map(async (tid) => {
+        const teacher = await (await import('@/api/data')).getUserById(tid);
+        if (teacher) nameMap[tid] = teacher.fullName;
+      }));
+      setTeacherNames(nameMap);
     }
     load();
   }, [user]);
 
-  const getStudentFlag = (studentId: string) => {
-    const cards = storage.getReportCards().filter(r => r.studentId === studentId);
-    if (!cards.length) return 'green' as const;
-    const latest = cards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-    const grades = storage.getSubjectGrades().filter(g => g.reportCardId === latest.id);
-    if (grades.some(g => g.flag === 'red')) return 'red';
-    if (grades.some(g => g.flag === 'yellow')) return 'yellow';
-    return 'green';
+  const getStudentFlag = async (studentId: string) => {
+    try {
+      const cards = await getReportCards({ studentId });
+      if (!cards.length) return 'green' as const;
+      const grades = await getSubjectGrades(cards[0].id);
+      if (grades.some(g => g.flag === 'red')) return 'red';
+      if (grades.some(g => g.flag === 'yellow')) return 'yellow';
+      return 'green';
+    } catch {
+      return 'green';
+    }
   };
-
-  const school = user?.schoolId ? storage.getSchools().find(s => s.id === user.schoolId) : null;
 
   const donutData = summary ? [
     { label: 'On Track', value: summary.flagDistribution.green, color: '#7A9B8A' },
@@ -76,7 +104,7 @@ export default function AdminDashboard() {
           <h2 className="font-display text-2xl md:text-4xl text-charcoal">School Dashboard</h2>
           <div className="gradient-divider flex-1" />
         </div>
-        <p className="font-body text-medium-gray mb-6">{school ? `${school.name} — ${school.boardType}` : 'No school configured'}</p>
+        <p className="font-body text-medium-gray mb-6">{schoolName || 'No school configured'}</p>
       </motion.div>
 
       {/* Metrics */}
@@ -211,9 +239,8 @@ export default function AdminDashboard() {
             </thead>
             <tbody>
               {classes.map((cls, ci) => {
-                const students = storage.getStudents().filter(s => s.classId === cls.id);
-                const teacher = getUserById(cls.teacherId);
-                const flags = students.filter(s => getStudentFlag(s.id) === 'red' || getStudentFlag(s.id) === 'yellow');
+                const studentRows = students.filter(s => s.classId === cls.id);
+                const flags = studentRows.filter(s => flagMap[s.id] === 'red' || flagMap[s.id] === 'yellow');
                 return (
                   <motion.tr
                     key={cls.id}
@@ -224,13 +251,13 @@ export default function AdminDashboard() {
                     className="border-b border-light-gray/50 hover:bg-cream/50 hover:shadow-sm transition-all duration-200"
                   >
                     <td className="py-3 px-4 font-body text-sm text-charcoal">Grade {cls.grade}-{cls.section}</td>
-                    <td className="py-3 px-4 font-body text-sm text-medium-gray">{teacher?.fullName || 'Not assigned'}</td>
-                    <td className="py-3 px-4 font-body text-sm text-charcoal">{students.length}</td>
+                    <td className="py-3 px-4 font-body text-sm text-medium-gray">{teacherNames[cls.teacherId] || 'Not assigned'}</td>
+                    <td className="py-3 px-4 font-body text-sm text-charcoal">{studentRows.length}</td>
                     <td className="py-3 px-4">
                       <div className="flex gap-1">
                         {flags.length > 0
                           ? flags.slice(0, 3).map(s => (
-                              <span key={s.id} className={`w-2 h-2 rounded-full ${s.status === 'red' ? 'bg-coral' : 'bg-amber'}`} />
+                              <span key={s.id} className={`w-2 h-2 rounded-full ${flagMap[s.id] === 'red' ? 'bg-coral' : 'bg-amber'}`} />
                             ))
                           : <span className="w-2 h-2 rounded-full bg-sage" />}
                       </div>

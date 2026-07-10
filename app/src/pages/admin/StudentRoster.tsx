@@ -3,8 +3,7 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Upload, X, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getStudents, addStudent, getClasses, deleteStudent } from '@/api/data';
-import { storage } from '@/api/storage';
+import { getStudents, addStudent, getClasses, deleteStudent, getReportCards, getSubjectGrades } from '@/api/data';
 import FlagBadge from '@/components/shared/FlagBadge';
 import type { Student, Class } from '@/types';
 
@@ -64,15 +63,31 @@ export default function StudentRoster() {
     s.rollNumber.includes(search)
   );
 
-  const getStudentFlag = (studentId: string) => {
-    const cards = storage.getReportCards().filter(r => r.studentId === studentId);
-    if (!cards.length) return 'green' as const;
-    const latest = cards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-    const grades = storage.getSubjectGrades().filter(g => g.reportCardId === latest.id);
-    if (grades.some(g => g.flag === 'red')) return 'red';
-    if (grades.some(g => g.flag === 'yellow')) return 'yellow';
-    return 'green';
+  const [flagMap, setFlagMap] = useState<Record<string, string>>({});
+
+  const getStudentFlag = async (studentId: string) => {
+    try {
+      const cards = await getReportCards({ studentId });
+      if (!cards.length) return 'green' as const;
+      const grades = await getSubjectGrades(cards[0].id);
+      if (grades.some(g => g.flag === 'red')) return 'red';
+      if (grades.some(g => g.flag === 'yellow')) return 'yellow';
+      return 'green';
+    } catch {
+      return 'green';
+    }
   };
+
+  useEffect(() => {
+    async function loadFlags() {
+      const flags: Record<string, string> = {};
+      await Promise.all(students.map(async (s) => {
+        flags[s.id] = await getStudentFlag(s.id);
+      }));
+      setFlagMap(flags);
+    }
+    if (students.length > 0) loadFlags();
+  }, [students]);
 
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
@@ -117,7 +132,7 @@ export default function StudentRoster() {
             <tbody>
               {filtered.map(student => {
                 const cls = classes.find(c => c.id === student.classId);
-                const flag = getStudentFlag(student.id);
+                const flag = flagMap[student.id] || 'green';
                 return (
                   <tr key={student.id} className="border-b border-light-gray/50 hover:bg-cream/30 transition-colors">
                     <td className="py-3 px-4 font-body text-sm text-charcoal">{student.fullName}</td>

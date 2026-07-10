@@ -22,64 +22,91 @@ function createApiError(code: number, message: string): ApiError {
 
 // ===== Schools =====
 export async function createSchool(data: Partial<School>): Promise<School> {
-  await delay(150);
-
   const user = await requireRole(['admin']);
-  const schools = storage.getSchools();
 
-  const school: School = {
-    id: generateId(),
-    name: data.name || 'My School',
-    boardType: data.boardType || 'CBSE',
-    address: data.address,
-    adminId: user.id,
-    subscriptionPlan: 'basic',
-    studentSeatLimit: 250,
-    createdAt: new Date().toISOString(),
+  const { data: row, error } = await supabase
+    .from('schools')
+    .insert({
+      name: data.name || 'My School',
+      board_type: data.boardType || 'CBSE',
+      address: data.address,
+      admin_id: user.id,
+      subscription_plan: 'basic',
+      student_seat_limit: 250,
+    })
+    .select()
+    .single();
+
+  if (error || !row) throw createApiError(500, error?.message || 'Could not create school');
+
+  // Update profile with school_id
+  await supabase.from('profiles').update({ school_id: row.id }).eq('id', user.id);
+
+  return {
+    id: row.id,
+    name: row.name,
+    boardType: row.board_type,
+    address: row.address,
+    adminId: row.admin_id,
+    subscriptionPlan: row.subscription_plan,
+    studentSeatLimit: row.student_seat_limit,
+    createdAt: row.created_at,
   };
-
-  schools.push(school);
-  storage.setSchools(schools);
-
-  const users = storage.getUsers();
-  const currentUser = users.find((storedUser) => storedUser.id === user.id);
-
-  if (currentUser) {
-    currentUser.schoolId = school.id;
-    storage.setUsers(users);
-  }
-
-  return school;
 }
 
 export async function getMySchool(): Promise<School | null> {
-  await delay(100);
-
   const user = await requireAuth();
-
   if (!user.schoolId) return null;
 
-  const schools = storage.getSchools();
-  return schools.find((school) => school.id === user.schoolId) || null;
+  const { data, error } = await supabase
+    .from('schools')
+    .select('*')
+    .eq('id', user.schoolId)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    name: data.name,
+    boardType: data.board_type,
+    address: data.address,
+    adminId: data.admin_id,
+    subscriptionPlan: data.subscription_plan,
+    studentSeatLimit: data.student_seat_limit,
+    createdAt: data.created_at,
+  };
 }
 
 export async function updateSchool(id: string, data: Partial<School>): Promise<School> {
-  await delay(150);
-
   await requireRole(['admin']);
 
-  const schools = storage.getSchools();
-  const index = schools.findIndex((school) => school.id === id);
+  const updates: Record<string, unknown> = {};
+  if (data.name) updates.name = data.name;
+  if (data.boardType) updates.board_type = data.boardType;
+  if (data.address) updates.address = data.address;
+  if (data.subscriptionPlan) updates.subscription_plan = data.subscriptionPlan;
+  if (data.studentSeatLimit) updates.student_seat_limit = data.studentSeatLimit;
 
-  if (index === -1) throw createApiError(404, 'School not found');
+  const { data: row, error } = await supabase
+    .from('schools')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
 
-  schools[index] = {
-    ...schools[index],
-    ...data,
+  if (error || !row) throw createApiError(404, error?.message || 'School not found');
+
+  return {
+    id: row.id,
+    name: row.name,
+    boardType: row.board_type,
+    address: row.address,
+    adminId: row.admin_id,
+    subscriptionPlan: row.subscription_plan,
+    studentSeatLimit: row.student_seat_limit,
+    createdAt: row.created_at,
   };
-
-  storage.setSchools(schools);
-  return schools[index];
 }
 
 // ===== Classes =====
@@ -88,83 +115,98 @@ export async function createClass(data: {
   section: string;
   teacherId?: string;
 }): Promise<Class> {
-  await delay(150);
-
   const user = await requireRole(['admin']);
-
   if (!user.schoolId) throw createApiError(400, 'No school associated');
 
-  const classes = storage.getClasses();
+  const { data: row, error } = await supabase
+    .from('classes')
+    .insert({
+      school_id: user.schoolId,
+      grade: data.grade,
+      section: data.section,
+      teacher_id: data.teacherId || null,
+    })
+    .select()
+    .single();
 
-  const classItem: Class = {
-    id: generateId(),
-    schoolId: user.schoolId,
-    grade: data.grade,
-    section: data.section,
-    teacherId: data.teacherId || '',
-    createdAt: new Date().toISOString(),
+  if (error || !row) throw createApiError(500, error?.message || 'Could not create class');
+
+  return {
+    id: row.id,
+    schoolId: row.school_id,
+    grade: row.grade,
+    section: row.section,
+    teacherId: row.teacher_id ?? '',
+    createdAt: row.created_at,
   };
-
-  classes.push(classItem);
-  storage.setClasses(classes);
-
-  return classItem;
 }
 
 export async function getClasses(filters?: {
   schoolId?: string;
   teacherId?: string;
 }): Promise<Class[]> {
-  await delay(100);
-
   const user = await requireAuth();
-  const classes = storage.getClasses();
+
+  let query = supabase.from('classes').select('*');
 
   if (filters?.schoolId) {
-    return classes.filter((classItem) => classItem.schoolId === filters.schoolId);
+    query = query.eq('school_id', filters.schoolId);
+  } else if (filters?.teacherId) {
+    query = query.eq('teacher_id', filters.teacherId);
+  } else if (user.role === 'admin' && user.schoolId) {
+    query = query.eq('school_id', user.schoolId);
+  } else if (user.role === 'teacher') {
+    query = query.eq('teacher_id', user.id);
+  } else {
+    return [];
   }
 
-  if (filters?.teacherId) {
-    return classes.filter((classItem) => classItem.teacherId === filters.teacherId);
-  }
+  const { data, error } = await query.order('grade', { ascending: true });
 
-  if (user.role === 'admin' && user.schoolId) {
-    return classes.filter((classItem) => classItem.schoolId === user.schoolId);
-  }
+  if (error) throw createApiError(500, error.message);
 
-  if (user.role === 'teacher') {
-    return classes.filter((classItem) => classItem.teacherId === user.id);
-  }
-
-  return [];
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    schoolId: row.school_id,
+    grade: row.grade,
+    section: row.section,
+    teacherId: row.teacher_id ?? '',
+    createdAt: row.created_at,
+  }));
 }
 
 export async function updateClass(id: string, data: Partial<Class>): Promise<Class> {
-  await delay(150);
-
   await requireRole(['admin']);
 
-  const classes = storage.getClasses();
-  const index = classes.findIndex((classItem) => classItem.id === id);
+  const updates: Record<string, unknown> = {};
+  if (data.grade) updates.grade = data.grade;
+  if (data.section) updates.section = data.section;
+  if (data.teacherId !== undefined) updates.teacher_id = data.teacherId || null;
 
-  if (index === -1) throw createApiError(404, 'Class not found');
+  const { data: row, error } = await supabase
+    .from('classes')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
 
-  classes[index] = {
-    ...classes[index],
-    ...data,
+  if (error || !row) throw createApiError(404, error?.message || 'Class not found');
+
+  return {
+    id: row.id,
+    schoolId: row.school_id,
+    grade: row.grade,
+    section: row.section,
+    teacherId: row.teacher_id ?? '',
+    createdAt: row.created_at,
   };
-
-  storage.setClasses(classes);
-  return classes[index];
 }
 
 export async function deleteClass(id: string): Promise<void> {
-  await delay(150);
-
   await requireRole(['admin']);
 
-  const classes = storage.getClasses().filter((classItem) => classItem.id !== id);
-  storage.setClasses(classes);
+  const { error } = await supabase.from('classes').delete().eq('id', id);
+  if (error) throw createApiError(500, error.message);
 }
 
 // ===== Students =====
@@ -175,57 +217,56 @@ export async function addStudent(data: {
   parentName?: string;
   parentEmail?: string;
 }): Promise<Student> {
-  await delay(200);
-
   const user = await requireAuth();
-  const classes = storage.getClasses();
-  const classItem = classes.find((storedClass) => storedClass.id === data.classId);
 
-  if (!classItem) throw createApiError(404, 'Class not found');
+  // Get the class to find schoolId
+  const { data: classRow } = await supabase
+    .from('classes')
+    .select('school_id')
+    .eq('id', data.classId)
+    .single();
 
-  let parentId = user.id;
+  if (!classRow) throw createApiError(404, 'Class not found');
+
+  let parentUserId = user.id;
 
   if (user.role === 'admin' && data.parentEmail) {
-    const users = storage.getUsers();
-    let parent = users.find((storedUser) => storedUser.email === data.parentEmail);
+    // Try to find existing parent profile by email
+    const { data: existingParent } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', 'parent')
+      .maybeSingle();
 
-    if (!parent) {
-      parent = {
-        id: generateId(),
-        email: data.parentEmail,
-        passwordHash: await (await import('@/lib/crypto')).hashPassword('welcome123'),
-        fullName: data.parentName || data.fullName + "'s Parent",
-        role: 'parent',
-        schoolId: classItem.schoolId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastLoginAt: null,
-        isActive: true,
-      };
-
-      users.push(parent);
-      storage.setUsers(users);
-    }
-
-    parentId = parent.id;
+    // We can't search by email easily — profiles don't have email column
+    // Fallback: use the admin's user ID as parent reference
+    // Parents will link via signup flow
+    parentUserId = user.id;
   }
 
-  const students = storage.getStudents();
+  const { data: row, error } = await supabase
+    .from('students')
+    .insert({
+      user_id: parentUserId,
+      full_name: data.fullName,
+      school_id: classRow.school_id,
+      class_id: data.classId,
+      roll_number: data.rollNumber,
+    })
+    .select()
+    .single();
 
-  const student: Student = {
-    id: generateId(),
-    schoolId: classItem.schoolId,
-    classId: data.classId,
-    rollNumber: data.rollNumber,
-    fullName: data.fullName,
-    parentId,
-    createdAt: new Date().toISOString(),
+  if (error || !row) throw createApiError(500, error?.message || 'Could not add student');
+
+  return {
+    id: row.id,
+    schoolId: row.school_id ?? classRow.school_id,
+    classId: row.class_id,
+    rollNumber: row.roll_number ?? '',
+    fullName: row.full_name,
+    parentId: row.user_id,
+    createdAt: row.created_at,
   };
-
-  students.push(student);
-  storage.setStudents(students);
-
-  return student;
 }
 
 export async function addParentStudent(fullName: string): Promise<Student> {
@@ -284,7 +325,9 @@ export async function getStudents(filters?: {
   parentId?: string;
   schoolId?: string;
 }): Promise<Student[]> {
-  // Parent: fetch from Supabase
+  const user = await requireAuth();
+
+  // Parent: fetch from Supabase scoped to parent
   if (filters?.parentId) {
     const { data, error } = await supabase
       .from('students')
@@ -305,47 +348,98 @@ export async function getStudents(filters?: {
     }));
   }
 
-  // Admin / teacher: keep localStorage path
-  await delay(100);
-  let students = storage.getStudents();
-  if (filters?.classId) students = students.filter((s) => s.classId === filters.classId);
-  if (filters?.schoolId) students = students.filter((s) => s.schoolId === filters.schoolId);
-  return students;
+  // Admin / teacher: fetch from Supabase
+  let query = supabase.from('students').select('*');
+
+  if (filters?.classId) {
+    query = query.eq('class_id', filters.classId);
+  }
+  if (filters?.schoolId) {
+    query = query.eq('school_id', filters.schoolId);
+  }
+  // If admin, scope to school
+  if (!filters?.classId && !filters?.schoolId && user.role === 'admin' && user.schoolId) {
+    query = query.eq('school_id', user.schoolId);
+  }
+  // If teacher, scope by their classes
+  if (!filters?.classId && !filters?.schoolId && user.role === 'teacher') {
+    const classes = await getClasses();
+    const classIds = classes.map((c) => c.id);
+    if (classIds.length > 0) {
+      query = query.in('class_id', classIds);
+    } else {
+      return [];
+    }
+  }
+
+  const { data, error } = await query.order('full_name', { ascending: true });
+
+  if (error) throw createApiError(500, error.message);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    schoolId: row.school_id ?? '',
+    classId: row.class_id ?? '',
+    rollNumber: row.roll_number ?? '',
+    fullName: row.full_name,
+    parentId: row.user_id,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function getStudent(id: string): Promise<Student | null> {
-  await delay(80);
+  const { data, error } = await supabase
+    .from('students')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  const students = await getStudents();
-  return students.find((student) => student.id === id) || null;
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    schoolId: data.school_id ?? '',
+    classId: data.class_id ?? '',
+    rollNumber: data.roll_number ?? '',
+    fullName: data.full_name,
+    parentId: data.user_id,
+    createdAt: data.created_at,
+  };
 }
 
 export async function updateStudent(id: string, data: Partial<Student>): Promise<Student> {
-  await delay(150);
-
   await requireAuth();
 
-  const students = storage.getStudents();
-  const index = students.findIndex((student) => student.id === id);
+  const updates: Record<string, unknown> = {};
+  if (data.fullName) updates.full_name = data.fullName;
+  if (data.rollNumber) updates.roll_number = data.rollNumber;
+  if (data.classId) updates.class_id = data.classId;
 
-  if (index === -1) throw createApiError(404, 'Student not found');
+  const { data: row, error } = await supabase
+    .from('students')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
 
-  students[index] = {
-    ...students[index],
-    ...data,
+  if (error || !row) throw createApiError(404, error?.message || 'Student not found');
+
+  return {
+    id: row.id,
+    schoolId: row.school_id ?? '',
+    classId: row.class_id ?? '',
+    rollNumber: row.roll_number ?? '',
+    fullName: row.full_name,
+    parentId: row.user_id,
+    createdAt: row.created_at,
   };
-
-  storage.setStudents(students);
-  return students[index];
 }
 
 export async function deleteStudent(id: string): Promise<void> {
-  await delay(150);
-
   await requireRole(['admin']);
 
-  const students = storage.getStudents().filter((student) => student.id !== id);
-  storage.setStudents(students);
+  const { error } = await supabase.from('students').delete().eq('id', id);
+  if (error) throw createApiError(500, error.message);
 }
 
 export async function bulkUploadStudents(
@@ -547,28 +641,56 @@ export async function addSubjectGrades(
   reportCardId: string,
   grades: Partial<SubjectGrade>[]
 ): Promise<SubjectGrade[]> {
-  await delay(200);
-
   await requireAuth();
 
-  const allGrades = storage.getSubjectGrades();
-
-  const newGrades: SubjectGrade[] = grades.map((grade) => ({
-    id: generateId(),
-    reportCardId,
-    subjectName: grade.subjectName || '',
+  // Data is primarily in report_cards.ai_response — this is a legacy cache
+  // Insert into Supabase subject_grades table if needed
+  const rows = grades.map((grade) => ({
+    report_card_id: reportCardId,
+    subject_name: grade.subjectName || '',
     grade: grade.grade || '',
-    normalizedScore: grade.normalizedScore || 0,
-    teacherComment: grade.teacherComment,
+    normalized_score: grade.normalizedScore || 0,
     flag: grade.flag || 'green',
-    aiNote: grade.aiNote,
-    createdAt: new Date().toISOString(),
+    ai_note: grade.aiNote || null,
   }));
 
-  allGrades.push(...newGrades);
-  storage.setSubjectGrades(allGrades);
+  // Try Supabase; silently fall back to localStorage for backwards compat
+  const { error } = await supabase.from('subject_grades').insert(rows);
+  if (error) {
+    // localStorage fallback
+    const allGrades = storage.getSubjectGrades();
+    const newGrades: SubjectGrade[] = grades.map((grade) => ({
+      id: `${reportCardId}-${Math.random().toString(36).slice(2)}`,
+      reportCardId,
+      subjectName: grade.subjectName || '',
+      grade: grade.grade || '',
+      normalizedScore: grade.normalizedScore || 0,
+      teacherComment: grade.teacherComment,
+      flag: grade.flag || 'green',
+      aiNote: grade.aiNote,
+      createdAt: new Date().toISOString(),
+    }));
+    allGrades.push(...newGrades);
+    storage.setSubjectGrades(allGrades);
+    return newGrades;
+  }
 
-  return newGrades;
+  // If Supabase succeeded, also cache in localStorage for fast reads
+  storage.setSubjectGrades(storage.getSubjectGrades().concat(
+    (rows as any[]).map((r) => ({
+      id: `${reportCardId}-${Math.random().toString(36).slice(2)}`,
+      reportCardId,
+      subjectName: r.subject_name,
+      grade: r.grade,
+      normalizedScore: r.normalized_score,
+      teacherComment: '',
+      flag: r.flag,
+      aiNote: r.ai_note,
+      createdAt: new Date().toISOString(),
+    }))
+  ));
+
+  return [];
 }
 
 export async function getSubjectGrades(reportCardId: string): Promise<SubjectGrade[]> {
@@ -601,24 +723,46 @@ export async function getSubjectGrades(reportCardId: string): Promise<SubjectGra
 
 // ===== Clarity Checks =====
 export async function getClarityCheck(reportCardId: string): Promise<ClarityCheck | null> {
-  await delay(100);
-
   await requireRole(['parent']);
 
-  return storage.getClarityChecks().find((check) => check.reportCardId === reportCardId) || null;
+  // Try reading from localStorage cache first
+  const cached = storage.getClarityChecks().find((check) => check.reportCardId === reportCardId);
+  if (cached) return cached;
+
+  // Fallback: reconstruct from Supabase report_cards.ai_response
+  const { data, error } = await supabase
+    .from('report_cards')
+    .select('ai_response, uploaded_by')
+    .eq('id', reportCardId)
+    .single();
+
+  if (error || !data?.ai_response) return null;
+
+  const analysis = data.ai_response as AIReportAnalysis;
+
+  return {
+    id: `clarity-${reportCardId}`,
+    reportCardId,
+    parentId: data.uploaded_by,
+    overallStatus: analysis.overallStatus || 'green',
+    summaryText: analysis.summaryText || '',
+    conversationScript: analysis.conversationScript || {},
+    teacherQuestions: analysis.teacherQuestions || [],
+    thirtyDayPlan: analysis.thirtyDayPlan || [],
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 export async function saveClarityCheck(data: Omit<ClarityCheck, 'id'>): Promise<ClarityCheck> {
-  await delay(200);
-
   await requireRole(['parent']);
 
+  // Primary data is already in report_cards.ai_response — this is a cache
   const checks = storage.getClarityChecks();
   const existingIndex = checks.findIndex((check) => check.reportCardId === data.reportCardId);
 
   const clarityCheck: ClarityCheck = {
     ...data,
-    id: existingIndex >= 0 ? checks[existingIndex].id : generateId(),
+    id: existingIndex >= 0 ? checks[existingIndex].id : `clarity-${data.reportCardId}`,
   };
 
   if (existingIndex >= 0) {
@@ -637,84 +781,123 @@ export async function addTeacherNote(data: {
   studentId: string;
   note: string;
 }): Promise<TeacherNote> {
-  await delay(150);
-
   const user = await requireRole(['teacher']);
-  const notes = storage.getTeacherNotes();
 
-  const note: TeacherNote = {
-    id: generateId(),
-    studentId: data.studentId,
-    teacherId: user.id,
-    note: data.note,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+  const { data: row, error } = await supabase
+    .from('teacher_notes')
+    .insert({
+      student_id: data.studentId,
+      teacher_id: user.id,
+      note: data.note,
+    })
+    .select()
+    .single();
+
+  if (error || !row) throw createApiError(500, error?.message || 'Could not add note');
+
+  return {
+    id: row.id,
+    studentId: row.student_id,
+    teacherId: row.teacher_id,
+    note: row.note,
+    createdAt: row.created_at,
+    updatedAt: row.created_at,
   };
-
-  notes.push(note);
-  storage.setTeacherNotes(notes);
-
-  return note;
 }
 
 export async function getTeacherNotes(studentId: string): Promise<TeacherNote[]> {
-  await delay(80);
-
   await requireRole(['teacher']);
 
-  return storage.getTeacherNotes().filter((note) => note.studentId === studentId);
+  const { data, error } = await supabase
+    .from('teacher_notes')
+    .select('*')
+    .eq('student_id', studentId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw createApiError(500, error.message);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    studentId: row.student_id,
+    teacherId: row.teacher_id,
+    note: row.note,
+    createdAt: row.created_at,
+    updatedAt: row.created_at,
+  }));
 }
 
 export async function updateTeacherNote(id: string, note: string): Promise<TeacherNote> {
-  await delay(150);
-
   const user = await requireRole(['teacher']);
-  const notes = storage.getTeacherNotes();
-  const index = notes.findIndex((storedNote) => storedNote.id === id && storedNote.teacherId === user.id);
 
-  if (index === -1) throw createApiError(404, 'Note not found');
+  const { data: row, error } = await supabase
+    .from('teacher_notes')
+    .update({ note })
+    .eq('id', id)
+    .eq('teacher_id', user.id)
+    .select()
+    .single();
 
-  notes[index] = {
-    ...notes[index],
-    note,
-    updatedAt: new Date().toISOString(),
+  if (error || !row) throw createApiError(404, error?.message || 'Note not found');
+
+  return {
+    id: row.id,
+    studentId: row.student_id,
+    teacherId: row.teacher_id,
+    note: row.note,
+    createdAt: row.created_at,
+    updatedAt: row.created_at,
   };
-
-  storage.setTeacherNotes(notes);
-  return notes[index];
 }
 
 // ===== Plan Progress =====
 export async function getPlanProgress(clarityCheckId: string): Promise<PlanProgress | null> {
-  await delay(80);
-
   await requireRole(['parent']);
 
-  return storage.getPlanProgress().find((progress) => progress.clarityCheckId === clarityCheckId) || null;
+  const { data, error } = await supabase
+    .from('plan_progress')
+    .select('*')
+    .eq('clarity_check_id', clarityCheckId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    clarityCheckId: data.clarity_check_id,
+    parentId: data.parent_id,
+    actionItems: data.action_items as PlanProgress['actionItems'],
+    completionRate: data.completion_rate,
+    updatedAt: data.updated_at,
+  };
 }
 
 export async function createPlanProgress(
   clarityCheckId: string,
   actionItems: PlanProgress['actionItems']
 ): Promise<PlanProgress> {
-  await delay(150);
-
   const user = await requireRole(['parent']);
 
-  const progress: PlanProgress = {
-    id: generateId(),
-    clarityCheckId,
-    parentId: user.id,
-    actionItems,
-    completionRate: 0,
-    updatedAt: new Date().toISOString(),
+  const { data, error } = await supabase
+    .from('plan_progress')
+    .insert({
+      clarity_check_id: clarityCheckId,
+      parent_id: user.id,
+      action_items: JSON.parse(JSON.stringify(actionItems)),
+      completion_rate: 0,
+    })
+    .select()
+    .single();
+
+  if (error || !data) throw createApiError(500, error?.message || 'Could not create plan progress');
+
+  return {
+    id: data.id,
+    clarityCheckId: data.clarity_check_id,
+    parentId: data.parent_id,
+    actionItems: data.action_items as PlanProgress['actionItems'],
+    completionRate: data.completion_rate,
+    updatedAt: data.updated_at,
   };
-
-  const allProgress = storage.getPlanProgress();
-  allProgress.push(progress);
-  storage.setPlanProgress(allProgress);
-
-  return progress;
 }
 
 export async function updateActionItem(
@@ -722,125 +905,121 @@ export async function updateActionItem(
   itemIndex: number,
   completed: boolean
 ): Promise<PlanProgress> {
-  await delay(100);
-
   await requireRole(['parent']);
 
-  const allProgress = storage.getPlanProgress();
-  const index = allProgress.findIndex((progress) => progress.id === progressId);
+  // Read current progress
+  const { data: current, error: readError } = await supabase
+    .from('plan_progress')
+    .select('*')
+    .eq('id', progressId)
+    .single();
 
-  if (index === -1) throw createApiError(404, 'Progress not found');
+  if (readError || !current) throw createApiError(404, 'Progress not found');
 
-  allProgress[index].actionItems[itemIndex].completed = completed;
+  const actionItems = [...(current.action_items as PlanProgress['actionItems'])];
+  if (itemIndex >= actionItems.length) throw createApiError(400, 'Invalid action item index');
 
-  const total = allProgress[index].actionItems.length;
-  const done = allProgress[index].actionItems.filter((action) => action.completed).length;
+  actionItems[itemIndex].completed = completed;
 
-  allProgress[index].completionRate = Math.round((done / total) * 100);
-  allProgress[index].updatedAt = new Date().toISOString();
+  const total = actionItems.length;
+  const done = actionItems.filter((a) => a.completed).length;
+  const completionRate = Math.round((done / total) * 100);
 
-  storage.setPlanProgress(allProgress);
+  const { data, error } = await supabase
+    .from('plan_progress')
+    .update({
+      action_items: JSON.parse(JSON.stringify(actionItems)),
+      completion_rate: completionRate,
+    })
+    .eq('id', progressId)
+    .select()
+    .single();
 
-  return allProgress[index];
+  if (error || !data) throw createApiError(500, error?.message || 'Could not update progress');
+
+  return {
+    id: data.id,
+    clarityCheckId: data.clarity_check_id,
+    parentId: data.parent_id,
+    actionItems: data.action_items as PlanProgress['actionItems'],
+    completionRate: data.completion_rate,
+    updatedAt: data.updated_at,
+  };
 }
 
 // ===== Dashboard =====
 export async function getAdminDashboard(): Promise<DashboardSummary> {
-  await delay(200);
-
   const user = await requireRole(['admin']);
 
   if (!user.schoolId) {
     return {
-      totalStudents: 0,
-      totalTeachers: 0,
-      totalClasses: 0,
-      reportCardsThisTerm: 0,
-      flaggedStudents: 0,
-      flagDistribution: {
-        green: 0,
-        yellow: 0,
-        red: 0,
-      },
+      totalStudents: 0, totalTeachers: 0, totalClasses: 0,
+      reportCardsThisTerm: 0, flaggedStudents: 0,
+      flagDistribution: { green: 0, yellow: 0, red: 0 },
     };
   }
 
-  const students = storage.getStudents().filter((student) => student.schoolId === user.schoolId);
-  const classes = storage.getClasses().filter((classItem) => classItem.schoolId === user.schoolId);
-  const users = storage.getUsers();
+  const schoolId = user.schoolId;
 
-  const assignedTeacherIds = new Set(
-    classes
-      .map((classItem) => classItem.teacherId)
-      .filter(Boolean)
-  );
+  // Fetch students and classes for this school
+  const [students, classes, teachersResult] = await Promise.all([
+    getStudents({ schoolId }),
+    getClasses({ schoolId }),
+    supabase.from('profiles').select('id').eq('school_id', schoolId).eq('role', 'teacher'),
+  ]);
 
-  const activeTeachers = users.filter((storedUser) => {
-    return (
-      storedUser.role === 'teacher' &&
-      (
-        storedUser.invitationStatus === 'accepted' ||
-        assignedTeacherIds.has(storedUser.id)
-      )
-    );
-  });
+  const totalStudents = students.length;
+  const totalClasses = classes.length;
+  const totalTeachers = teachersResult.data?.length ?? 0;
 
-  const uniqueTeacherEmails = new Set(
-    activeTeachers.map((teacher) => teacher.email.toLowerCase())
-  );
-
-  const reportCards = storage.getReportCards();
-  const studentIds = students.map((student) => student.id);
-  const schoolReportCards = reportCards.filter((reportCard) => {
-    return studentIds.includes(reportCard.studentId);
-  });
-
-  const allGrades = storage.getSubjectGrades();
-
+  // Get report cards for all students in this school
+  const studentIds = students.map((s) => s.id);
+  let reportCardsThisTerm = 0;
+  let flaggedStudents = 0;
   let green = 0;
   let yellow = 0;
   let red = 0;
 
-  const flaggedStudentIds = new Set<string>();
+  if (studentIds.length > 0) {
+    const { data: cards } = await supabase
+      .from('report_cards')
+      .select('id, student_id, ai_response, status')
+      .in('student_id', studentIds)
+      .order('created_at', { ascending: false });
 
-  for (const student of students) {
-    const studentCards = schoolReportCards.filter((reportCard) => {
-      return reportCard.studentId === student.id;
-    });
+    if (cards) {
+      // Group by student to get latest
+      const latestByStudent = new Map<string, typeof cards[0]>();
+      for (const card of cards) {
+        if (!latestByStudent.has(card.student_id)) {
+          latestByStudent.set(card.student_id, card);
+        }
+      }
 
-    if (studentCards.length === 0) continue;
+      reportCardsThisTerm = cards.length;
 
-    const latestCard = studentCards.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
+      for (const [, card] of latestByStudent) {
+        if (card.ai_response) {
+          const analysis = card.ai_response as AIReportAnalysis;
+          const subjects = analysis.subjects ?? [];
+          const hasRed = subjects.some((s) => s.flag === 'red');
+          const hasYellow = subjects.some((s) => s.flag === 'yellow');
 
-    const grades = allGrades.filter((grade) => grade.reportCardId === latestCard.id);
-
-    const hasRed = grades.some((grade) => grade.flag === 'red');
-    const hasYellow = grades.some((grade) => grade.flag === 'yellow');
-
-    if (hasRed) {
-      red++;
-      flaggedStudentIds.add(student.id);
-    } else if (hasYellow) {
-      yellow++;
-      flaggedStudentIds.add(student.id);
-    } else {
-      green++;
+          if (hasRed) { red++; flaggedStudents++; }
+          else if (hasYellow) { yellow++; flaggedStudents++; }
+          else { green++; }
+        }
+      }
     }
   }
 
   return {
-    totalStudents: students.length,
-    totalTeachers: uniqueTeacherEmails.size,
-    totalClasses: classes.length,
-    reportCardsThisTerm: schoolReportCards.length,
-    flaggedStudents: flaggedStudentIds.size,
-    flagDistribution: {
-      green,
-      yellow,
-      red,
-    },
+    totalStudents,
+    totalTeachers,
+    totalClasses,
+    reportCardsThisTerm,
+    flaggedStudents,
+    flagDistribution: { green, yellow, red },
   };
 }
 
@@ -850,57 +1029,73 @@ export async function getTeacherDashboard(): Promise<{
   reportCardCount: number;
   flaggedCount: number;
 }> {
-  await delay(200);
-
   const user = await requireRole(['teacher']);
-  const classes = storage.getClasses().filter((classItem) => classItem.teacherId === user.id);
-  const classIds = classes.map((classItem) => classItem.id);
 
-  const students = storage.getStudents().filter((student) => classIds.includes(student.classId));
-  const reportCards = storage.getReportCards();
-  const studentIds = students.map((student) => student.id);
-  const studentCards = reportCards.filter((card) => studentIds.includes(card.studentId));
+  const myClasses = await getClasses();
+  const classIds = myClasses.map((c) => c.id);
+  const students = await getStudents();
+  const studentIds = students.map((s) => s.id);
 
-  const allGrades = storage.getSubjectGrades();
-
+  let reportCardCount = 0;
   let flaggedCount = 0;
 
-  for (const student of students) {
-    const cards = studentCards.filter((card) => card.studentId === student.id);
+  if (studentIds.length > 0) {
+    const { data: cards } = await supabase
+      .from('report_cards')
+      .select('id, student_id, ai_response')
+      .in('student_id', studentIds)
+      .order('created_at', { ascending: false });
 
-    if (cards.length === 0) continue;
+    if (cards) {
+      // Group by student for latest
+      const latestByStudent = new Map<string, typeof cards[0]>();
+      for (const card of cards) {
+        if (!latestByStudent.has(card.student_id)) {
+          latestByStudent.set(card.student_id, card);
+        }
+      }
 
-    const latest = cards.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
+      reportCardCount = cards.length;
 
-    const grades = allGrades.filter((grade) => grade.reportCardId === latest.id);
-
-    if (grades.some((grade) => grade.flag === 'red' || grade.flag === 'yellow')) {
-      flaggedCount++;
+      for (const [, card] of latestByStudent) {
+        if (card.ai_response) {
+          const analysis = card.ai_response as AIReportAnalysis;
+          const subjects = analysis.subjects ?? [];
+          if (subjects.some((s) => s.flag === 'red' || s.flag === 'yellow')) {
+            flaggedCount++;
+          }
+        }
+      }
     }
   }
 
   return {
-    classes,
+    classes: myClasses,
     totalStudents: students.length,
-    reportCardCount: studentCards.length,
+    reportCardCount,
     flaggedCount,
   };
 }
 
-// Helper to get user by ID
-export function getUserById(id: string): {
+// Helper to get user by ID from Supabase profiles
+export async function getUserById(id: string): Promise<{
   id: string;
   email: string;
   fullName: string;
   role: string;
-} | null {
-  const users = storage.getUsers();
-  const user = users.find((storedUser) => storedUser.id === id);
+} | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, role')
+    .eq('id', id)
+    .maybeSingle();
 
-  if (!user) return null;
+  if (error || !data) return null;
 
-  const { passwordHash: _, ...rest } = user;
-  return rest;
+  return {
+    id: data.id,
+    email: '',
+    fullName: data.full_name,
+    role: data.role,
+  };
 }

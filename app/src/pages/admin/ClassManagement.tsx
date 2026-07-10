@@ -3,15 +3,17 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, X, Users, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getClasses, createClass, createSchool, getUserById } from '@/api/data';
-import { storage } from '@/api/storage';
-import type { Class, User } from '@/types';
+import { getClasses, createClass, createSchool, getUserById, getStudents, getReportCards } from '@/api/data';
+import { supabase } from '@/lib/supabase';
+import type { Class } from '@/types';
 
 export default function ClassManagement() {
   const { user } = useAuth();
 
   const [classes, setClasses] = useState<Class[]>([]);
-  const [teachers, setTeachers] = useState<User[]>([]);
+  const [teachers, setTeachers] = useState<{ id: string; fullName: string }[]>([]);
+  const [classStats, setClassStats] = useState<Record<string, { studentCount: number; reportCount: number }>>({});
+  const [teacherNames, setTeacherNames] = useState<Record<string, string>>({});
   const [showModal, setShowModal] = useState(false);
 
   const [grade, setGrade] = useState(1);
@@ -22,39 +24,45 @@ export default function ClassManagement() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    loadClasses();
-    loadTeachers();
+    loadData();
   }, [user]);
 
-  const loadClasses = async () => {
+  const loadData = async () => {
     const allClasses = await getClasses();
     setClasses(allClasses);
-  };
 
-  const loadTeachers = () => {
-    const users = storage.getUsers();
+    // Load teachers from profiles
+    if (user?.schoolId) {
+      const { data: teacherProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('role', 'teacher')
+        .eq('school_id', user.schoolId);
 
-    const currentAdmin = users.find((storedUser) => storedUser.id === user?.id);
-    const currentSchoolId = currentAdmin?.schoolId || user?.schoolId;
+      // Get already assigned teacher IDs
+      const assignedIds = new Set(allClasses.map(c => c.teacherId).filter(Boolean));
 
-    const allClasses = storage.getClasses();
-
-    const alreadyAssignedTeacherIds = new Set(
-      allClasses
-        .map((classItem) => classItem.teacherId)
-        .filter(Boolean)
-    );
-
-    const acceptedTeachersForSchool = users.filter((teacher) => {
-      return (
-        teacher.role === 'teacher' &&
-        teacher.invitationStatus === 'accepted' &&
-        teacher.schoolId === currentSchoolId &&
-        !alreadyAssignedTeacherIds.has(teacher.id)
+      setTeachers(
+        (teacherProfiles ?? [])
+          .filter(t => !assignedIds.has(t.id))
+          .map(t => ({ id: t.id, fullName: t.full_name }))
       );
-    });
 
-    setTeachers(acceptedTeachersForSchool);
+      // Build teacher name map
+      const nameMap: Record<string, string> = {};
+      for (const t of teacherProfiles ?? []) {
+        nameMap[t.id] = t.full_name;
+      }
+      setTeacherNames(nameMap);
+    }
+
+    // Precompute stats for each class
+    const statsMap: Record<string, { studentCount: number; reportCount: number }> = {};
+    await Promise.all(allClasses.map(async (cls) => {
+      const students = await getStudents({ classId: cls.id });
+      statsMap[cls.id] = { studentCount: students.length, reportCount: 0 };
+    }));
+    setClassStats(statsMap);
   };
 
   const resetForm = () => {
@@ -67,7 +75,6 @@ export default function ClassManagement() {
 
   const openModal = () => {
     resetForm();
-    loadTeachers();
     setShowModal(true);
   };
 
@@ -101,23 +108,12 @@ export default function ClassManagement() {
       });
 
       closeModal();
-      await loadClasses();
-      loadTeachers();
+      await loadData();
     } catch (err: any) {
       setError(err?.message || 'Unable to create class. Please try again.');
     } finally {
       setCreating(false);
     }
-  };
-
-  const getClassStats = (classId: string) => {
-    const students = storage.getStudents().filter((student) => student.classId === classId);
-    const reports = storage.getReportCards().filter((report) => report.classId === classId);
-
-    return {
-      studentCount: students.length,
-      reportCount: reports.length,
-    };
   };
 
   return (
@@ -146,8 +142,7 @@ export default function ClassManagement() {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {classes.map((classItem, index) => {
-          const stats = getClassStats(classItem.id);
-          const teacher = getUserById(classItem.teacherId);
+          const stats = classStats[classItem.id] || { studentCount: 0, reportCount: 0 };
 
           return (
             <motion.div
@@ -166,7 +161,7 @@ export default function ClassManagement() {
               </p>
 
               <p className="font-body text-sm text-medium-gray mb-4">
-                Teacher: {teacher?.fullName || 'Not assigned'}
+                Teacher: {teacherNames[classItem.teacherId] || 'Not assigned'}
               </p>
 
               <div className="grid grid-cols-2 gap-3">
@@ -272,7 +267,7 @@ export default function ClassManagement() {
 
                     {teachers.map((teacher) => (
                       <option key={teacher.id} value={teacher.id}>
-                        {teacher.fullName} - {teacher.email}
+                        {teacher.fullName}
                       </option>
                     ))}
                   </select>

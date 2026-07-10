@@ -3,8 +3,8 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
 import { Users, FileText, AlertTriangle, BarChart3, ArrowRight, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getTeacherDashboard, getStudents, getClasses, getTeacherNotes, addTeacherNote } from '@/api/data';
-import { storage } from '@/api/storage';
+import { getTeacherDashboard, getStudents, getClasses, getTeacherNotes, addTeacherNote, getReportCards, getSubjectGrades } from '@/api/data';
+import { supabase } from '@/lib/supabase';
 import FlagBadge from '@/components/shared/FlagBadge';
 import CountUp from '@/components/shared/CountUp';
 import SparkleBurst from '@/components/shared/SparkleBurst';
@@ -33,6 +33,7 @@ export default function TeacherDashboard() {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [classCount, setClassCount] = useState(0);
+  const [flagMap, setFlagMap] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentGrades, setStudentGrades] = useState<SubjectGrade[]>([]);
@@ -53,36 +54,52 @@ export default function TeacherDashboard() {
     async function load() {
       if (!user || inviteStatus !== 'accepted') return;
 
-      const dashboardStats = await getTeacherDashboard();
+      const [dashboardStats, allStudents, myClasses] = await Promise.all([
+        getTeacherDashboard(),
+        getStudents(),
+        getClasses(),
+      ]);
       setStats(dashboardStats);
-
-      const allStudents = await getStudents();
-      const myClasses = await getClasses();
       setClassCount(myClasses.length);
       const myClassIds = myClasses.map(c => c.id);
-      setStudents(allStudents.filter(s => myClassIds.includes(s.classId)));
+      const filtered = allStudents.filter(s => myClassIds.includes(s.classId));
+      setStudents(filtered);
+
+      // Precompute flags
+      const flags: Record<string, string> = {};
+      await Promise.all(filtered.map(async (s) => {
+        flags[s.id] = await getStudentFlag(s.id);
+      }));
+      setFlagMap(flags);
     }
 
     load();
   }, [user, inviteStatus]);
 
-  const acceptInvite = () => {
+  const acceptInvite = async () => {
     if (!user) return;
 
-    const users = storage.getUsers();
-    const index = users.findIndex((storedUser) => storedUser.id === user.id);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ invitation_status: 'accepted' })
+      .eq('id', user.id);
 
-    if (index === -1) return;
+    if (!error) {
+      setInviteStatus('accepted');
+    }
+  };
 
-    users[index] = {
-      ...users[index],
-      invitationStatus: 'accepted',
-      updatedAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-    };
-
-    storage.setUsers(users);
-    setInviteStatus('accepted');
+  const getStudentFlag = async (studentId: string) => {
+    try {
+      const cards = await getReportCards({ studentId });
+      if (!cards.length) return 'green' as const;
+      const grades = await getSubjectGrades(cards[0].id);
+      if (grades.some((grade) => grade.flag === 'red')) return 'red';
+      if (grades.some((grade) => grade.flag === 'yellow')) return 'yellow';
+      return 'green';
+    } catch {
+      return 'green';
+    }
   };
 
   const filteredStudents = students.filter((student) =>
@@ -90,38 +107,13 @@ export default function TeacherDashboard() {
     student.rollNumber.includes(search)
   );
 
-  const getStudentFlag = (studentId: string) => {
-    const cards = storage.getReportCards().filter((report) => report.studentId === studentId);
-
-    if (!cards.length) return 'green' as const;
-
-    const latest = cards.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
-
-    const grades = storage.getSubjectGrades().filter(
-      (grade) => grade.reportCardId === latest.id
-    );
-
-    if (grades.some((grade) => grade.flag === 'red')) return 'red';
-    if (grades.some((grade) => grade.flag === 'yellow')) return 'yellow';
-
-    return 'green';
-  };
-
   const openStudentPanel = async (student: Student) => {
     setSelectedStudent(student);
 
-    const cards = storage.getReportCards().filter((report) => report.studentId === student.id);
-
+    const cards = await getReportCards({ studentId: student.id });
     if (cards.length > 0) {
-      const latest = cards.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )[0];
-
-      setStudentGrades(
-        storage.getSubjectGrades().filter((grade) => grade.reportCardId === latest.id)
-      );
+      const grades = await getSubjectGrades(cards[0].id);
+      setStudentGrades(grades);
     }
 
     const notes = await getTeacherNotes(student.id);
@@ -144,10 +136,10 @@ export default function TeacherDashboard() {
 
   const watchList = [...students]
     .sort((a, b) => {
-      const firstFlag = getStudentFlag(a.id) === 'red' ? 2 : getStudentFlag(a.id) === 'yellow' ? 1 : 0;
-      const secondFlag = getStudentFlag(b.id) === 'red' ? 2 : getStudentFlag(b.id) === 'yellow' ? 1 : 0;
-
-      return secondFlag - firstFlag;
+      const firstFlag = flagMap[a.id];
+      const secondFlag = flagMap[b.id];
+      const rank = (f: string) => f === 'red' ? 2 : f === 'yellow' ? 1 : 0;
+      return rank(secondFlag) - rank(firstFlag);
     })
     .slice(0, 5);
 
@@ -263,7 +255,7 @@ export default function TeacherDashboard() {
 
                   <tbody>
                     {filteredStudents.map((student) => {
-                      const flag = getStudentFlag(student.id);
+                      const flag = flagMap[student.id];
 
                       return (
                         <motion.tr
@@ -295,7 +287,7 @@ export default function TeacherDashboard() {
                           </td>
 
                           <td className="py-3 px-4">
-                            <FlagBadge flag={flag} size="sm" />
+                            <FlagBadge flag={flag || 'green'} size="sm" />
                           </td>
                         </motion.tr>
                       );
@@ -320,7 +312,7 @@ export default function TeacherDashboard() {
 
               <div className="space-y-3">
                 {watchList.map((student) => {
-                  const flag = getStudentFlag(student.id);
+                  const flag = flagMap[student.id];
 
                   return (
                     <motion.div

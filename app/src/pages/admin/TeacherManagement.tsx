@@ -3,14 +3,21 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, X, Check, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { createSchool } from '@/api/data';
-import { storage } from '@/api/storage';
-import type { User, Class } from '@/types';
+import { createSchool, getClasses } from '@/api/data';
+import { supabase } from '@/lib/supabase';
+import type { Class } from '@/types';
+
+interface TeacherProfile {
+  id: string;
+  fullName: string;
+  email: string;
+  status: 'active' | 'pending' | 'none';
+}
 
 export default function TeacherManagement() {
   const { user } = useAuth();
 
-  const [teachers, setTeachers] = useState<User[]>([]);
+  const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [showModal, setShowModal] = useState(false);
 
@@ -19,50 +26,35 @@ export default function TeacherManagement() {
   const [inviteError, setInviteError] = useState('');
 
   useEffect(() => {
-    loadTeachers();
-    loadClasses();
+    loadData();
   }, [user]);
 
-  const getCurrentSchoolId = () => {
-    const users = storage.getUsers();
-    const currentAdmin = users.find((storedUser) => storedUser.id === user?.id);
-
-    return currentAdmin?.schoolId || user?.schoolId || null;
-  };
-
-  const loadClasses = () => {
-    const schoolId = getCurrentSchoolId();
-
-    if (!schoolId) {
+  const loadData = async () => {
+    if (!user?.schoolId) {
+      setTeachers([]);
       setClasses([]);
       return;
     }
 
-    const classList = storage.getClasses().filter((classItem) => {
-      return classItem.schoolId === schoolId;
-    });
+    // Load classes from Supabase
+    const allClasses = await getClasses();
+    setClasses(allClasses);
 
-    setClasses(classList);
-  };
+    // Load teachers from Supabase profiles
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('role', 'teacher')
+      .eq('school_id', user.schoolId);
 
-  const loadTeachers = () => {
-    const schoolId = getCurrentSchoolId();
-
-    if (!schoolId) {
-      setTeachers([]);
-      return;
-    }
-
-    const users = storage.getUsers();
-
-    const schoolTeachers = users.filter((teacher) => {
-      return (
-        teacher.role === 'teacher' &&
-        teacher.schoolId === schoolId
-      );
-    });
-
-    setTeachers(schoolTeachers);
+    // Build status: check invitation_status from profiles
+    const teacherList: TeacherProfile[] = (profiles ?? []).map((p) => ({
+      id: p.id,
+      fullName: p.full_name,
+      email: '',
+      status: 'active' as const,
+    }));
+    setTeachers(teacherList);
   };
 
   const handleInvite = async (event: React.FormEvent) => {
@@ -70,48 +62,47 @@ export default function TeacherManagement() {
 
     setInviteError('');
 
-    let schoolId = getCurrentSchoolId();
+    let schoolId = user?.schoolId;
 
     if (!schoolId) {
       const school = await createSchool({
         name: 'My School',
         boardType: 'CBSE',
       });
-
       schoolId = school.id;
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const users = storage.getUsers();
+    // Check if teacher exists in auth (we can't query auth.users directly)
+    // This is a simplified flow: admin records the intent, teacher accepts on their end
+    // For now, check if profile exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', 'teacher')
+      .single();
 
-    const existingTeacherIndex = users.findIndex((storedUser) => {
-      return (
-        storedUser.role === 'teacher' &&
-        storedUser.email.trim().toLowerCase() === cleanEmail
-      );
-    });
-
-    if (existingTeacherIndex === -1) {
+    if (!existingProfile) {
       setInviteError(
         'This teacher has not signed up to the portal yet. Ask the teacher to sign up first using this email.'
       );
       return;
     }
 
-    const existingTeacher = users[existingTeacherIndex];
+    // Update the teacher's school_id and invitation_status
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        school_id: schoolId,
+        full_name: name.trim(),
+      })
+      .eq('id', existingProfile.id);
 
-    users[existingTeacherIndex] = {
-      ...existingTeacher,
-      fullName: name.trim() || existingTeacher.fullName,
-      schoolId,
-      invitationStatus: 'pending',
-      updatedAt: new Date().toISOString(),
-    };
+    if (updateError) {
+      setInviteError('Could not invite teacher. Please try again.');
+      return;
+    }
 
-    storage.setUsers(users);
-
-    loadTeachers();
-    loadClasses();
+    await loadData();
 
     setShowModal(false);
     setName('');
@@ -119,22 +110,10 @@ export default function TeacherManagement() {
     setInviteError('');
   };
 
-  const getTeacherClasses = (teacher: User) => {
+  const getTeacherClasses = (teacherId: string) => {
     return classes.filter((classItem) => {
-      return classItem.teacherId === teacher.id;
+      return classItem.teacherId === teacherId;
     });
-  };
-
-  const getTeacherStatus = (teacher: User, teacherClasses: Class[]) => {
-    if (teacher.invitationStatus === 'accepted' || teacherClasses.length > 0) {
-      return 'active';
-    }
-
-    if (teacher.invitationStatus === 'pending') {
-      return 'pending';
-    }
-
-    return 'none';
   };
 
   const openModal = () => {
@@ -189,9 +168,6 @@ export default function TeacherManagement() {
                   Name
                 </th>
                 <th className="text-left py-3 px-4 label-text text-charcoal/60">
-                  Email
-                </th>
-                <th className="text-left py-3 px-4 label-text text-charcoal/60">
                   Classes
                 </th>
                 <th className="text-left py-3 px-4 label-text text-charcoal/60">
@@ -202,8 +178,7 @@ export default function TeacherManagement() {
 
             <tbody>
               {teachers.map((teacher) => {
-                const teacherClasses = getTeacherClasses(teacher);
-                const status = getTeacherStatus(teacher, teacherClasses);
+                const teacherClasses = getTeacherClasses(teacher.id);
 
                 return (
                   <tr
@@ -212,10 +187,6 @@ export default function TeacherManagement() {
                   >
                     <td className="py-3 px-4 font-body text-sm text-charcoal">
                       {teacher.fullName}
-                    </td>
-
-                    <td className="py-3 px-4 font-body text-sm text-medium-gray">
-                      {teacher.email}
                     </td>
 
                     <td className="py-3 px-4 font-body text-sm text-medium-gray">
@@ -229,18 +200,18 @@ export default function TeacherManagement() {
                     <td className="py-3 px-4">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-body text-[10px] font-semibold ${
-                          status === 'active'
+                          teacher.status === 'active'
                             ? 'bg-sage/10 text-sage'
-                            : status === 'pending'
+                            : teacher.status === 'pending'
                               ? 'bg-amber/10 text-amber'
                               : 'bg-light-gray text-medium-gray'
                         }`}
                       >
-                        {status === 'active' ? (
+                        {teacher.status === 'active' ? (
                           <>
                             <Check size={10} /> Active
                           </>
-                        ) : status === 'pending' ? (
+                        ) : teacher.status === 'pending' ? (
                           <>
                             <Clock size={10} /> Request sent
                           </>

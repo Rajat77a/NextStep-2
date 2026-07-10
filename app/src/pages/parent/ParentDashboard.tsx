@@ -3,11 +3,10 @@ import { motion } from 'framer-motion';
 import TransitionLink from '@/components/shared/TransitionLink';
 import { Upload, MessageCircle, HelpCircle, Calendar, TrendingUp, ArrowRight, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getStudents, getReportCards, getClarityCheck, getPlanProgress } from '@/api/data';
+import { getStudents, getReportCards, getClarityCheck, getPlanProgress, getSubjectGrades } from '@/api/data';
 import FlagBadge from '@/components/shared/FlagBadge';
 import SparkleBurst from '@/components/shared/SparkleBurst';
 import type { Student, ReportCard, ClarityCheck, SubjectGrade } from '@/types';
-import { storage } from '@/api/storage';
 
 const springEasing = [0.22, 1, 0.36, 1] as const;
 
@@ -40,7 +39,7 @@ export default function ParentDashboard() {
           if (cards.length > 0) {
             const check = await getClarityCheck(cards[0].id);
             setLatestCheck(check);
-            const grades = storage.getSubjectGrades().filter(g => g.reportCardId === cards[0].id);
+            const grades = await getSubjectGrades(cards[0].id);
             setLatestGrades(grades);
             if (check) {
               const prog = await getPlanProgress(check.id);
@@ -154,7 +153,7 @@ export default function ParentDashboard() {
             ) : (
               <div className="space-y-3">
                 {reportCards.slice(0, 3).map((card, ci) => {
-                  const grades = storage.getSubjectGrades().filter(g => g.reportCardId === card.id);
+                  const grades = latestGrades;
                   const fc = { green: grades.filter(g => g.flag === 'green').length, yellow: grades.filter(g => g.flag === 'yellow').length, red: grades.filter(g => g.flag === 'red').length };
                   return (
                     <motion.div key={card.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35, delay: 0.15 + ci * 0.06 }} whileTap={{ scale: 0.98 }}>
