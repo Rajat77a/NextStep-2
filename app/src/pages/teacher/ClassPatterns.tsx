@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
 import { ArrowLeft, BookOpen } from 'lucide-react';
@@ -8,22 +9,26 @@ import type { Class } from '@/types';
 
 export default function ClassPatterns() {
   const { user } = useAuth();
+  const location = useLocation();
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [patternData, setPatternData] = useState<{ subject: string; green: number; yellow: number; red: number }[]>([]);
+
+  const preselectedClassId = (location.state as any)?.classId;
 
   useEffect(() => {
     async function load() {
       if (!user) return;
       const cls = await getClasses();
       setClasses(cls);
-      if (cls.length > 0) {
-        setSelectedClass(cls[0].id);
-        analyzeClass(cls[0].id);
+      const target = preselectedClassId && cls.find(c => c.id === preselectedClassId) ? preselectedClassId : cls[0]?.id;
+      if (target) {
+        setSelectedClass(target);
+        analyzeClass(target);
       }
     }
     load();
-  }, [user]);
+  }, [user, preselectedClassId]);
 
   const analyzeClass = async (classId: string) => {
     const students = await getStudents({ classId });

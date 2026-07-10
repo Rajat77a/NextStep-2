@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, FileText, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Users, FileText, BarChart3, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getClasses, getStudents, getReportCards, getSubjectGrades } from '@/api/data';
 import FlagBadge from '@/components/shared/FlagBadge';
@@ -9,6 +10,7 @@ import type { Class, Student } from '@/types';
 
 export default function TeacherClasses() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [classes, setClasses] = useState<Class[]>([]);
   const [studentsByClass, setStudentsByClass] = useState<Record<string, Student[]>>({});
 
@@ -111,6 +113,13 @@ export default function TeacherClasses() {
                 })}
                 {students.length > 3 && <p className="font-body text-xs text-medium-gray">+{students.length - 3} more students</p>}
               </div>
+
+              <button
+                onClick={() => navigate('/teacher/patterns', { state: { classId: cls.id } })}
+                className="mt-4 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-light-gray font-body text-xs font-medium text-medium-gray hover:border-coral/40 hover:text-coral hover:bg-coral/[0.03] transition-all"
+              >
+                <TrendingUp size={13} /> View Patterns
+              </button>
             </motion.div>
           );
         })}
