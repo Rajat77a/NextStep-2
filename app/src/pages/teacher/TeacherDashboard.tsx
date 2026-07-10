@@ -37,9 +37,12 @@ export default function TeacherDashboard() {
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentGrades, setStudentGrades] = useState<SubjectGrade[]>([]);
+  const [gradeTrends, setGradeTrends] = useState<Record<string, 'up' | 'down' | 'stable'>>({});
   const [studentNotes, setStudentNotes] = useState<TeacherNote[]>([]);
   const [noteText, setNoteText] = useState('');
   const [showPanel, setShowPanel] = useState(false);
+  const [quickNoteStudentId, setQuickNoteStudentId] = useState<string | null>(null);
+  const [quickNoteText, setQuickNoteText] = useState('');
 
   const [inviteStatus, setInviteStatus] = useState<InviteStatus>(
     (user?.invitationStatus as InviteStatus) || 'none'
@@ -114,11 +117,37 @@ export default function TeacherDashboard() {
     if (cards.length > 0) {
       const grades = await getSubjectGrades(cards[0].id);
       setStudentGrades(grades);
+
+      // Compute trends by comparing with previous report card
+      if (cards.length > 1) {
+        const prevGrades = await getSubjectGrades(cards[1].id);
+        const trends: Record<string, 'up' | 'down' | 'stable'> = {};
+        for (const g of grades) {
+          const prev = prevGrades.find(p => p.subjectName === g.subjectName);
+          if (!prev) { trends[g.subjectName] = 'stable'; continue; }
+          const diff = g.normalizedScore - prev.normalizedScore;
+          trends[g.subjectName] = diff > 5 ? 'up' : diff < -5 ? 'down' : 'stable';
+        }
+        setGradeTrends(trends);
+      } else {
+        setGradeTrends({});
+      }
     }
 
     const notes = await getTeacherNotes(student.id);
     setStudentNotes(notes);
     setShowPanel(true);
+  };
+
+  const handleQuickNote = async () => {
+    if (!quickNoteStudentId || !quickNoteText.trim()) return;
+    try {
+      await addTeacherNote({ studentId: quickNoteStudentId, note: quickNoteText });
+      setQuickNoteStudentId(null);
+      setQuickNoteText('');
+    } catch {
+      alert('Failed to save note.');
+    }
   };
 
   const handleAddNote = async () => {
@@ -223,6 +252,30 @@ export default function TeacherDashboard() {
             </div>
           </motion.div>
 
+          {/* Flagged students banner */}
+          {stats.flaggedCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.14 }}
+              className="bg-amber/[0.06] border border-amber/20 rounded-2xl p-4 mb-6 flex items-center gap-3"
+            >
+              <AlertTriangle size={18} className="text-amber shrink-0" />
+              <p className="font-body text-sm text-charcoal">
+                <span className="font-semibold">{stats.flaggedCount}</span> student{stats.flaggedCount !== 1 ? 's' : ''} flagged —{' '}
+                <span
+                  onClick={() => {
+                    const el = document.getElementById('student-table');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-coral underline cursor-pointer hover:no-underline"
+                >
+                  Review now
+                </span>
+              </p>
+            </motion.div>
+          )}
+
           <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: springEasing, delay: 0.14 }} className="bg-white rounded-2xl shadow-card p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
@@ -242,7 +295,7 @@ export default function TeacherDashboard() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" id="student-table">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-light-gray">
@@ -266,8 +319,17 @@ export default function TeacherDashboard() {
                             flag === 'red' ? 'bg-coral/[0.02]' : ''
                           }`}
                         >
-                          <td className="py-3 px-4 font-body text-sm text-charcoal">
-                            {student.fullName}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setQuickNoteStudentId(student.id); setQuickNoteText(''); }}
+                                className="w-6 h-6 rounded-full bg-cream hover:bg-coral/10 hover:text-coral flex items-center justify-center text-xs text-medium-gray transition-colors"
+                                title="Quick note"
+                              >
+                                +
+                              </button>
+                              <span className="font-body text-sm text-charcoal">{student.fullName}</span>
+                            </div>
                           </td>
 
                           <td className="py-3 px-4 font-body text-sm text-medium-gray">
@@ -398,23 +460,29 @@ export default function TeacherDashboard() {
                   </div>
 
                   <div className="space-y-3 mb-6">
-                    {studentGrades.map((grade) => (
-                      <div
-                        key={grade.id}
-                        className="flex items-center justify-between p-3 bg-cream rounded-xl"
-                      >
-                        <span className="font-body text-sm text-charcoal">
-                          {grade.subjectName}
-                        </span>
-
-                        <div className="flex items-center gap-2">
-                          <span className="font-body text-sm text-medium-gray">
-                            {grade.grade}
+                    {studentGrades.map((grade) => {
+                      const trend = gradeTrends[grade.subjectName];
+                      return (
+                        <div
+                          key={grade.id}
+                          className="flex items-center justify-between p-3 bg-cream rounded-xl"
+                        >
+                          <span className="font-body text-sm text-charcoal flex items-center gap-1.5">
+                            {trend === 'up' && <span className="text-sage text-xs" title="Improved">▲</span>}
+                            {trend === 'down' && <span className="text-coral text-xs" title="Declined">▼</span>}
+                            {trend === 'stable' && <span className="text-medium-gray text-xs" title="Stable">●</span>}
+                            {grade.subjectName}
                           </span>
-                          <FlagBadge flag={grade.flag} size="sm" />
+
+                          <div className="flex items-center gap-2">
+                            <span className="font-body text-sm text-medium-gray">
+                              {grade.grade}
+                            </span>
+                            <FlagBadge flag={grade.flag} size="sm" />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="mb-4">
@@ -455,6 +523,55 @@ export default function TeacherDashboard() {
                       Parent insights are private. You can see class-level patterns only.
                     </p>
                   </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Quick Note Dialog */}
+          {quickNoteStudentId && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div
+                className="absolute inset-0 bg-charcoal/30 backdrop-blur-sm"
+                onClick={() => setQuickNoteStudentId(null)}
+              />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="relative bg-white rounded-2xl shadow-modal p-6 w-full max-w-sm"
+              >
+                <h4 className="font-display text-lg text-charcoal mb-4">
+                  Quick Note
+                </h4>
+                <p className="font-body text-sm text-medium-gray mb-3">
+                  {students.find(s => s.id === quickNoteStudentId)?.fullName}
+                </p>
+                <textarea
+                  value={quickNoteText}
+                  onChange={(e) => setQuickNoteText(e.target.value)}
+                  placeholder="Type your note..."
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-[10px] border border-light-gray bg-cream font-body text-sm focus:border-coral outline-none resize-none mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setQuickNoteStudentId(null)}
+                    className="flex-1 py-2.5 rounded-[10px] border border-light-gray font-body text-sm text-charcoal hover:bg-cream transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleQuickNote}
+                    disabled={!quickNoteText.trim()}
+                    className="flex-1 py-2.5 rounded-[10px] bg-coral text-white font-body text-sm hover:bg-coral-dark transition-all disabled:opacity-50"
+                  >
+                    Save Note
+                  </button>
                 </div>
               </motion.div>
             </motion.div>

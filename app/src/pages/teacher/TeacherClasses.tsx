@@ -79,7 +79,33 @@ export default function TeacherClasses() {
               transition={{ delay: 0.1 + i * 0.1 }}
               className="bg-white rounded-2xl shadow-card p-6"
             >
-              <h3 className="font-display text-xl text-charcoal mb-1">Grade {cls.grade}</h3>
+              <div className="flex items-start justify-between mb-1">
+                <h3 className="font-display text-xl text-charcoal">Grade {cls.grade}</h3>
+                {stats.studentCount > 0 && (() => {
+                  const health = Math.round(((stats.studentCount - stats.flagged) / stats.studentCount) * 100);
+                  const color = health >= 80 ? '#7A9B8A' : health >= 50 ? '#D4A03A' : '#E85D3E';
+                  const r = 16;
+                  const circumference = 2 * Math.PI * r;
+                  const offset = circumference - (health / 100) * circumference;
+                  return (
+                    <div className="relative w-10 h-10 shrink-0" title={`${health}% healthy`}>
+                      <svg viewBox="0 0 40 40" className="w-full h-full -rotate-90">
+                        <circle cx="20" cy="20" r={r} fill="none" stroke="#E8E3DE" strokeWidth="3" />
+                        <motion.circle
+                          cx="20" cy="20" r={r}
+                          fill="none" stroke={color} strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeDasharray={circumference}
+                          initial={{ strokeDashoffset: circumference }}
+                          animate={{ strokeDashoffset: offset }}
+                          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                        />
+                      </svg>
+                      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-body font-bold" style={{ color }}>{health}%</span>
+                    </div>
+                  );
+                })()}
+              </div>
               <p className="label-text text-medium-gray mb-4">Section {cls.section}</p>
 
               <div className="grid grid-cols-3 gap-3 mb-4">
