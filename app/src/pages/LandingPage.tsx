@@ -1083,10 +1083,17 @@ export default function LandingPage() {
   const floatOffset3 = useTransform(pageProgress, [0, 1], ['0px', '-60px']);
   const floatOffset4 = useTransform(pageProgress, [0, 1], ['0px', '100px']);
 
-  // Hero exit transforms
+  // Hero exit transforms — content blurs smoothly as it scrolls up
   const heroExitOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const heroExitBlur = useTransform(scrollYProgress, [0, 1], ['blur(0px)', 'blur(6px)']);
   const heroExitScale = useTransform(scrollYProgress, [0, 1], [1, 0.97]);
+  const heroBlurAmount = useTransform(scrollYProgress, [0.3, 0.95], [0, 3]);
+  const heroExitRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const unsub = heroBlurAmount.on('change', (v) => {
+      if (heroExitRef.current) heroExitRef.current.style.filter = `blur(${v}px)`;
+    });
+    return unsub;
+  }, [heroBlurAmount]);
 
   // Section-scoped exit refs
   const featuresRef = useRef<HTMLDivElement>(null);
@@ -1104,6 +1111,10 @@ export default function LandingPage() {
   // Unique exit transforms per section (maps 0.7→1.0 progress to exit values)
   const featuresExitOpacity = useTransform(featuresProgress, [0.7, 1], [1, 0]);
   const featuresExitX = useTransform(featuresProgress, [0.7, 1], ['0px', '-40px']);
+  // Feature demo card parallax — subtle Y drift as section scrolls
+  const demoParallax0 = useTransform(featuresProgress, [0, 1], ['20px', '-20px']);
+  const demoParallax1 = useTransform(featuresProgress, [0, 1], ['-15px', '15px']);
+  const demoParallax2 = useTransform(featuresProgress, [0, 1], ['25px', '-25px']);
 
   const statsExitOpacity = useTransform(statsProgress, [0.7, 1], [1, 0]);
   const statsExitScale = useTransform(statsProgress, [0.7, 1], [1, 0.92]);
@@ -1120,8 +1131,22 @@ export default function LandingPage() {
   const howItWorksExitY = useTransform(howItWorksProgress, [0.7, 1], ['0px', '60px']);
   const howItWorksExitScale = useTransform(howItWorksProgress, [0.7, 1], [1, 0.95]);
 
+  // Scroll-linked step card entrance — staggered, continuous
+  const step1Opacity = useTransform(howItWorksProgress, [0, 0.3], [0, 1]);
+  const step1Y = useTransform(howItWorksProgress, [0, 0.3], ['30px', '0px']);
+  const step1Scale = useTransform(howItWorksProgress, [0, 0.3], [0.92, 1]);
+  const step2Opacity = useTransform(howItWorksProgress, [0.08, 0.38], [0, 1]);
+  const step2Y = useTransform(howItWorksProgress, [0.08, 0.38], ['30px', '0px']);
+  const step2Scale = useTransform(howItWorksProgress, [0.08, 0.38], [0.92, 1]);
+  const step3Opacity = useTransform(howItWorksProgress, [0.16, 0.46], [0, 1]);
+  const step3Y = useTransform(howItWorksProgress, [0.16, 0.46], ['30px', '0px']);
+  const step3Scale = useTransform(howItWorksProgress, [0.16, 0.46], [0.92, 1]);
+
   const faqExitOpacity = useTransform(faqProgress, [0.7, 1], [1, 0]);
   const faqExitY = useTransform(faqProgress, [0.7, 1], ['0px', '-30px']);
+
+  // Scroll progress bar visibility (fades in after hero)
+  const progressBarOpacity = useTransform(scrollYProgress, [0.5, 0.85], [0, 1]);
 
   const ambientGradient = useTransform(
     pageProgress,
@@ -1218,8 +1243,20 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: '#0a0a0f' }}>
+      {/* Scroll progress bar */}
+      <motion.div
+        aria-hidden="true"
+        className="fixed top-0 left-0 right-0 z-[60] h-[2px] pointer-events-none"
+        style={{
+          scaleX: shouldReduceMotion ? 0 : pageProgress,
+          opacity: progressBarOpacity,
+          transformOrigin: 'left',
+          background: 'linear-gradient(90deg, #E85D3E, #A7BDA5)',
+          boxShadow: '0 0 8px rgba(232,93,62,0.3), 0 0 16px rgba(232,93,62,0.1)',
+          willChange: 'transform',
+        }}
+      />
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${scrolled ? 'bg-[#0a0a0f]/92 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_4px_40px_rgba(0,0,0,0.5)]' : 'bg-[#0a0a0f]/40 backdrop-blur-sm'}`}>
         <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
           <Link to="/" onClick={(e) => { e.preventDefault(); navigateWithTransition('/'); }} className="flex items-baseline gap-1 group">
             <span className="font-display text-xl md:text-2xl font-semibold text-white tracking-tight group-hover:text-coral transition-colors duration-300">NextStep</span>
@@ -1408,13 +1445,13 @@ export default function LandingPage() {
           </>
         )}
 
-        {/* Exit wrapper — blur + fade + scale as user scrolls past */}
+        {/* Exit wrapper — fade + scale + subtle blur as content scrolls up */}
         <motion.div
+          ref={heroExitRef}
           className="relative z-[3] w-full"
           style={shouldReduceMotion ? undefined : {
             opacity: heroExitOpacity,
             scale: heroExitScale,
-            filter: heroExitBlur,
           }}
         >
           <div className="max-w-7xl mx-auto px-5 md:px-12 w-full">
@@ -1593,20 +1630,33 @@ export default function LandingPage() {
               { num: '01', title: 'Upload', desc: "Snap or upload your child's report card. We support all major school boards and formats.", icon: <Upload size={28} /> },
               { num: '02', title: 'AI Analysis', desc: 'Our system reads grades, comments, and patterns. We understand context, not just numbers.', icon: <Brain size={28} /> },
               { num: '03', title: 'Your Plan', desc: 'Get personalized flags, talking points, and a 30-day plan tailored to your child.', icon: <FileText size={28} /> },
-            ].map((step, i) => (
-              <div key={step.num} className="group relative">
-                <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-8 h-full hover:border-white/[0.15] transition-all duration-500">
-                  <div className="flex items-center gap-4 mb-5">
-                    <span className="font-display text-[40px] md:text-[48px] font-semibold leading-none text-white/20">{step.num}</span>
-                    <span className="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center text-white/50">
-                      {step.icon}
-                    </span>
+            ].map((step, i) => {
+              const stepOpacity = [step1Opacity, step2Opacity, step3Opacity][i];
+              const stepTranslateY = [step1Y, step2Y, step3Y][i];
+              const stepCardScale = [step1Scale, step2Scale, step3Scale][i];
+              return (
+                <motion.div
+                  key={step.num}
+                  className="group relative"
+                  style={shouldReduceMotion ? undefined : {
+                    opacity: stepOpacity,
+                    y: stepTranslateY,
+                    scale: stepCardScale,
+                  }}
+                >
+                  <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-8 h-full hover:border-white/[0.15] transition-all duration-500">
+                    <div className="flex items-center gap-4 mb-5">
+                      <span className="font-display text-[40px] md:text-[48px] font-semibold leading-none text-white/20">{step.num}</span>
+                      <span className="w-10 h-10 rounded-lg bg-white/[0.06] flex items-center justify-center text-white/50">
+                        {step.icon}
+                      </span>
+                    </div>
+                    <h3 className="font-display text-2xl font-medium text-white mb-3">{step.title}</h3>
+                    <p className="font-body text-white/60 leading-relaxed">{step.desc}</p>
                   </div>
-                  <h3 className="font-display text-2xl font-medium text-white mb-3">{step.title}</h3>
-                  <p className="font-body text-white/60 leading-relaxed">{step.desc}</p>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       </section>
@@ -1710,7 +1760,10 @@ export default function LandingPage() {
                     ))}
                   </motion.ul>
                 </div>
-                <div className="glass-card-premium overflow-hidden">
+                <motion.div
+                  className="glass-card-premium overflow-hidden"
+                  style={shouldReduceMotion ? undefined : { y: [demoParallax0, demoParallax1, demoParallax2][i] }}
+                >
                   {feature.label === 'CLARITY CHECK' ? (
                     <AnimatedClarityCheck />
                   ) : feature.label === "TONIGHT'S CONVERSATION" ? (
@@ -1718,7 +1771,7 @@ export default function LandingPage() {
                   ) : (
                     <AnimatedDayPlan />
                   )}
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           );
