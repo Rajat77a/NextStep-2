@@ -80,8 +80,9 @@ const portalCards = [
 
 const HERO_VIDEOS = [
   { src: 'https://cdn.pixabay.com/video/2025/04/01/269207_large.mp4', poster: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&h=1080&fit=crop' },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215475_large.mp4', poster: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920&h=1080&fit=crop' },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215471_large.mp4', poster: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1920&h=1080&fit=crop' },
+  { src: 'https://cdn.pixabay.com/video/2022/02/04/106705-673786412_large.mp4', poster: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920&h=1080&fit=crop' },
+  { src: 'https://cdn.pixabay.com/video/2021/01/29/63328-506377472_large.mp4', poster: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1920&h=1080&fit=crop' },
+  { src: 'https://cdn.pixabay.com/video/2020/04/19/36544-411342277_large.mp4', poster: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1920&h=1080&fit=crop' },
 ];
 
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
