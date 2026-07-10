@@ -7,7 +7,7 @@ function createApiError(code: number, message: string, field?: string): ApiError
 
 function buildProfileFromUser(
   supaUser: import('@supabase/supabase-js').User,
-  dbRow?: Record<string, unknown> | null
+  dbRow?: Record<string, any> | null
 ): Omit<User, 'passwordHash'> {
   const meta = supaUser.user_metadata ?? {};
   return {

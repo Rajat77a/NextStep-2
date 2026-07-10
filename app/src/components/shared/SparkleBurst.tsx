@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
@@ -26,17 +25,14 @@ export default function SparkleBurst({
 
   if (!active || prefersReducedMotion) return null;
 
-  const particles = React.useMemo(() =>
-    Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: (Math.random() - 0.5) * 60,
-      y: -(Math.random() * 50 + 20),
-      size: Math.random() * 3 + 2,
-      bg: color || PARTICLE_COLORS[i % PARTICLE_COLORS.length],
-      delay: i * 0.06,
-    })),
-    [count, color]
-  );
+  const particles = Array.from({ length: count }, (_, i) => ({
+    id: i,
+    x: (Math.random() - 0.5) * 60,
+    y: -(Math.random() * 50 + 20),
+    size: Math.random() * 3 + 2,
+    bg: color || PARTICLE_COLORS[i % PARTICLE_COLORS.length],
+    delay: i * 0.06,
+  }));
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-visible" style={{ zIndex: 10 }}>
