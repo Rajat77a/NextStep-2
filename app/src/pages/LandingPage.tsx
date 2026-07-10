@@ -78,32 +78,10 @@ const portalCards = [
   },
 ];
 
-const heroImages = [
-  'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1536337005238-94b997371b40?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1476234251651-f353703a034d?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1920&h=1080&fit=crop',
-  'https://images.unsplash.com/photo-1591123120675-6f7f1aae0e5b?w=1920&h=1080&fit=crop',
-];
-
-const HERO_VIDEOS = [
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215475_large.mp4', poster: heroImages[0] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215472_large.mp4', poster: heroImages[2] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215473_large.mp4', poster: heroImages[4] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215474_large.mp4', poster: heroImages[5] },
-  { src: 'https://cdn.pixabay.com/video/2024/06/06/215471_large.mp4', poster: heroImages[7] },
-  { src: 'https://cdn.pixabay.com/video/2025/04/01/269207_large.mp4', poster: heroImages[8] },
-  { src: 'https://cdn.pixabay.com/video/2015/09/27/846-140823862_large.mp4', poster: heroImages[9] },
-  { src: 'https://cdn.pixabay.com/video/2020/06/30/43459-436106182_large.mp4', poster: heroImages[10] },
-  { src: 'https://cdn.pixabay.com/video/2022/11/28/140807-776043760_large.mp4', poster: heroImages[11] },
-];
+const HERO_VIDEO = {
+  src: 'https://cdn.pixabay.com/video/2025/04/01/269207_large.mp4',
+  poster: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&h=1080&fit=crop',
+};
 
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement | null>(null);
@@ -1011,7 +989,6 @@ export default function LandingPage() {
   const [testimonialPaused, setTestimonialPaused] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [valuePropIdx, setValuePropIdx] = useState(0);
-  const [heroVideoIdx, setHeroVideoIdx] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const valueProps = ['next move', 'insight', 'confidence', 'connection'];
   const testimonialResumeTimer = useRef<number | null>(null);
@@ -1154,25 +1131,7 @@ export default function LandingPage() {
     return () => window.clearInterval(timer);
   }, [shouldReduceMotion, valueProps.length]);
 
-  // Auto-advance hero video every 6s with preload for seamless crossfade
-  useEffect(() => {
-    if (shouldReduceMotion) return;
-    const nextIdx = (heroVideoIdx + 1) % HERO_VIDEOS.length;
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'video';
-    link.href = HERO_VIDEOS[nextIdx].src;
-    document.head.appendChild(link);
-    return () => { if (link.parentNode) link.parentNode.removeChild(link); };
-  }, [heroVideoIdx, shouldReduceMotion]);
 
-  useEffect(() => {
-    if (shouldReduceMotion) return;
-    const timer = window.setInterval(() => {
-      setHeroVideoIdx(prev => (prev + 1) % HERO_VIDEOS.length);
-    }, 6000);
-    return () => window.clearInterval(timer);
-  }, [shouldReduceMotion]);
 
   const pauseTestimonials = () => {
     if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
@@ -1266,28 +1225,22 @@ export default function LandingPage() {
         ref={heroRef}
         className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden bg-charcoal"
       >
-        {/* Video background — cinematic crossfade playlist */}
+        {/* Video background — single loop */}
         <div className="absolute inset-0 overflow-hidden z-0">
-          <AnimatePresence>
-            <motion.video
-              key={heroVideoIdx}
-              autoPlay
-              muted
-              playsInline
-              preload="auto"
-              poster={HERO_VIDEOS[heroVideoIdx].poster}
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{
-                animation: shouldReduceMotion ? 'none' : 'hero-zoom 12s ease-in-out infinite alternate',
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.2, ease: 'easeInOut' }}
-            >
-              <source src={HERO_VIDEOS[heroVideoIdx].src} type="video/mp4" />
-            </motion.video>
-          </AnimatePresence>
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster={HERO_VIDEO.poster}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              animation: shouldReduceMotion ? 'none' : 'hero-zoom 12s ease-in-out infinite alternate',
+            }}
+          >
+            <source src={HERO_VIDEO.src} type="video/mp4" />
+          </video>
         </div>
 
         {/* Cinematic gradient overlays — heavy dark falloff for premium text readability */}
@@ -1466,37 +1419,14 @@ export default function LandingPage() {
                 initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.4 }}
                 className="relative"
               >
-                <GlowTiltCard>
-                  <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-white/[0.08] backdrop-blur-xl border border-white/20 aspect-[4/3] flex items-center justify-center relative">
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-coral/[0.08] via-transparent to-sage/[0.04]" />
-                    <div className="text-center p-8 relative z-[1]">
-                      <motion.div
-                        animate={shouldReduceMotion ? undefined : { scale: [1, 1.06, 1] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                        className="w-20 h-20 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center mx-auto mb-4"
-                      >
-                        <motion.span
-                          animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }}
-                          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          <Heart size={32} className="text-coral" />
-                        </motion.span>
-                      </motion.div>
-                      <p className="font-display text-2xl text-white mb-2 drop-shadow-lg">Every report card tells a story</p>
-                      <p className="font-body text-white/70">We help you read between the grades</p>
-                    </div>
-                  </div>
-                </GlowTiltCard>
+                <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-white/[0.08] backdrop-blur-xl border border-white/20">
+                  <AnimatedClarityCheck />
+                </div>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
-                  className="absolute -bottom-6 -left-6 md:-left-10 bg-white/20 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] p-4 w-[200px]"
+                  className="absolute -bottom-4 -left-4 md:-left-8 bg-white/20 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] px-4 py-3"
                 >
-                  <p className="label-text text-coral mb-2">Clarity Check</p>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sage shadow-[0_0_6px_rgba(122,155,138,0.4)]" /><span className="font-body text-xs text-white/80">Math — On Track</span></div>
-                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber shadow-[0_0_6px_rgba(212,160,58,0.4)]" /><span className="font-body text-xs text-white/80">Science — Watch</span></div>
-                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-coral shadow-[0_0_6px_rgba(232,93,62,0.4)]" /><span className="font-body text-xs text-white/80">English — Address</span></div>
-                  </div>
+                  <p className="label-text text-coral whitespace-nowrap">Live Demo</p>
                 </motion.div>
               </motion.div>
             </div>
