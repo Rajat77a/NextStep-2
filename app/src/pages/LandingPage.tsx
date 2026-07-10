@@ -520,6 +520,145 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
   );
 }
 
+function AmbientHeroCard() {
+  const shouldReduceMotion = useReducedMotion();
+
+  const badges = [
+    { label: 'Math', color: 'text-sage', bg: 'bg-sage/15', delay: 0 },
+    { label: 'Science', color: 'text-amber', bg: 'bg-amber/15', delay: 0.5 },
+    { label: 'English', color: 'text-coral', bg: 'bg-coral/15', delay: 1 },
+    { label: 'Art', color: 'text-sage', bg: 'bg-sage/15', delay: 1.5 },
+    { label: 'Hindi', color: 'text-amber', bg: 'bg-amber/15', delay: 2 },
+  ];
+
+  const orbs = [
+    { size: 180, x: '15%', y: '10%', color: 'rgba(232,93,62,0.12)', delay: 0, duration: 14 },
+    { size: 130, x: '55%', y: '60%', color: 'rgba(167,189,165,0.1)', delay: 2, duration: 18 },
+    { size: 100, x: '70%', y: '15%', color: 'rgba(232,93,62,0.08)', delay: 4, duration: 12 },
+    { size: 80, x: '30%', y: '75%', color: 'rgba(167,189,165,0.08)', delay: 1, duration: 16 },
+  ];
+
+  const stars = Array.from({ length: 8 }, (_, i) => ({
+    top: `${10 + Math.random() * 75}%`,
+    left: `${10 + Math.random() * 75}%`,
+    delay: Math.random() * 3,
+    size: 3 + Math.random() * 4,
+  }));
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.7, delay: 0.4 }}
+      className="relative"
+    >
+      <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-white/[0.08] backdrop-blur-xl border border-white/20 aspect-[4/3] relative">
+        {!shouldReduceMotion && orbs.map((orb, i) => (
+          <motion.div
+            key={i}
+            aria-hidden="true"
+            className="absolute rounded-full"
+            style={{
+              width: orb.size,
+              height: orb.size,
+              top: orb.y,
+              left: orb.x,
+              background: `radial-gradient(circle, ${orb.color}, transparent 70%)`,
+            }}
+            animate={{
+              y: [0, -20, 12, -8, 0],
+              x: [0, 14, -10, 6, 0],
+              scale: [1, 1.08, 0.92, 1.04, 1],
+            }}
+            transition={{
+              duration: orb.duration,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: orb.delay,
+            }}
+          />
+        ))}
+
+        {!shouldReduceMotion && stars.map((star, i) => (
+          <motion.div
+            key={i}
+            aria-hidden="true"
+            className="absolute rounded-full bg-white"
+            style={{
+              top: star.top,
+              left: star.left,
+              width: star.size,
+              height: star.size,
+            }}
+            animate={{
+              opacity: [0, 0.6, 0],
+              scale: [0, 1, 0],
+            }}
+            transition={{
+              duration: 3 + Math.random() * 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: star.delay,
+            }}
+          />
+        ))}
+
+        <div className="absolute inset-0 bg-gradient-to-br from-coral/[0.05] via-transparent to-sage/[0.03]" />
+
+        <div className="relative z-[1] flex flex-col items-center justify-center h-full p-8 text-center">
+          <motion.div
+            animate={shouldReduceMotion ? undefined : { y: [0, -8, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            className="mb-5"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-coral/20 to-coral/5 border border-white/10 backdrop-blur-sm flex items-center justify-center mx-auto shadow-lg">
+              <motion.span
+                animate={shouldReduceMotion ? undefined : { scale: [1, 1.12, 1] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#E85D3E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  <line x1="8" y1="7" x2="16" y2="7" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+              </motion.span>
+            </div>
+          </motion.div>
+
+          <p className="font-display text-xl text-white mb-2 drop-shadow-lg leading-snug">
+            Every report card<br />tells a story
+          </p>
+          <p className="font-body text-sm text-white/60 mb-6 max-w-[220px]">
+            We help you read between the grades
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-2" style={{ maxWidth: 220 }}>
+            {badges.map((badge, i) => (
+              <motion.span
+                key={badge.label}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ delay: badge.delay + 0.5, duration: 0.5, ease: 'easeOut' }}
+                className={`font-body text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.bg} ${badge.color} backdrop-blur-sm border border-white/[0.06]`}
+                whileHover={shouldReduceMotion ? undefined : { scale: 1.12, y: -2 }}
+              >
+                {badge.label}
+              </motion.span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
+        className="absolute -bottom-4 -left-4 md:-left-8 bg-white/20 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] px-4 py-3"
+      >
+        <p className="label-text text-coral whitespace-nowrap">Clarity Check</p>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function AnimatedConversation() {
   const shouldReduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<'idle' | 'typing1' | 'response1' | 'typing2' | 'response2' | 'done'>('idle');
@@ -1419,15 +1558,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.4 }}
                 className="relative"
               >
-                <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-white/[0.08] backdrop-blur-xl border border-white/20">
-                  <AnimatedClarityCheck />
-                </div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
-                  className="absolute -bottom-4 -left-4 md:-left-8 bg-white/20 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] px-4 py-3"
-                >
-                  <p className="label-text text-coral whitespace-nowrap">Live Demo</p>
-                </motion.div>
+                <AmbientHeroCard />
               </motion.div>
             </div>
           </div>
