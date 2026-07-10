@@ -522,13 +522,7 @@ function FloatingMockCard({ children }: { children: ReactNode }) {
 }
 
 function AmbientHeroCard() {
-  const grades = [
-    { subject: 'Mathematics', grade: 'A', color: 'text-sage' },
-    { subject: 'Science', grade: 'B+', color: 'text-amber' },
-    { subject: 'English', grade: 'A-', color: 'text-sage' },
-    { subject: 'Social Studies', grade: 'B', color: 'text-amber' },
-    { subject: 'Hindi', grade: 'A', color: 'text-sage' },
-  ];
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <motion.div
@@ -537,34 +531,38 @@ function AmbientHeroCard() {
       transition={{ duration: 0.7, delay: 0.4 }}
       className="relative"
     >
-      <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.3)] bg-[#0e0e14] border border-white/[0.06]">
-        <div className="p-6 md:p-7">
-          <div className="flex items-center justify-between mb-5 pb-4 border-b border-white/[0.06]">
-            <div>
-              <p className="label-text text-white/40 mb-0.5">Term 2</p>
-              <p className="font-display text-lg text-white font-medium">Progress Report</p>
-            </div>
-            <span className="font-body text-xs text-white/30">Grade 6</span>
-          </div>
-
-          <div className="space-y-3">
-            {grades.map((row) => (
-              <div
-                key={row.subject}
-                className="flex items-center justify-between group"
+      <GlowTiltCard>
+        <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-white/[0.08] backdrop-blur-xl border border-white/20 aspect-[4/3] flex items-center justify-center relative">
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-coral/[0.08] via-transparent to-sage/[0.04]" />
+          <div className="text-center p-8 relative z-[1]">
+            <motion.div
+              animate={shouldReduceMotion ? undefined : { scale: [1, 1.06, 1] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="w-20 h-20 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center mx-auto mb-4"
+            >
+              <motion.span
+                animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <span className="font-body text-sm text-white/70 group-hover:text-white transition-colors duration-200">{row.subject}</span>
-                <span className={`font-display text-base font-semibold ${row.color}`}>{row.grade}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-5 pt-4 border-t border-white/[0.06] flex items-center justify-between">
-            <span className="font-body text-xs text-white/30">GPA</span>
-            <span className="font-display text-sm font-semibold text-white">3.6 / 4.0</span>
+                <Heart size={32} className="text-coral" />
+              </motion.span>
+            </motion.div>
+            <p className="font-display text-2xl text-white mb-2 drop-shadow-lg">Every report card tells a story</p>
+            <p className="font-body text-white/70">We help you read between the grades</p>
           </div>
         </div>
-      </div>
+      </GlowTiltCard>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
+        className="absolute -bottom-6 -left-6 md:-left-10 bg-white/20 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] p-4 w-[200px]"
+      >
+        <p className="label-text text-coral mb-2">Clarity Check</p>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-sage shadow-[0_0_6px_rgba(122,155,138,0.4)]" /><span className="font-body text-xs text-white/80">Math — On Track</span></div>
+          <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber shadow-[0_0_6px_rgba(212,160,58,0.4)]" /><span className="font-body text-xs text-white/80">Science — Watch</span></div>
+          <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-coral shadow-[0_0_6px_rgba(232,93,62,0.4)]" /><span className="font-body text-xs text-white/80">English — Address</span></div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -1182,6 +1180,17 @@ export default function LandingPage() {
   }, [shouldReduceMotion, valueProps.length]);
 
   // Auto-advance hero video every 7s with smooth crossfade
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const nextIdx = (heroVideoIdx + 1) % HERO_VIDEOS.length;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'video';
+    link.href = HERO_VIDEOS[nextIdx].src;
+    document.head.appendChild(link);
+    return () => { if (link.parentNode) link.parentNode.removeChild(link); };
+  }, [heroVideoIdx, shouldReduceMotion]);
+
   useEffect(() => {
     if (shouldReduceMotion) return;
     const timer = window.setInterval(() => {
