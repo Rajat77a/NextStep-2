@@ -78,10 +78,11 @@ const portalCards = [
   },
 ];
 
-const HERO_VIDEO = {
-  src: 'https://cdn.pixabay.com/video/2025/04/01/269207_large.mp4',
-  poster: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&h=1080&fit=crop',
-};
+const HERO_VIDEOS = [
+  { src: 'https://cdn.pixabay.com/video/2025/04/01/269207_large.mp4', poster: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1920&h=1080&fit=crop' },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215475_large.mp4', poster: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1920&h=1080&fit=crop' },
+  { src: 'https://cdn.pixabay.com/video/2024/06/06/215471_large.mp4', poster: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1920&h=1080&fit=crop' },
+];
 
 function CountUp({ value, suffix = '' }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement | null>(null);
@@ -1060,6 +1061,7 @@ export default function LandingPage() {
   const [testimonialPaused, setTestimonialPaused] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [valuePropIdx, setValuePropIdx] = useState(0);
+  const [heroVideoIdx, setHeroVideoIdx] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const valueProps = ['next move', 'insight', 'confidence', 'connection'];
   const testimonialResumeTimer = useRef<number | null>(null);
@@ -1202,7 +1204,14 @@ export default function LandingPage() {
     return () => window.clearInterval(timer);
   }, [shouldReduceMotion, valueProps.length]);
 
-
+  // Auto-advance hero video every 7s with smooth crossfade
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const timer = window.setInterval(() => {
+      setHeroVideoIdx(prev => (prev + 1) % HERO_VIDEOS.length);
+    }, 7000);
+    return () => window.clearInterval(timer);
+  }, [shouldReduceMotion]);
 
   const pauseTestimonials = () => {
     if (testimonialResumeTimer.current) window.clearTimeout(testimonialResumeTimer.current);
@@ -1296,22 +1305,28 @@ export default function LandingPage() {
         ref={heroRef}
         className="min-h-screen pt-24 md:pt-[72px] flex items-center relative overflow-hidden bg-charcoal"
       >
-        {/* Video background — single loop */}
+        {/* Video background — crossfade playlist */}
         <div className="absolute inset-0 overflow-hidden z-0">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            poster={HERO_VIDEO.poster}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{
-              animation: shouldReduceMotion ? 'none' : 'hero-zoom 12s ease-in-out infinite alternate',
-            }}
-          >
-            <source src={HERO_VIDEO.src} type="video/mp4" />
-          </video>
+          <AnimatePresence>
+            <motion.video
+              key={heroVideoIdx}
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+              poster={HERO_VIDEOS[heroVideoIdx].poster}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{
+                animation: shouldReduceMotion ? 'none' : 'hero-zoom 12s ease-in-out infinite alternate',
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2, ease: 'easeInOut' }}
+            >
+              <source src={HERO_VIDEOS[heroVideoIdx].src} type="video/mp4" />
+            </motion.video>
+          </AnimatePresence>
         </div>
 
         {/* Cinematic gradient overlays — heavy dark falloff for premium text readability */}
