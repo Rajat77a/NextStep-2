@@ -582,12 +582,6 @@ function AmbientHeroCard() {
           </p>
         </div>
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
-        className="absolute -bottom-3 -left-3 md:-left-6 bg-[#1a1a22] border border-white/[0.06] shadow-lg px-3.5 py-2.5"
-      >
-        <p className="label-text text-coral whitespace-nowrap">Clarity</p>
-      </motion.div>
     </motion.div>
   );
 }
