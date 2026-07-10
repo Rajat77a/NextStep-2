@@ -532,13 +532,13 @@ function AmbientHeroCard() {
       className="relative"
     >
       <GlowTiltCard>
-        <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.25)] bg-white/[0.08] backdrop-blur-xl border border-white/20 aspect-[4/3] flex items-center justify-center relative">
+        <div className="rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.3)] bg-[#0e0e14] border border-white/[0.06] aspect-[4/3] flex items-center justify-center relative">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-coral/[0.08] via-transparent to-sage/[0.04]" />
           <div className="text-center p-8 relative z-[1]">
             <motion.div
               animate={shouldReduceMotion ? undefined : { scale: [1, 1.06, 1] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="w-20 h-20 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center mx-auto mb-4"
+              className="w-20 h-20 rounded-full bg-[#1a1a22] border border-white/[0.06] flex items-center justify-center mx-auto mb-4"
             >
               <motion.span
                 animate={shouldReduceMotion ? undefined : { scale: [1, 1.1, 1] }}
@@ -554,7 +554,7 @@ function AmbientHeroCard() {
       </GlowTiltCard>
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
-        className="absolute -bottom-6 -left-6 md:-left-10 bg-white/20 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] p-4 w-[200px]"
+        className="absolute -bottom-6 -left-6 md:-left-10 bg-[#15151c] border border-white/[0.06] rounded-xl shadow-lg p-4 w-[200px]"
       >
         <p className="label-text text-coral mb-2">Clarity Check</p>
         <div className="space-y-1.5">
@@ -1195,7 +1195,7 @@ export default function LandingPage() {
     if (shouldReduceMotion) return;
     const timer = window.setInterval(() => {
       setHeroVideoIdx(prev => (prev + 1) % HERO_VIDEOS.length);
-    }, 7000);
+    }, 5000);
     return () => window.clearInterval(timer);
   }, [shouldReduceMotion]);
 
