@@ -43,16 +43,15 @@ export default function TeacherManagement() {
     // Load teachers from Supabase profiles
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, full_name')
+      .select('id, full_name, invitation_status, email')
       .eq('role', 'teacher')
       .eq('school_id', user.schoolId);
 
-    // Build status: check invitation_status from profiles
     const teacherList: TeacherProfile[] = (profiles ?? []).map((p) => ({
       id: p.id,
       fullName: p.full_name,
-      email: '',
-      status: 'active' as const,
+      email: (p as any).email ?? '',
+      status: (p.invitation_status === 'pending' ? 'pending' : 'active') as 'active' | 'pending',
     }));
     setTeachers(teacherList);
   };
@@ -70,35 +69,22 @@ export default function TeacherManagement() {
         boardType: 'CBSE',
       });
       schoolId = school.id;
-    }
-
-    // Check if teacher exists in auth (we can't query auth.users directly)
-    // This is a simplified flow: admin records the intent, teacher accepts on their end
-    // For now, check if profile exists
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('role', 'teacher')
-      .single();
-
-    if (!existingProfile) {
-      setInviteError(
-        'This teacher has not signed up to the portal yet. Ask the teacher to sign up first using this email.'
-      );
+      window.location.reload();
       return;
     }
 
-    // Update the teacher's school_id and invitation_status
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        school_id: schoolId,
-        full_name: name.trim(),
-      })
-      .eq('id', existingProfile.id);
+    // We can't look up users by email from the client (profiles table has no email column).
+    // The teacher must sign up first. Once they do, their profile appears here.
+    // For now, create a pending profile entry for the teacher.
+    const { error: insertError } = await supabase.from('profiles').insert({
+      full_name: name.trim(),
+      role: 'teacher',
+      school_id: schoolId,
+      invitation_status: 'pending',
+    });
 
-    if (updateError) {
-      setInviteError('Could not invite teacher. Please try again.');
+    if (insertError) {
+      setInviteError('Could not create teacher profile. The teacher may already exist. Ask them to sign up first.');
       return;
     }
 

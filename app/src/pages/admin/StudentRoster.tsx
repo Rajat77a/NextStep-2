@@ -29,10 +29,14 @@ export default function StudentRoster() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addStudent(newStudent);
-    setShowAdd(false);
-    setNewStudent({ fullName: '', rollNumber: '', classId: '', parentName: '', parentEmail: '' });
-    loadData();
+    try {
+      await addStudent(newStudent);
+      setShowAdd(false);
+      setNewStudent({ fullName: '', rollNumber: '', classId: '', parentName: '', parentEmail: '' });
+      loadData();
+    } catch {
+      alert('Failed to add student. Please try again.');
+    }
   };
 
   const handleBulk = async (e: React.FormEvent) => {
@@ -52,9 +56,12 @@ export default function StudentRoster() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to remove this student?')) {
+    if (!confirm('Are you sure you want to remove this student?')) return;
+    try {
       await deleteStudent(id);
       loadData();
+    } catch {
+      alert('Failed to delete student. Please try again.');
     }
   };
 

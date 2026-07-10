@@ -3,7 +3,7 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, X, Users, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getClasses, createClass, createSchool, getUserById, getStudents, getReportCards } from '@/api/data';
+import { getClasses, createClass, createSchool, getStudents, getReportCards } from '@/api/data';
 import { supabase } from '@/lib/supabase';
 import type { Class } from '@/types';
 
@@ -57,10 +57,12 @@ export default function ClassManagement() {
     }
 
     // Precompute stats for each class
+    const allCards = await getReportCards();
     const statsMap: Record<string, { studentCount: number; reportCount: number }> = {};
     await Promise.all(allClasses.map(async (cls) => {
       const students = await getStudents({ classId: cls.id });
-      statsMap[cls.id] = { studentCount: students.length, reportCount: 0 };
+      const reportCount = allCards.filter(c => c.classId === cls.id).length;
+      statsMap[cls.id] = { studentCount: students.length, reportCount };
     }));
     setClassStats(statsMap);
   };
@@ -99,6 +101,9 @@ export default function ClassManagement() {
           name: 'My School',
           boardType: 'CBSE',
         });
+        // Reload so auth picks up the new school_id from the profile
+        window.location.reload();
+        return;
       }
 
       await createClass({

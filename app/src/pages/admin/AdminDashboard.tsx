@@ -3,7 +3,7 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
 import { Users, UserCheck, BookOpen, FileText, AlertTriangle, Plus, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getAdminDashboard, getClasses, getStudents, getReportCards, getSubjectGrades } from '@/api/data';
+import { getAdminDashboard, getClasses, getStudents, getReportCards, getSubjectGrades, getMySchool, getUserById } from '@/api/data';
 import CountUp from '@/components/shared/CountUp';
 import SparkleBurst from '@/components/shared/SparkleBurst';
 import type { DashboardSummary, Class, Student } from '@/types';
@@ -40,7 +40,6 @@ export default function AdminDashboard() {
       setStudents(allStudents);
 
       if (user.schoolId) {
-        const { getMySchool } = await import('@/api/data');
         const school = await getMySchool();
         if (school) setSchoolName(`${school.name} — ${school.boardType}`);
       }
@@ -54,7 +53,7 @@ export default function AdminDashboard() {
       const teacherIds = [...new Set(c.map(cls => cls.teacherId).filter(Boolean))];
       const nameMap: Record<string, string> = {};
       await Promise.all(teacherIds.map(async (tid) => {
-        const teacher = await (await import('@/api/data')).getUserById(tid);
+        const teacher = await getUserById(tid);
         if (teacher) nameMap[tid] = teacher.fullName;
       }));
       setTeacherNames(nameMap);
