@@ -3,8 +3,7 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getClasses, getStudents } from '@/api/data';
-import { storage } from '@/api/storage';
+import { getClasses, getStudents, getReportCards, getSubjectGrades } from '@/api/data';
 import type { Class } from '@/types';
 
 export default function ClassPatterns() {
@@ -28,22 +27,25 @@ export default function ClassPatterns() {
 
   const analyzeClass = async (classId: string) => {
     const students = await getStudents({ classId });
+    const allCards = await getReportCards();
     const subjects = ['Mathematics', 'Science', 'English', 'Hindi', 'Social Studies'];
-    const data = subjects.map(subject => {
+    const data: { subject: string; green: number; yellow: number; red: number }[] = [];
+    for (const subject of subjects) {
       let green = 0, yellow = 0, red = 0;
       for (const student of students) {
-        const cards = storage.getReportCards().filter(r => r.studentId === student.id);
+        const cards = allCards.filter(r => r.studentId === student.id);
         if (cards.length === 0) continue;
         const latest = cards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-        const grade = storage.getSubjectGrades().find(g => g.reportCardId === latest.id && g.subjectName === subject);
+        const grades = await getSubjectGrades(latest.id);
+        const grade = grades.find(g => g.subjectName === subject);
         if (grade) {
           if (grade.flag === 'green') green++;
           else if (grade.flag === 'yellow') yellow++;
           else red++;
         }
       }
-      return { subject, green, yellow, red };
-    });
+      data.push({ subject, green, yellow, red });
+    }
     setPatternData(data);
   };
 

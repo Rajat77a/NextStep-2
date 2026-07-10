@@ -4,8 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TransitionLink from '@/components/shared/TransitionLink';
 import { ArrowLeft, AlertCircle, ChevronDown, ChevronUp, ArrowRight, MessageCircle, HelpCircle, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getReportCards, getClarityCheck } from '@/api/data';
-import { storage } from '@/api/storage';
+import { getReportCards, getClarityCheck, getSubjectGrades } from '@/api/data';
 import FlagBadge from '@/components/shared/FlagBadge';
 import type { ReportCard, ClarityCheck as IClarityCheck, SubjectGrade } from '@/types';
 
@@ -30,7 +29,8 @@ export default function ClarityCheck() {
         setSelectedCard(card);
         const check = await getClarityCheck(card.id);
         setClarityCheck(check);
-        setGrades(storage.getSubjectGrades().filter(g => g.reportCardId === card.id));
+        const grades = await getSubjectGrades(card.id);
+        setGrades(grades);
       }
       setLoading(false);
     }
@@ -44,7 +44,8 @@ export default function ClarityCheck() {
       setLoading(true);
       const check = await getClarityCheck(card.id);
       setClarityCheck(check);
-      setGrades(storage.getSubjectGrades().filter(g => g.reportCardId === card.id));
+      const grades = await getSubjectGrades(card.id);
+      setGrades(grades);
       setLoading(false);
     }
   };

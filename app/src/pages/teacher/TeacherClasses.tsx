@@ -3,8 +3,7 @@ import TransitionLink from '@/components/shared/TransitionLink';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users, FileText, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getClasses, getStudents } from '@/api/data';
-import { storage } from '@/api/storage';
+import { getClasses, getStudents, getReportCards, getSubjectGrades } from '@/api/data';
 import FlagBadge from '@/components/shared/FlagBadge';
 import type { Class, Student } from '@/types';
 
@@ -26,19 +25,36 @@ export default function TeacherClasses() {
     load();
   }, [user]);
 
-  const getClassStats = (classId: string) => {
-    const students = studentsByClass[classId] || [];
-    const reportCards = storage.getReportCards().filter(r => r.classId === classId);
-    let flagged = 0;
-    for (const s of students) {
-      const cards = reportCards.filter(r => r.studentId === s.id);
-      if (cards.length === 0) continue;
-      const latest = cards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-      const grades = storage.getSubjectGrades().filter(g => g.reportCardId === latest.id);
-      if (grades.some(g => g.flag === 'red' || g.flag === 'yellow')) flagged++;
+  const [statsCache, setStatsCache] = useState<Record<string, { studentCount: number; reportCount: number; flagged: number }>>({});
+  const [flagCache, setFlagCache] = useState<Record<string, 'green' | 'yellow' | 'red'>>({});
+
+  useEffect(() => {
+    async function loadStats() {
+      if (!user) return;
+      const allCards = await getReportCards();
+      const newStats: Record<string, { studentCount: number; reportCount: number; flagged: number }> = {};
+      const newFlags: Record<string, 'green' | 'yellow' | 'red'> = {};
+      for (const cls of classes) {
+        const students = studentsByClass[cls.id] || [];
+        const clsCards = allCards.filter(r => r.classId === cls.id);
+        let flagged = 0;
+        for (const s of students) {
+          const cards = clsCards.filter(r => r.studentId === s.id);
+          if (cards.length === 0) { newFlags[s.id] = 'green'; continue; }
+          const latest = cards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+          const grades = await getSubjectGrades(latest.id);
+          if (grades.some(g => g.flag === 'red' || g.flag === 'yellow')) flagged++;
+          if (grades.some(g => g.flag === 'red')) newFlags[s.id] = 'red';
+          else if (grades.some(g => g.flag === 'yellow')) newFlags[s.id] = 'yellow';
+          else newFlags[s.id] = 'green';
+        }
+        newStats[cls.id] = { studentCount: students.length, reportCount: clsCards.length, flagged };
+      }
+      setStatsCache(newStats);
+      setFlagCache(newFlags);
     }
-    return { studentCount: students.length, reportCount: reportCards.length, flagged };
-  };
+    if (classes.length > 0 && Object.keys(studentsByClass).length > 0) loadStats();
+  }, [user, classes, studentsByClass]);
 
   return (
     <div className="max-w-7xl mx-auto px-5 md:px-12 py-6 md:py-8">
@@ -51,7 +67,7 @@ export default function TeacherClasses() {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {classes.map((cls, i) => {
-          const stats = getClassStats(cls.id);
+          const stats = statsCache[cls.id] || { studentCount: 0, reportCount: 0, flagged: 0 };
           const students = studentsByClass[cls.id] || [];
           return (
             <motion.div
@@ -85,14 +101,7 @@ export default function TeacherClasses() {
               <div className="space-y-2">
                 <p className="label-text text-medium-gray">Quick View</p>
                 {students.slice(0, 3).map(s => {
-                  const cards = storage.getReportCards().filter(r => r.studentId === s.id);
-                  let flag: 'green' | 'yellow' | 'red' = 'green';
-                  if (cards.length > 0) {
-                    const latest = cards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-                    const grades = storage.getSubjectGrades().filter(g => g.reportCardId === latest.id);
-                    if (grades.some(g => g.flag === 'red')) flag = 'red';
-                    else if (grades.some(g => g.flag === 'yellow')) flag = 'yellow';
-                  }
+                  const flag = flagCache[s.id] || 'green';
                   return (
                     <div key={s.id} className="flex items-center justify-between py-1.5">
                       <span className="font-body text-sm text-charcoal">{s.fullName}</span>
