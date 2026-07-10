@@ -1257,7 +1257,7 @@ export default function LandingPage() {
         }}
       />
       {/* Navigation */}
-        <div className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
+        <nav className="max-w-7xl mx-auto px-5 md:px-12 h-16 md:h-[72px] flex items-center justify-between">
           <Link to="/" onClick={(e) => { e.preventDefault(); navigateWithTransition('/'); }} className="flex items-baseline gap-1 group">
             <span className="font-display text-xl md:text-2xl font-semibold text-white tracking-tight group-hover:text-coral transition-colors duration-300">NextStep</span>
             <span className="text-coral text-[10px] font-body font-bold">●</span>
@@ -1283,8 +1283,7 @@ export default function LandingPage() {
           <button onClick={() => setMobileMenu(!mobileMenu)} className="lg:hidden p-2 text-white/60 hover:text-white transition-colors">
             {mobileMenu ? <X size={20} /> : <Menu size={20} />}
           </button>
-        </div>
-      </nav>
+        </nav>
 
       {/* Scroll-linked ambient gradient — Stripe-inspired living background */}
       <motion.div
