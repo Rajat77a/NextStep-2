@@ -56,7 +56,7 @@ export default function StudentRoster() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this student?')) return;
+    if (!confirm("Are you sure you want to remove ${students.find(s => s.id === id)?.fullName || 'this student'}?")) return;
     try {
       await deleteStudent(id);
       loadData();
@@ -210,3 +210,4 @@ export default function StudentRoster() {
     </div>
   );
 }
+
