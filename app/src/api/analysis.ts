@@ -16,7 +16,7 @@ export async function analyzeReportText(data: {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    const errorData = await response.json().catch(() => ({} as Record<string, unknown>));
     throw new Error(errorData.error || 'Failed to analyze report');
   }
 
@@ -43,3 +43,4 @@ export function mapAIAnalysisToClarityCheck(analysis: AIReportAnalysis) {
     thirtyDayPlan: analysis.thirtyDayPlan,
   };
 }
+
