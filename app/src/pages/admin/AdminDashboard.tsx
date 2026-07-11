@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function load() {
       if (!user) return;
+  if (!summary) return <div className="max-w-6xl mx-auto px-5 md:px-12 py-6 md:py-8 text-center"><div className="animate-pulse space-y-4"><div className="h-8 bg-light-gray rounded w-1/3 mx-auto" /><div className="h-48 bg-light-gray rounded-xl" /></div></div>;
       const [s, c, allStudents] = await Promise.all([
         getAdminDashboard(),
         getClasses(),
