@@ -182,8 +182,8 @@ export default function TeacherDashboard() {
 
   const watchList = [...students]
     .sort((a, b) => {
-      const firstFlag = flagMap[a.id];
-      const secondFlag = flagMap[b.id];
+      const firstFlag = flagMap[a.id] || 'green';
+      const secondFlag = flagMap[b.id] || 'green';
       const rank = (f: string) => f === 'red' ? 2 : f === 'yellow' ? 1 : 0;
       return rank(secondFlag) - rank(firstFlag);
     })
@@ -325,7 +325,7 @@ export default function TeacherDashboard() {
 
                   <tbody>
                     {filteredStudents.map((student) => {
-                      const flag = flagMap[student.id];
+                      const flag = flagMap[student.id] || 'green';
 
                       return (
                         <motion.tr
