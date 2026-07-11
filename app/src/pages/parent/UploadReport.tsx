@@ -155,17 +155,6 @@ export default function UploadReport() {
   };
 
   const handleProcess = async () => {
-    const effectiveChildId = selectedChildId || children[0]?.id;
-
-    if (!effectiveChildId) {
-      setError(
-        'No child is linked to this parent account. Please add a student from the school admin portal using this parent email.'
-      );
-      return;
-    }
-
-    setSelectedChildId(effectiveChildId);
-
     if (!rawText.trim() || rawText.trim().length < 20) {
       setError(
         'Please paste the report card text before analyzing. Image/PDF OCR can be added later, but the AI needs text to read right now.'
@@ -209,7 +198,7 @@ export default function UploadReport() {
 
     if (!effectiveChildId) {
       setError(
-        'No child is linked to this parent account. Please add a student from the school admin portal using this parent email.'
+        'Analysis is working, but saving needs a linked child. Add a student from the school admin portal using this parent email, then try Generate Clarity Check again.'
       );
       return;
     }
@@ -336,7 +325,7 @@ export default function UploadReport() {
 
               {children.length === 0 && (
                 <p className="font-body text-xs text-medium-gray mt-2">
-                  Add a student from the school admin portal using this parent email.
+                  You can still test AI analysis. Saving the final clarity check needs a linked child.
                 </p>
               )}
             </div>
@@ -430,7 +419,7 @@ export default function UploadReport() {
 
             <button
               onClick={handleProcess}
-              disabled={loading || !rawText.trim() || children.length === 0}
+              disabled={loading || !rawText.trim()}
               className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {loading ? (
