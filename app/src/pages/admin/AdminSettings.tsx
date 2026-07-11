@@ -10,6 +10,8 @@ export default function AdminSettings() {
         <TransitionLink to="/admin" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
           <ArrowLeft size={14} /> Back to Dashboard
         </TransitionLink>
+        <h2 className="font-display text-3xl text-charcoal mb-1">Admin Settings</h2>
+        <p className="font-body text-medium-gray text-sm mb-4">Manage your account and school preferences.</p>
       </motion.div>
       <ParentSettings />
     </div>
