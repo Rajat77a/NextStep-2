@@ -16,7 +16,7 @@ export default function ConversationGuide() {
     async function load() {
       if (!user) return;
       const cards = await getReportCards();
-      if (cards.length > 0) {
+      if (cards.length === 0) { return <div className="max-w-3xl mx-auto px-5 md:px-12 py-8"><TransitionLink to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"><ArrowLeft size={14} /> Back to Dashboard</TransitionLink><div className="text-center py-12"><MessageCircle size={40} className="mx-auto text-light-gray mb-4" /><h2 className="font-display text-2xl text-charcoal mb-2">No Conversation Guide Yet</h2><p className="font-body text-medium-gray">Upload a report card first to get a personalized conversation script.</p></div></div>; } if (cards.length > 0) {
         const student = await getStudent(cards[0].studentId);
         if (student) setChildName(student.fullName);
         const c = await getClarityCheck(cards[0].id);
