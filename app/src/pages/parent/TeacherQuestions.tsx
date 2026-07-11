@@ -35,7 +35,7 @@ export default function TeacherQuestions() {
   }, [user]);
 
   const handleCopyAll = () => {
-    if (!check) return;
+    if (!check || !check.teacherQuestions?.length) return;
     const text = [
       'Questions for the Teacher',
       '',
@@ -55,7 +55,7 @@ export default function TeacherQuestions() {
     }
   };
 
-  if (!check) {
+  if (!check || !check.teacherQuestions?.length) {
     return (
       <div className="max-w-3xl mx-auto px-5 md:px-12 py-8 text-center">
         <h2 className="font-display text-2xl text-charcoal mb-4">No Questions Available</h2>
