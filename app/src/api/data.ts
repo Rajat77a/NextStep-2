@@ -701,6 +701,17 @@ export async function addSubjectGrades(
   return [];
 }
 
+function gradeToScore(grade: string): number {
+  const map: Record<string, number> = {
+    'A+': 95, 'A': 90, 'A-': 85,
+    'B+': 80, 'B': 75, 'B-': 70,
+    'C+': 65, 'C': 60, 'C-': 55,
+    'D+': 50, 'D': 45, 'F': 30,
+  };
+  const upper = grade.toUpperCase().trim();
+  return map[upper] ?? 0;
+}
+
 export async function getSubjectGrades(reportCardId: string): Promise<SubjectGrade[]> {
   await requireAuth();
 
@@ -721,7 +732,7 @@ export async function getSubjectGrades(reportCardId: string): Promise<SubjectGra
     reportCardId,
     subjectName: subject.subject,
     grade: subject.grade,
-    normalizedScore: subject.normalizedScore,
+    normalizedScore: subject.normalizedScore || gradeToScore(subject.grade),
     teacherComment: subject.teacherComment,
     flag: subject.flag,
     aiNote: subject.reasoning,
