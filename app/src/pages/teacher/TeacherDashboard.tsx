@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import FlagBadge from '@/components/shared/FlagBadge';
 import CountUp from '@/components/shared/CountUp';
 import SparkleBurst from '@/components/shared/SparkleBurst';
-import type { Student, SubjectGrade, TeacherNote } from '@/types';
+import type { Student, SubjectGrade, TeacherNote, AIReportAnalysis } from '@/types';
 
 const springEasing = [0.22, 1, 0.36, 1] as const;
 
@@ -68,11 +68,36 @@ export default function TeacherDashboard() {
       const filtered = allStudents.filter(s => myClassIds.includes(s.classId));
       setStudents(filtered);
 
-      // Precompute flags
+      // Batch precompute flags — one query for all students
       const flags: Record<string, string> = {};
-      await Promise.all(filtered.map(async (s) => {
-        flags[s.id] = await getStudentFlag(s.id);
-      }));
+      const studentIds = filtered.map(s => s.id);
+      if (studentIds.length > 0) {
+        const { data: allCards } = await supabase
+          .from('report_cards')
+          .select('student_id, ai_response')
+          .in('student_id', studentIds)
+          .order('created_at', { ascending: false });
+
+        if (allCards) {
+          const latestByStudent = new Map<string, typeof allCards[0]>();
+          for (const card of allCards) {
+            if (!latestByStudent.has(card.student_id)) {
+              latestByStudent.set(card.student_id, card);
+            }
+          }
+          for (const s of filtered) {
+            const card = latestByStudent.get(s.id);
+            if (!card?.ai_response) { flags[s.id] = 'green'; continue; }
+            const analysis = card.ai_response as AIReportAnalysis;
+            const subjects = analysis.subjects ?? [];
+            if (subjects.some((g) => g.flag === 'red')) flags[s.id] = 'red';
+            else if (subjects.some((g) => g.flag === 'yellow')) flags[s.id] = 'yellow';
+            else flags[s.id] = 'green';
+          }
+        } else {
+          filtered.forEach(s => { flags[s.id] = 'green'; });
+        }
+      }
       setFlagMap(flags);
     }
 
@@ -89,19 +114,6 @@ export default function TeacherDashboard() {
 
     if (!error) {
       setInviteStatus('accepted');
-    }
-  };
-
-  const getStudentFlag = async (studentId: string) => {
-    try {
-      const cards = await getReportCards({ studentId });
-      if (!cards.length) return 'green' as const;
-      const grades = await getSubjectGrades(cards[0].id);
-      if (grades.some((grade) => grade.flag === 'red')) return 'red';
-      if (grades.some((grade) => grade.flag === 'yellow')) return 'yellow';
-      return 'green';
-    } catch {
-      return 'green';
     }
   };
 
@@ -143,6 +155,11 @@ export default function TeacherDashboard() {
     if (!quickNoteStudentId || !quickNoteText.trim()) return;
     try {
       await addTeacherNote({ studentId: quickNoteStudentId, note: quickNoteText });
+      // Refresh notes for the student if the panel is already open
+      if (selectedStudent?.id === quickNoteStudentId) {
+        const notes = await getTeacherNotes(quickNoteStudentId);
+        setStudentNotes(notes);
+      }
       setQuickNoteStudentId(null);
       setQuickNoteText('');
     } catch {

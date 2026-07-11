@@ -491,10 +491,18 @@ export async function uploadReportCard(data: {
   const supaUserId = sessionData.session?.user?.id;
   if (!supaUserId) throw createApiError(401, 'Please sign in to continue');
 
+  // Look up student's class_id so report cards are scoped correctly for teachers/admins
+  const { data: student } = await supabase
+    .from('students')
+    .select('class_id')
+    .eq('id', data.studentId)
+    .single();
+
   const { data: row, error } = await supabase
     .from('report_cards')
     .insert({
       student_id: data.studentId,
+      class_id: student?.class_id || null,
       uploaded_by: supaUserId,
       upload_source: data.uploadMethod || 'self_uploaded',
       board_type: data.boardType,
@@ -541,6 +549,8 @@ export async function getReportCards(filters?: {
 
     if (filters?.studentId) {
       query = query.eq('student_id', filters.studentId);
+    } else if (filters?.classId) {
+      query = query.eq('class_id', filters.classId);
     } else {
       // Scope to parent's own children
       const { data: myStudents } = await supabase
@@ -548,7 +558,7 @@ export async function getReportCards(filters?: {
         .select('id')
         .eq('user_id', supaUserId);
 
-            const studentIds = (myStudents ?? []).map((s: any) => s.id);
+      const studentIds = (myStudents ?? []).map((s: { id: string }) => s.id);
       if (studentIds.length > 0) {
         query = query.in('student_id', studentIds);
       }
@@ -573,12 +583,10 @@ export async function getReportCards(filters?: {
     }
 
     if (reportCards.length === 0) {
-      // Supabase returned no data — try localStorage for backwards compat
       await delay(50);
       reportCards = storage.getReportCards();
     }
   } else {
-    // Fallback: localStorage (admin/teacher without Supabase tables)
     await delay(100);
     await requireAuth();
     reportCards = storage.getReportCards();
