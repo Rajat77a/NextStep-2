@@ -33,7 +33,7 @@ export default function ProgressTracking() {
     load();
   }, [user]);
 
-  if (reportCards.length < 2) {
+  if (reportCards.length < 2 || subjects.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-5 md:px-12 py-8">
         <TransitionLink to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
