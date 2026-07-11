@@ -55,7 +55,7 @@ export default function TeacherClasses() {
       setStatsCache(newStats);
       setFlagCache(newFlags);
     }
-    if (classes.length > 0 && Object.keys(studentsByClass).length > 0) loadStats();
+    if (classes.length > 0 && Object.keys(studentsByClass).length > 0 && classes.some(c => studentsByClass[c.id]?.length)) loadStats();
   }, [user, classes, studentsByClass]);
 
   return (
