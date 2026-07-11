@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 export default function AuthCallback() {
-  const [message, setMessage] = useState('Completing sign in...')
+  const [state, setState] = useState<'loading' | 'error'>('loading')
 
   useEffect(() => {
     let cancelled = false
@@ -49,8 +49,10 @@ export default function AuthCallback() {
       } catch (error) {
         console.error('OAuth callback failed:', error)
         if (!cancelled) {
-          setMessage('Sign in could not be completed. Redirecting...')
-          window.location.href = '/login?error=auth_failed'
+          setState('error')
+          setTimeout(() => {
+            if (!cancelled) window.location.href = '/login?error=auth_failed'
+          }, 2500)
         }
       }
     }
@@ -76,9 +78,31 @@ export default function AuthCallback() {
     return () => { cancelled = true }
   }, [])
 
+  if (state === 'error') {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-card p-8 max-w-sm mx-4 text-center">
+          <div className="w-14 h-14 rounded-full bg-coral/10 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">!</span>
+          </div>
+          <h2 className="font-display text-xl text-charcoal mb-2">Sign-in issue</h2>
+          <p className="font-body text-sm text-medium-gray mb-5">
+            Could not complete sign in. Redirecting you back...
+          </p>
+          <div className="w-5 h-5 border-2 border-coral border-t-transparent rounded-full animate-spin mx-auto" />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <p>{message}</p>
+    <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-card p-8 max-w-sm mx-4 text-center">
+        <div className="w-10 h-10 border-2 border-coral border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="font-body text-sm text-medium-gray">
+          Completing sign in...
+        </p>
+      </div>
     </div>
   )
 }
