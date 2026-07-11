@@ -54,7 +54,7 @@ export default function ClassPatterns() {
     setPatternData(data);
   };
 
-  const maxVal = Math.max(...patternData.flatMap(d => [d.green + d.yellow + d.red]), 1);
+  const maxVal = patternData.length === 0 ? 1 : Math.max(...patternData.flatMap(d => [d.green + d.yellow + d.red]), 1);
 
   return (
     <div className="max-w-4xl mx-auto px-5 md:px-12 py-6 md:py-8">
