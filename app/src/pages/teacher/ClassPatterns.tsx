@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getClasses, getStudents, getReportCards, getSubjectGrades } from '@/api/data';
-import type { Class } from '@/types';
+import type { Class, ClassPatternsRouteState } from '@/types';
 
 export default function ClassPatterns() {
   const { user } = useAuth();
@@ -14,7 +14,7 @@ export default function ClassPatterns() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [patternData, setPatternData] = useState<{ subject: string; green: number; yellow: number; red: number }[]>([]);
 
-  const preselectedClassId = (location.state as any)?.classId;
+  const preselectedClassId = (location.state as ClassPatternsRouteState).classId;
 
   useEffect(() => {
     async function load() {
