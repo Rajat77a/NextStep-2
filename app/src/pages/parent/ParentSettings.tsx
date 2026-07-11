@@ -89,7 +89,7 @@ export default function ParentSettings() {
           </div>
         </div>
 
-        <button type="submit" disabled={saving} className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
+        <button type="submit" disabled={saving} disabled={saving} className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </form>
