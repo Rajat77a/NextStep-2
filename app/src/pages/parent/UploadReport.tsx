@@ -93,6 +93,16 @@ export default function UploadReport() {
   }, [user]);
 
   const handleFileSelect = async (selectedFile: File) => {
+    const maxSize = 10 * 1024 * 1024;
+    const allowed = ['image/jpeg','image/png','image/webp','application/pdf','text/plain'];
+    if (!allowed.includes(selectedFile.type) && !selectedFile.name.match(/\.(jpg|jpeg|png|webp|pdf|txt|csv)$/i)) {
+      setError('Please upload a PDF, JPEG, PNG, WebP image, or text file.');
+      return;
+    }
+    if (selectedFile.size > maxSize) {
+      setError('File is too large. Maximum size is 10 MB.');
+      return;
+    }
     setFile(selectedFile);
     setError('');
     setRawText('');
