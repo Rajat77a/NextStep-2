@@ -34,6 +34,7 @@ import type {
 
 function canReadTextDirectly(file: File) {
   const name = file.name.toLowerCase();
+
   return (
     file.type.startsWith('text/') ||
     name.endsWith('.txt') ||
@@ -83,26 +84,44 @@ export default function UploadReport() {
   const [ocrStatus, setOcrStatus] = useState('');
 
   useEffect(() => {
-    if (!user) return;
-    getStudents({ parentId: user.id }).then(kids => {
-      setChildren(kids);
-      if (kids.length > 0 && !selectedChildId) {
-        setSelectedChildId(kids[0].id);
-      }
-    }).catch(() => {});
-  }, [user]);
+    if (!user?.id) return;
+
+    getStudents({ parentId: user.id })
+      .then((kids) => {
+        setChildren(kids);
+
+        if (kids.length > 0) {
+          setSelectedChildId((current) => current || kids[0].id);
+        }
+      })
+      .catch((err) => {
+        setError(err?.message || 'Could not load children.');
+      });
+  }, [user?.id]);
 
   const handleFileSelect = async (selectedFile: File) => {
     const maxSize = 10 * 1024 * 1024;
-    const allowed = ['image/jpeg','image/png','image/webp','application/pdf','text/plain'];
-    if (!allowed.includes(selectedFile.type) && !selectedFile.name.match(/\.(jpg|jpeg|png|webp|pdf|txt|csv)$/i)) {
+    const allowed = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'application/pdf',
+      'text/plain',
+    ];
+
+    if (
+      !allowed.includes(selectedFile.type) &&
+      !selectedFile.name.match(/\.(jpg|jpeg|png|webp|pdf|txt|csv)$/i)
+    ) {
       setError('Please upload a PDF, JPEG, PNG, WebP image, or text file.');
       return;
     }
+
     if (selectedFile.size > maxSize) {
       setError('File is too large. Maximum size is 10 MB.');
       return;
     }
+
     setFile(selectedFile);
     setError('');
     setRawText('');
@@ -113,9 +132,10 @@ export default function UploadReport() {
       setRawText(text);
     } else {
       try {
-        const text = await extractReportText(selectedFile, (msg) => {
-          setOcrStatus(msg);
+        const text = await extractReportText(selectedFile, (message) => {
+          setOcrStatus(message);
         });
+
         setRawText(text);
         setOcrStatus('');
       } catch (err: any) {
@@ -124,16 +144,28 @@ export default function UploadReport() {
     }
   };
 
-  const handleFileDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
+  const handleFileDrop = async (event: React.DragEvent) => {
+    event.preventDefault();
 
-    const selectedFile = e.dataTransfer.files[0];
+    const selectedFile = event.dataTransfer.files[0];
+
     if (selectedFile) {
       await handleFileSelect(selectedFile);
     }
   };
 
   const handleProcess = async () => {
+    const effectiveChildId = selectedChildId || children[0]?.id;
+
+    if (!effectiveChildId) {
+      setError(
+        'No child is linked to this parent account. Please add a student from the school admin portal using this parent email.'
+      );
+      return;
+    }
+
+    setSelectedChildId(effectiveChildId);
+
     if (!rawText.trim() || rawText.trim().length < 20) {
       setError(
         'Please paste the report card text before analyzing. Image/PDF OCR can be added later, but the AI needs text to read right now.'
@@ -173,15 +205,21 @@ export default function UploadReport() {
   };
 
   const handleConfirm = async () => {
+    const effectiveChildId = selectedChildId || children[0]?.id;
+
+    if (!effectiveChildId) {
+      setError(
+        'No child is linked to this parent account. Please add a student from the school admin portal using this parent email.'
+      );
+      return;
+    }
+
     if (!analysis || !user) {
       setError('AI analysis is missing. Please analyze the report again.');
       return;
     }
-    if (!selectedChildId) {
-      setError('Please select a child for this report card.');
-      return;
-    }
 
+    setSelectedChildId(effectiveChildId);
     setLoading(true);
     setError('');
 
@@ -189,7 +227,7 @@ export default function UploadReport() {
       const clarityData = mapAIAnalysisToClarityCheck(analysis);
 
       const card = await uploadReportCard({
-        studentId: selectedChildId,
+        studentId: effectiveChildId,
         term: analysis.term || 'Current Term',
         boardType: 'Other',
         file: file || undefined,
@@ -268,40 +306,55 @@ export default function UploadReport() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            {/* Student selector */}
             <div className="mb-5">
               <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
                 Select Child
               </label>
+
               <div className="relative">
-                <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray pointer-events-none" />
+                <Users
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray pointer-events-none"
+                />
+
                 <select
-                  value={selectedChildId}
-                  onChange={e => setSelectedChildId(e.target.value)}
+                  value={selectedChildId || children[0]?.id || ''}
+                  onChange={(event) => setSelectedChildId(event.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal appearance-none cursor-pointer focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
                 >
-                  {children.length === 0 && <option value="">No children added yet</option>}
-                  {children.map(child => (
-                    <option key={child.id} value={child.id}>{child.fullName}</option>
+                  {children.length === 0 && (
+                    <option value="">No children added yet</option>
+                  )}
+
+                  {children.map((child) => (
+                    <option key={child.id} value={child.id}>
+                      {child.fullName}
+                    </option>
                   ))}
                 </select>
               </div>
+
+              {children.length === 0 && (
+                <p className="font-body text-xs text-medium-gray mt-2">
+                  Add a student from the school admin portal using this parent email.
+                </p>
+              )}
             </div>
 
             <input
               ref={fileInputRef}
               type="file"
-              accept=".txt,.csv,.pdf,.jpg,.jpeg,.png"
+              accept=".txt,.csv,.pdf,.jpg,.jpeg,.png,.webp"
               className="hidden"
-              onChange={(e) => {
-                const selectedFile = e.target.files?.[0];
+              onChange={(event) => {
+                const selectedFile = event.target.files?.[0];
                 if (selectedFile) handleFileSelect(selectedFile);
               }}
             />
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => e.preventDefault()}
+              onDragOver={(event) => event.preventDefault()}
               onDrop={handleFileDrop}
               className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer mb-6 ${
                 file
@@ -313,16 +366,23 @@ export default function UploadReport() {
                 <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
                   <Check size={32} className="mx-auto text-sage mb-3" />
                   <p className="font-body font-medium text-charcoal">{file.name}</p>
+
                   {ocrStatus && (
-                    <p className="font-body text-xs text-medium-gray mt-1">{ocrStatus}</p>
+                    <p className="font-body text-xs text-medium-gray mt-1">
+                      {ocrStatus}
+                    </p>
                   )}
+
                   {rawText && !ocrStatus && (
-                    <p className="font-body text-xs text-sage mt-1">Text extracted successfully</p>
+                    <p className="font-body text-xs text-sage mt-1">
+                      Text extracted successfully
+                    </p>
                   )}
+
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={(event) => {
+                      event.stopPropagation();
                       setFile(null);
                       setRawText('');
                       setOcrStatus('');
@@ -335,11 +395,13 @@ export default function UploadReport() {
               ) : (
                 <>
                   <Upload size={32} className="mx-auto text-medium-gray mb-3" />
+
                   <p className="font-body text-charcoal mb-1">
                     Drag & drop or click to upload
                   </p>
+
                   <p className="font-body text-sm text-medium-gray">
-                    TXT, CSV, PDF, JPG, PNG
+                    TXT, CSV, PDF, JPG, PNG, WebP
                   </p>
                 </>
               )}
@@ -349,9 +411,10 @@ export default function UploadReport() {
               <label className="block font-body text-sm font-medium text-charcoal mb-2">
                 Report card text
               </label>
+
               <textarea
                 value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
+                onChange={(event) => setRawText(event.target.value)}
                 rows={8}
                 placeholder="Paste the report card text here. If you uploaded a TXT or CSV file, this will fill automatically."
                 className="w-full px-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal focus:border-coral outline-none resize-none"
@@ -367,7 +430,7 @@ export default function UploadReport() {
 
             <button
               onClick={handleProcess}
-              disabled={loading || !rawText.trim()}
+              disabled={loading || !rawText.trim() || children.length === 0}
               className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -411,11 +474,11 @@ export default function UploadReport() {
                   <div className="flex items-center justify-between mb-2 gap-3">
                     <input
                       value={grade.subjectName}
-                      onChange={(e) => {
+                      onChange={(event) => {
                         const nextGrades = [...grades];
                         nextGrades[index] = {
                           ...nextGrades[index],
-                          subjectName: e.target.value,
+                          subjectName: event.target.value,
                         };
                         setGrades(nextGrades);
                       }}
@@ -424,11 +487,11 @@ export default function UploadReport() {
 
                     <input
                       value={grade.grade}
-                      onChange={(e) => {
+                      onChange={(event) => {
                         const nextGrades = [...grades];
                         nextGrades[index] = {
                           ...nextGrades[index],
-                          grade: e.target.value,
+                          grade: event.target.value,
                         };
                         setGrades(nextGrades);
                       }}
@@ -438,11 +501,11 @@ export default function UploadReport() {
 
                   <textarea
                     value={grade.teacherComment || ''}
-                    onChange={(e) => {
+                    onChange={(event) => {
                       const nextGrades = [...grades];
                       nextGrades[index] = {
                         ...nextGrades[index],
-                        teacherComment: e.target.value,
+                        teacherComment: event.target.value,
                       };
                       setGrades(nextGrades);
                     }}
@@ -451,7 +514,9 @@ export default function UploadReport() {
                   />
 
                   {grade.aiNote && (
-                    <p className="font-body text-xs text-medium-gray">{grade.aiNote}</p>
+                    <p className="font-body text-xs text-medium-gray">
+                      {grade.aiNote}
+                    </p>
                   )}
                 </motion.div>
               ))}
