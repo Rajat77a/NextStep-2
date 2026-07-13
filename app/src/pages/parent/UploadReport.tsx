@@ -198,7 +198,7 @@ export default function UploadReport() {
 
     if (!effectiveChildId) {
       setError(
-        'Analysis is working, but saving needs a linked child. Add a student from the school admin portal using this parent email, then try Generate Clarity Check again.'
+        'Analysis is working, but saving needs a linked child. Ask the school admin to add a student with your parent email, then refresh this page.'
       );
       return;
     }
@@ -325,7 +325,7 @@ export default function UploadReport() {
 
               {children.length === 0 && (
                 <p className="font-body text-xs text-medium-gray mt-2">
-                  You can still test AI analysis. Saving the final clarity check needs a linked child.
+                  You can still test AI analysis. Saving the final clarity check needs a student linked to your parent email.
                 </p>
               )}
             </div>

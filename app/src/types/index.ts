@@ -46,6 +46,7 @@ export interface Student {
   rollNumber: string;
   fullName: string;
   parentId: string;
+  parentEmail?: string;
   createdAt: string;
 }
 

@@ -1,5 +1,5 @@
 import { storage } from './storage';
-import { generateId, delay } from '@/lib/crypto';
+import { delay } from '@/lib/crypto';
 import { requireAuth, requireRole } from './auth';
 import { supabase } from '@/lib/supabase';
 import type {
@@ -18,6 +18,53 @@ import type {
 
 function createApiError(code: number, message: string): ApiError {
   return { code, message };
+}
+
+function normalizeEmail(email?: string | null): string {
+  return email?.trim().toLowerCase() ?? '';
+}
+
+type StudentRow = {
+  id: string;
+  school_id?: string | null;
+  class_id?: string | null;
+  roll_number?: string | null;
+  full_name: string;
+  user_id: string;
+  parent_email?: string | null;
+  created_at: string;
+};
+
+function mapStudentRow(row: StudentRow, fallbackSchoolId = ''): Student {
+  return {
+    id: row.id,
+    schoolId: row.school_id ?? fallbackSchoolId,
+    classId: row.class_id ?? '',
+    rollNumber: row.roll_number ?? '',
+    fullName: row.full_name,
+    parentId: row.user_id,
+    parentEmail: row.parent_email ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
+function isMissingColumnError(error: { code?: string; message?: string } | null | undefined, column: string) {
+  return error?.code === '42703' || error?.message?.toLowerCase().includes(column.toLowerCase());
+}
+
+async function claimStudentsForParent(parentId: string, parentEmail?: string) {
+  const email = normalizeEmail(parentEmail);
+  if (!email) return;
+
+  const { error } = await supabase
+    .from('students')
+    .update({ user_id: parentId })
+    .ilike('parent_email', email)
+    .neq('user_id', parentId);
+
+  if (error && !isMissingColumnError(error, 'parent_email')) {
+    throw createApiError(500, error.message);
+  }
 }
 
 // ===== Schools =====
@@ -228,23 +275,18 @@ export async function addStudent(data: {
 
   if (!classRow) throw createApiError(404, 'Class not found');
 
+  const parentEmail = normalizeEmail(data.parentEmail);
   let parentUserId = user.id;
 
   if (user.role === 'admin' && data.parentEmail) {
     // Try to find existing parent profile by email
-    const { data: existingParent } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('role', 'parent')
-      .maybeSingle();
-
     // We can't search by email easily — profiles don't have email column
     // Fallback: use the admin's user ID as parent reference
     // Parents will link via signup flow
     parentUserId = user.id;
   }
 
-  const { data: row, error } = await supabase
+  let insertResult = await supabase
     .from('students')
     .insert({
       user_id: parentUserId,
@@ -252,21 +294,30 @@ export async function addStudent(data: {
       school_id: classRow.school_id,
       class_id: data.classId,
       roll_number: data.rollNumber,
+      parent_email: parentEmail || null,
     })
     .select()
     .single();
 
+  if (isMissingColumnError(insertResult.error, 'parent_email')) {
+    insertResult = await supabase
+      .from('students')
+      .insert({
+        user_id: parentUserId,
+        full_name: data.fullName,
+        school_id: classRow.school_id,
+        class_id: data.classId,
+        roll_number: data.rollNumber,
+      })
+      .select()
+      .single();
+  }
+
+  const { data: row, error } = insertResult;
+
   if (error || !row) throw createApiError(500, error?.message || 'Could not add student');
 
-  return {
-    id: row.id,
-    schoolId: row.school_id ?? classRow.school_id,
-    classId: row.class_id,
-    rollNumber: row.roll_number ?? '',
-    fullName: row.full_name,
-    parentId: row.user_id,
-    createdAt: row.created_at,
-  };
+  return mapStudentRow(row, classRow.school_id);
 }
 
 export async function addParentStudent(fullName: string): Promise<Student> {
@@ -274,6 +325,7 @@ export async function addParentStudent(fullName: string): Promise<Student> {
   const { data: sessionData } = await supabase.auth.getSession();
   const supaUserId = sessionData.session?.user?.id;
   if (!supaUserId) throw createApiError(401, 'Please sign in to continue');
+  const parentEmail = normalizeEmail(sessionData.session?.user?.email);
 
   // Check for duplicate in Supabase
   const { data: existing } = await supabase
@@ -284,18 +336,10 @@ export async function addParentStudent(fullName: string): Promise<Student> {
     .maybeSingle();
 
   if (existing) {
-    return {
-      id: existing.id,
-      schoolId: existing.school_id ?? 'parent-local-school',
-      classId: existing.class_id ?? 'parent-local-class',
-      rollNumber: existing.roll_number ?? '',
-      fullName: existing.full_name,
-      parentId: existing.user_id,
-      createdAt: existing.created_at,
-    };
+    return mapStudentRow(existing, 'parent-local-school');
   }
 
-  const { data, error } = await supabase
+  let insertResult = await supabase
     .from('students')
     .insert({
       user_id: supaUserId,
@@ -303,21 +347,30 @@ export async function addParentStudent(fullName: string): Promise<Student> {
       school_id: null,
       class_id: null,
       roll_number: '',
+      parent_email: parentEmail || null,
     })
     .select()
     .single();
 
+  if (isMissingColumnError(insertResult.error, 'parent_email')) {
+    insertResult = await supabase
+      .from('students')
+      .insert({
+        user_id: supaUserId,
+        full_name: fullName,
+        school_id: null,
+        class_id: null,
+        roll_number: '',
+      })
+      .select()
+      .single();
+  }
+
+  const { data, error } = insertResult;
+
   if (error || !data) throw createApiError(500, error?.message || 'Could not add student');
 
-  return {
-    id: data.id,
-    schoolId: data.school_id ?? 'parent-local-school',
-    classId: data.class_id ?? 'parent-local-class',
-    rollNumber: data.roll_number ?? '',
-    fullName: data.full_name,
-    parentId: data.user_id,
-    createdAt: data.created_at,
-  };
+  return mapStudentRow(data, 'parent-local-school');
 }
 
 export async function getStudents(filters?: {
@@ -329,6 +382,8 @@ export async function getStudents(filters?: {
 
   // Parent: fetch from Supabase scoped to parent
   if (filters?.parentId) {
+    await claimStudentsForParent(filters.parentId, user.email);
+
     const { data, error } = await supabase
       .from('students')
       .select('*')
@@ -337,15 +392,7 @@ export async function getStudents(filters?: {
 
     if (error) throw createApiError(500, error.message);
 
-    return (data ?? []).map((row) => ({
-      id: row.id,
-      schoolId: row.school_id ?? 'parent-local-school',
-      classId: row.class_id ?? 'parent-local-class',
-      rollNumber: row.roll_number ?? '',
-      fullName: row.full_name,
-      parentId: row.user_id,
-      createdAt: row.created_at,
-    }));
+    return (data ?? []).map((row) => mapStudentRow(row, 'parent-local-school'));
   }
 
   // Admin / teacher: fetch from Supabase
@@ -376,15 +423,7 @@ export async function getStudents(filters?: {
 
   if (error) throw createApiError(500, error.message);
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    schoolId: row.school_id ?? '',
-    classId: row.class_id ?? '',
-    rollNumber: row.roll_number ?? '',
-    fullName: row.full_name,
-    parentId: row.user_id,
-    createdAt: row.created_at,
-  }));
+  return (data ?? []).map((row) => mapStudentRow(row));
 }
 
 export async function getStudent(id: string): Promise<Student | null> {
@@ -396,15 +435,7 @@ export async function getStudent(id: string): Promise<Student | null> {
 
   if (error || !data) return null;
 
-  return {
-    id: data.id,
-    schoolId: data.school_id ?? '',
-    classId: data.class_id ?? '',
-    rollNumber: data.roll_number ?? '',
-    fullName: data.full_name,
-    parentId: data.user_id,
-    createdAt: data.created_at,
-  };
+  return mapStudentRow(data);
 }
 
 export async function updateStudent(id: string, data: Partial<Student>): Promise<Student> {
@@ -424,15 +455,7 @@ export async function updateStudent(id: string, data: Partial<Student>): Promise
 
   if (error || !row) throw createApiError(404, error?.message || 'Student not found');
 
-  return {
-    id: row.id,
-    schoolId: row.school_id ?? '',
-    classId: row.class_id ?? '',
-    rollNumber: row.roll_number ?? '',
-    fullName: row.full_name,
-    parentId: row.user_id,
-    createdAt: row.created_at,
-  };
+  return mapStudentRow(row);
 }
 
 export async function deleteStudent(id: string): Promise<void> {
