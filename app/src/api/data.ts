@@ -84,10 +84,18 @@ export async function createSchool(data: Partial<School>): Promise<School> {
     .select()
     .single();
 
-  if (error || !row) throw createApiError(500, error?.message || 'Could not create school');
+  if (error || !row) {
+    throw createApiError(500, error?.message || 'Could not create school');
+  }
 
-  // Update profile with school_id
-  await supabase.from('profiles').update({ school_id: row.id }).eq('id', user.id);
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({ school_id: row.id })
+    .eq('id', user.id);
+
+  if (profileError) {
+    throw createApiError(500, profileError.message || 'Could not link school to admin profile');
+  }
 
   return {
     id: row.id,
@@ -161,14 +169,19 @@ export async function createClass(data: {
   grade: number;
   section: string;
   teacherId?: string;
+  schoolId?: string;
 }): Promise<Class> {
   const user = await requireRole(['admin']);
-  if (!user.schoolId) throw createApiError(400, 'No school associated');
+  const schoolId = data.schoolId || user.schoolId;
+
+  if (!schoolId) {
+    throw createApiError(400, 'No school associated');
+  }
 
   const { data: row, error } = await supabase
     .from('classes')
     .insert({
-      school_id: user.schoolId,
+      school_id: schoolId,
       grade: data.grade,
       section: data.section,
       teacher_id: data.teacherId || null,
@@ -176,7 +189,9 @@ export async function createClass(data: {
     .select()
     .single();
 
-  if (error || !row) throw createApiError(500, error?.message || 'Could not create class');
+  if (error || !row) {
+    throw createApiError(500, error?.message || 'Could not create class');
+  }
 
   return {
     id: row.id,
