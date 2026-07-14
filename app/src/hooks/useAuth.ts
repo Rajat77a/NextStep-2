@@ -6,6 +6,7 @@ import {
   verifyOtp as apiVerifyOtp,
   logout as apiLogout,
   updateProfile as apiUpdateProfile,
+  getCurrentUser as apiGetCurrentUser,
 } from '@/api/auth';
 
 function buildUserFromSession(session: import('@supabase/supabase-js').Session): Omit<import('@/types').User, 'passwordHash'> {
@@ -37,9 +38,15 @@ export function useAuth() {
     async function init() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+
         if (!mounted) return;
+
         if (session) {
-          setUser(buildUserFromSession(session));
+          const profileUser = await apiGetCurrentUser();
+
+          if (!mounted) return;
+
+          setUser(profileUser ?? buildUserFromSession(session));
         } else {
           setUser(null);
         }
@@ -50,21 +57,43 @@ export function useAuth() {
         if (mounted) setLoading(false);
       }
     }
+
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
+
         if (session) {
-          setUser(buildUserFromSession(session));
-          setSessionExpired(false);
+          const sessionUser = buildUserFromSession(session);
+
+          setUser(sessionUser);
+          setLoading(true);
+
+          void apiGetCurrentUser()
+            .then((profileUser) => {
+              if (!mounted) return;
+
+              setUser(profileUser ?? sessionUser);
+              setSessionExpired(false);
+            })
+            .catch(() => {
+              if (!mounted) return;
+
+              setUser(sessionUser);
+              setSessionExpired(false);
+            })
+            .finally(() => {
+              if (mounted) setLoading(false);
+            });
         } else {
           if (event === 'SIGNED_OUT') {
             setSessionExpired(true);
           }
+
           setUser(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
@@ -76,6 +105,7 @@ export function useAuth() {
 
   const signInWithGoogle = useCallback(async () => {
     setError(null);
+
     try {
       await apiSignInWithGoogle();
     } catch (e: any) {
@@ -83,9 +113,13 @@ export function useAuth() {
     }
   }, []);
 
-  const sendOtp = useCallback(async (email: string, options?: { data?: Record<string, unknown>; shouldCreateUser?: boolean }) => {
+  const sendOtp = useCallback(async (
+    email: string,
+    options?: { data?: Record<string, unknown>; shouldCreateUser?: boolean }
+  ) => {
     setError(null);
     setLoading(true);
+
     try {
       await apiSendOtp(email, options);
     } catch (e: any) {
@@ -99,6 +133,7 @@ export function useAuth() {
   const verifyOtp = useCallback(async (email: string, token: string) => {
     setError(null);
     setLoading(true);
+
     try {
       const result = await apiVerifyOtp(email, token);
       setUser(result.user);
@@ -126,6 +161,7 @@ export function useAuth() {
     role?: 'parent' | 'teacher' | 'admin';
   }) => {
     setError(null);
+
     try {
       const updated = await apiUpdateProfile(data);
       setUser(updated);
@@ -136,5 +172,16 @@ export function useAuth() {
     }
   }, []);
 
-  return { user, loading, error, sessionExpired, loggingOut, signInWithGoogle, sendOtp, verifyOtp, logout, updateUser };
+  return {
+    user,
+    loading,
+    error,
+    sessionExpired,
+    loggingOut,
+    signInWithGoogle,
+    sendOtp,
+    verifyOtp,
+    logout,
+    updateUser,
+  };
 }
