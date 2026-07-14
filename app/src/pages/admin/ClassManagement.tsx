@@ -113,17 +113,22 @@ export default function ClassManagement() {
         throw new Error('Section is required.');
       }
 
-      if (!user?.schoolId) {
-        await createSchool({
+      let schoolId = user?.schoolId || '';
+
+      if (!schoolId) {
+        const school = await createSchool({
           name: 'My School',
           boardType: 'CBSE',
         });
+
+        schoolId = school.id;
       }
 
       await createClass({
         grade,
         section: section.trim().toUpperCase(),
         teacherId,
+        schoolId,
       });
 
       closeModal();
