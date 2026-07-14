@@ -21,6 +21,7 @@ export default function ClassManagement() {
   const [teacherId, setTeacherId] = useState('');
 
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -28,43 +29,59 @@ export default function ClassManagement() {
   }, [user]);
 
   const loadData = async () => {
-    const allClasses = await getClasses();
-    setClasses(allClasses);
+    try {
+      setLoadError('');
 
-    // Load teachers from profiles
-    if (user?.schoolId) {
-      const { data: teacherProfiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .eq('role', 'teacher')
-        .eq('school_id', user.schoolId);
+      const allClasses = await getClasses();
+      setClasses(allClasses);
 
-      // Get already assigned teacher IDs
-      const assignedIds = new Set(allClasses.map(c => c.teacherId).filter(Boolean));
+      if (user?.schoolId) {
+        const { data: teacherProfiles, error: teacherError } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('role', 'teacher')
+          .eq('school_id', user.schoolId);
 
-      setTeachers(
-        (teacherProfiles ?? [])
-          .filter(t => !assignedIds.has(t.id))
-          .map(t => ({ id: t.id, fullName: t.full_name }))
-      );
+        if (teacherError) {
+          throw teacherError;
+        }
 
-      // Build teacher name map
-      const nameMap: Record<string, string> = {};
-      for (const t of teacherProfiles ?? []) {
-        nameMap[t.id] = t.full_name;
+        const assignedIds = new Set(allClasses.map(c => c.teacherId).filter(Boolean));
+
+        setTeachers(
+          (teacherProfiles ?? [])
+            .filter(t => !assignedIds.has(t.id))
+            .map(t => ({ id: t.id, fullName: t.full_name }))
+        );
+
+        const nameMap: Record<string, string> = {};
+        for (const teacher of teacherProfiles ?? []) {
+          nameMap[teacher.id] = teacher.full_name;
+        }
+
+        setTeacherNames(nameMap);
+      } else {
+        setTeachers([]);
+        setTeacherNames({});
       }
-      setTeacherNames(nameMap);
-    }
 
-    // Precompute stats for each class
-    const allCards = await getReportCards();
-    const statsMap: Record<string, { studentCount: number; reportCount: number }> = {};
-    await Promise.all(allClasses.map(async (cls) => {
-      const students = await getStudents({ classId: cls.id });
-      const reportCount = allCards.filter(c => c.classId === cls.id).length;
-      statsMap[cls.id] = { studentCount: students.length, reportCount };
-    }));
-    setClassStats(statsMap);
+      const allCards = await getReportCards();
+      const statsMap: Record<string, { studentCount: number; reportCount: number }> = {};
+
+      await Promise.all(allClasses.map(async (cls) => {
+        const students = await getStudents({ classId: cls.id });
+        const reportCount = allCards.filter(card => card.classId === cls.id).length;
+
+        statsMap[cls.id] = {
+          studentCount: students.length,
+          reportCount,
+        };
+      }));
+
+      setClassStats(statsMap);
+    } catch (err: any) {
+      setLoadError(err?.message || 'Unable to load classes. Please refresh and try again.');
+    }
   };
 
   const resetForm = () => {
@@ -101,9 +118,6 @@ export default function ClassManagement() {
           name: 'My School',
           boardType: 'CBSE',
         });
-        // Reload so auth picks up the new school_id from the profile
-        window.location.reload();
-        return;
       }
 
       await createClass({
@@ -145,9 +159,18 @@ export default function ClassManagement() {
         </div>
       </motion.div>
 
+      {loadError && (
+        <div className="mb-5 rounded-[10px] border border-coral/25 bg-coral/10 px-4 py-3 font-body text-sm text-coral">
+          {loadError}
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {classes.map((classItem, index) => {
-          const stats = classStats[classItem.id] || { studentCount: 0, reportCount: 0 };
+          const stats = classStats[classItem.id] || {
+            studentCount: 0,
+            reportCount: 0,
+          };
 
           return (
             <motion.div
@@ -172,9 +195,11 @@ export default function ClassManagement() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-cream rounded-xl p-3 text-center">
                   <Users size={14} className="mx-auto text-coral mb-1" />
+
                   <p className="font-display text-lg text-charcoal">
                     {stats.studentCount}
                   </p>
+
                   <p className="font-body text-[10px] text-medium-gray">
                     Students
                   </p>
@@ -182,9 +207,11 @@ export default function ClassManagement() {
 
                 <div className="bg-cream rounded-xl p-3 text-center">
                   <FileText size={14} className="mx-auto text-coral mb-1" />
+
                   <p className="font-display text-lg text-charcoal">
                     {stats.reportCount}
                   </p>
+
                   <p className="font-body text-[10px] text-medium-gray">
                     Reports
                   </p>
