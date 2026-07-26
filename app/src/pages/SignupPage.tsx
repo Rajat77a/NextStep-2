@@ -11,10 +11,12 @@ import {
   User,
   Heart,
 } from 'lucide-react';
-import { register as registerUser } from '@/api/auth';
+import { useAuth } from '@/hooks/useAuth';
+import * as authApi from '@/api/auth';
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const auth = useAuth();
 
   const [step, setStep] = useState(1);
   const [fullName, setFullName] = useState('');
@@ -53,7 +55,19 @@ export default function SignupPage() {
     setError('');
 
     try {
-      await registerUser({
+      const signupFunction =
+        (auth as any).register ||
+        (auth as any).signUp ||
+        (auth as any).signup ||
+        (authApi as any).register ||
+        (authApi as any).signUp ||
+        (authApi as any).signup;
+
+      if (typeof signupFunction !== 'function') {
+        throw new Error('Signup function is missing.');
+      }
+
+      await signupFunction({
         email,
         password,
         fullName,
