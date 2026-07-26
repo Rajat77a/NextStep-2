@@ -1,161 +1,218 @@
-import { supabase } from '@/lib/supabase';
+import { storage } from './storage';
+import {
+  hashPassword,
+  verifyPassword,
+  generateToken,
+  decodeToken,
+  generateId,
+  delay,
+} from '@/lib/crypto';
 import type { User, AuthResponse, ApiError } from '@/types';
 
 function createApiError(code: number, message: string, field?: string): ApiError {
   return { code, message, field };
 }
 
-function buildProfileFromUser(
-  supaUser: import('@supabase/supabase-js').User,
-  dbRow?: Record<string, any> | null
-): Omit<User, 'passwordHash'> {
-  const meta = supaUser.user_metadata ?? {};
-  return {
-    id: supaUser.id,
-    email: supaUser.email ?? '',
-    fullName: dbRow?.full_name ?? meta.full_name ?? meta.name ?? supaUser.email?.split('@')[0] ?? 'User',
-    role: (dbRow?.role ?? meta.role ?? 'parent') as 'parent' | 'teacher' | 'admin',
-    schoolId: dbRow?.school_id ?? meta.school_id ?? null,
-    createdAt: dbRow?.created_at ?? supaUser.created_at ?? new Date().toISOString(),
-    updatedAt: dbRow?.updated_at ?? new Date().toISOString(),
-    lastLoginAt: dbRow?.last_login_at ?? null,
+export async function register(data: {
+  email: string;
+  password: string;
+  fullName: string;
+  role: 'parent' | 'teacher' | 'admin';
+}): Promise<AuthResponse> {
+  await delay(200);
+
+  const users = storage.getUsers();
+  const normalizedEmail = data.email.trim().toLowerCase();
+
+  if (users.find((user) => user.email.toLowerCase() === normalizedEmail)) {
+    throw createApiError(409, 'An account with this email already exists', 'email');
+  }
+
+  const passwordHash = await hashPassword(data.password);
+
+  const user: User = {
+    id: generateId(),
+    email: normalizedEmail,
+    passwordHash,
+    fullName: data.fullName.trim(),
+    role: 'parent',
+    schoolId: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
     isActive: true,
-    invitationStatus: (dbRow?.invitation_status ?? 'accepted') as 'pending' | 'accepted',
   };
-}
 
-async function fetchProfile(supabaseUserId: string): Promise<Omit<User, 'passwordHash'> | null> {
-  const { data: authUser } = await supabase.auth.getUser();
-  if (!authUser?.user) return null;
+  users.push(user);
+  storage.setUsers(users);
 
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', supabaseUserId)
-    .maybeSingle();
+  const token = generateToken(user.id, user.role, user.schoolId);
+  storage.setToken(token);
 
-  return buildProfileFromUser(authUser.user, data);
-}
-
-// ─── Google OAuth ─────────────────────────────────────────────────────────────
-
-export async function signInWithGoogle(): Promise<void> {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-    },
-  });
-  if (error) throw createApiError(400, error.message);
-}
-
-// ─── Email OTP ────────────────────────────────────────────────────────────────
-
-export async function sendOtp(
-  email: string,
-  options?: { data?: Record<string, unknown>; shouldCreateUser?: boolean }
-): Promise<void> {
-  const otpOptions: {
-    shouldCreateUser: boolean;
-    data?: Record<string, unknown>;
-  } = {
-    shouldCreateUser: options?.shouldCreateUser ?? true,
-  };
-  if (options?.data) {
-    otpOptions.data = options.data;
-  }
-
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: otpOptions,
-  });
-  if (error) throw createApiError(400, error.message);
-}
-
-export async function verifyOtp(email: string, token: string): Promise<AuthResponse> {
-  const { data: authData, error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: 'email',
-  });
-
-  if (error || !authData.user) {
-    throw createApiError(401, error?.message || 'Invalid or expired OTP');
-  }
-
-  const profile = await fetchProfile(authData.user.id);
-  const user = profile ?? buildProfileFromUser(authData.user);
+  const { passwordHash: _, ...userWithoutPassword } = user;
 
   return {
-    user,
-    token: authData.session?.access_token ?? '',
+    user: userWithoutPassword as Omit<User, 'passwordHash'>,
+    token,
   };
 }
 
-// ─── logout ───────────────────────────────────────────────────────────────────
+export const signUp = register;
+export const signup = register;
 
-export async function logout(): Promise<void> {
-  await supabase.auth.signOut();
+export async function login(data: {
+  email: string;
+  password: string;
+}): Promise<AuthResponse> {
+  await delay(200);
+
+  const users = storage.getUsers();
+  const normalizedEmail = data.email.trim().toLowerCase();
+  const user = users.find((item) => item.email.toLowerCase() === normalizedEmail);
+
+  if (!user) {
+    throw createApiError(401, 'Invalid email or password');
+  }
+
+  const valid = await verifyPassword(data.password, user.passwordHash);
+
+  if (!valid) {
+    throw createApiError(401, 'Invalid email or password');
+  }
+
+  if (user.role !== 'parent') {
+    throw createApiError(403, 'Only parent accounts can sign in right now.');
+  }
+
+  user.lastLoginAt = new Date().toISOString();
+  user.updatedAt = new Date().toISOString();
+  storage.setUsers(users);
+
+  const token = generateToken(user.id, user.role, user.schoolId);
+  storage.setToken(token);
+
+  const { passwordHash: _, ...userWithoutPassword } = user;
+
+  return {
+    user: userWithoutPassword as Omit<User, 'passwordHash'>,
+    token,
+  };
 }
 
-// ─── session / current user ───────────────────────────────────────────────────
+export const signIn = login;
+export const signin = login;
 
-export async function getCurrentUser(): Promise<Omit<User, 'passwordHash'> | null> {
-  const { data } = await supabase.auth.getSession();
-  if (!data.session?.user) return null;
-  return fetchProfile(data.session.user.id);
+export function logout(): void {
+  storage.clearToken();
 }
 
-// ─── update profile ───────────────────────────────────────────────────────────
+export const signOut = logout;
+export const signout = logout;
+
+export function getCurrentUser(): Omit<User, 'passwordHash'> | null {
+  const token = storage.getToken();
+
+  if (!token) return null;
+
+  const payload = decodeToken(token);
+
+  if (!payload) {
+    storage.clearToken();
+    return null;
+  }
+
+  const users = storage.getUsers();
+  const user = users.find((item) => item.id === payload.sub);
+
+  if (!user || !user.isActive || user.role !== 'parent') {
+    storage.clearToken();
+    return null;
+  }
+
+  const { passwordHash: _, ...userWithoutPassword } = user;
+
+  return userWithoutPassword as Omit<User, 'passwordHash'>;
+}
+
+export const currentUser = getCurrentUser;
+export const getUser = getCurrentUser;
 
 export async function updateProfile(data: {
   fullName?: string;
   email?: string;
   currentPassword?: string;
   newPassword?: string;
-  role?: 'parent' | 'teacher' | 'admin';
 }): Promise<Omit<User, 'passwordHash'>> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const supaUser = sessionData.session?.user;
-  if (!supaUser) throw createApiError(401, 'Not authenticated');
+  await delay(150);
 
-  if (data.email || data.newPassword) {
-    const updates: { email?: string; password?: string } = {};
-    if (data.email) updates.email = data.email;
-    if (data.newPassword) updates.password = data.newPassword;
-    const { error } = await supabase.auth.updateUser(updates);
-    if (error) throw createApiError(400, error.message);
+  const currentUserValue = getCurrentUser();
+
+  if (!currentUserValue) {
+    throw createApiError(401, 'Not authenticated');
   }
 
-  const profileUpdates: Record<string, unknown> = {};
-  if (data.fullName) profileUpdates.full_name = data.fullName;
-  if (data.role) profileUpdates.role = data.role;
+  const users = storage.getUsers();
+  const user = users.find((item) => item.id === currentUserValue.id);
 
-  if (Object.keys(profileUpdates).length > 0) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update(profileUpdates)
-      .eq('id', supaUser.id);
-    if (profileError) throw createApiError(500, profileError.message);
+  if (!user) {
+    throw createApiError(404, 'User not found');
   }
 
-  const profile = await fetchProfile(supaUser.id);
-  if (!profile) throw createApiError(500, 'Failed to reload profile');
-  return profile;
+  if (data.email && data.email.trim().toLowerCase() !== user.email.toLowerCase()) {
+    const normalizedEmail = data.email.trim().toLowerCase();
+
+    if (users.find((item) => item.email.toLowerCase() === normalizedEmail && item.id !== user.id)) {
+      throw createApiError(409, 'Email already in use', 'email');
+    }
+
+    user.email = normalizedEmail;
+  }
+
+  if (data.fullName) {
+    user.fullName = data.fullName.trim();
+  }
+
+  if (data.newPassword) {
+    if (!data.currentPassword) {
+      throw createApiError(400, 'Current password is required', 'currentPassword');
+    }
+
+    const valid = await verifyPassword(data.currentPassword, user.passwordHash);
+
+    if (!valid) {
+      throw createApiError(400, 'Current password is incorrect', 'currentPassword');
+    }
+
+    user.passwordHash = await hashPassword(data.newPassword);
+  }
+
+  user.updatedAt = new Date().toISOString();
+  storage.setUsers(users);
+
+  const { passwordHash: _, ...userWithoutPassword } = user;
+
+  return userWithoutPassword as Omit<User, 'passwordHash'>;
 }
 
-// ─── guards ───────────────────────────────────────────────────────────────────
+export const updateUser = updateProfile;
+export const updateAccount = updateProfile;
 
-export async function requireAuth(): Promise<Omit<User, 'passwordHash'>> {
-  const user = await getCurrentUser();
-  if (!user) throw createApiError(401, 'Please sign in to continue');
+export function requireAuth(): Omit<User, 'passwordHash'> {
+  const user = getCurrentUser();
+
+  if (!user) {
+    throw createApiError(401, 'Please sign in to continue');
+  }
+
   return user;
 }
 
-export async function requireRole(allowedRoles: string[]): Promise<Omit<User, 'passwordHash'>> {
-  const user = await requireAuth();
+export function requireRole(allowedRoles: string[]): Omit<User, 'passwordHash'> {
+  const user = requireAuth();
+
   if (!allowedRoles.includes(user.role)) {
     throw createApiError(403, 'You do not have permission to access this resource');
   }
+
   return user;
 }
