@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -37,7 +37,6 @@ export default function SignupPage() {
 
   const handleNext = () => {
     const err = validateStep1();
-
     if (err) {
       setError(err);
       return;
@@ -47,9 +46,8 @@ export default function SignupPage() {
     setStep(2);
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError('');
 
@@ -91,7 +89,11 @@ export default function SignupPage() {
           <div className="flex items-center justify-between mb-6">
             {step === 2 && (
               <button
-                onClick={() => setStep(1)}
+                type="button"
+                onClick={() => {
+                  setError('');
+                  setStep(1);
+                }}
                 className="text-medium-gray hover:text-charcoal transition-colors"
               >
                 <ArrowLeft size={18} />
@@ -123,16 +125,12 @@ export default function SignupPage() {
                 <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
                   Full Name
                 </label>
-
                 <div className="relative">
-                  <User
-                    size={16}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray"
-                  />
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray" />
                   <input
                     type="text"
                     value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
+                    onChange={e => setFullName(e.target.value)}
                     placeholder="Your full name"
                     className="w-full pl-10 pr-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal placeholder:text-medium-gray focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
                   />
@@ -143,16 +141,12 @@ export default function SignupPage() {
                 <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
                   Email Address
                 </label>
-
                 <div className="relative">
-                  <Mail
-                    size={16}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray"
-                  />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray" />
                   <input
                     type="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className="w-full pl-10 pr-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal placeholder:text-medium-gray focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
                   />
@@ -163,20 +157,15 @@ export default function SignupPage() {
                 <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
                   Password
                 </label>
-
                 <div className="relative">
-                  <Lock
-                    size={16}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray"
-                  />
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray" />
                   <input
                     type={showPass ? 'text' : 'password'}
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={e => setPassword(e.target.value)}
                     placeholder="Min 6 characters"
                     className="w-full pl-10 pr-10 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal placeholder:text-medium-gray focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
                   />
-
                   <button
                     type="button"
                     onClick={() => setShowPass(!showPass)}
@@ -191,17 +180,17 @@ export default function SignupPage() {
                 <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
                   Confirm Password
                 </label>
-
                 <input
                   type={showPass ? 'text' : 'password'}
                   value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  onChange={e => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter password"
                   className="w-full px-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal placeholder:text-medium-gray focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
                 />
               </div>
 
               <button
+                type="button"
                 onClick={handleNext}
                 className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
               >
@@ -214,12 +203,10 @@ export default function SignupPage() {
                 <span className="mt-0.5 text-coral">
                   <Heart size={24} />
                 </span>
-
                 <div>
                   <p className="font-body font-semibold text-charcoal">Parent</p>
                   <p className="font-body text-sm text-medium-gray">
-                    Upload report cards and get clarity checks, teacher conversation
-                    support, and 30-day plans.
+                    Upload report cards and get clarity checks, teacher conversation support, and 30-day plans.
                   </p>
                 </div>
               </div>
