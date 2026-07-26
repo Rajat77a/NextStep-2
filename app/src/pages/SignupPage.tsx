@@ -15,7 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const auth = useAuth();
 
   const [step, setStep] = useState(1);
   const [fullName, setFullName] = useState('');
@@ -54,7 +54,16 @@ export default function SignupPage() {
     setError('');
 
     try {
-      await register({
+      const signupFunction =
+        (auth as any).register ||
+        (auth as any).signUp ||
+        (auth as any).signup;
+
+      if (typeof signupFunction !== 'function') {
+        throw new Error('Signup function is missing in useAuth.');
+      }
+
+      await signupFunction({
         email,
         password,
         fullName,
@@ -63,7 +72,7 @@ export default function SignupPage() {
 
       navigate('/parent');
     } catch (err: any) {
-      setError(err.message || 'Registration failed');
+      setError(err?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -176,6 +185,7 @@ export default function SignupPage() {
                     placeholder="Min 6 characters"
                     className="w-full pl-10 pr-10 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal placeholder:text-medium-gray focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPass(!showPass)}
