@@ -1,64 +1,114 @@
-import { useState, useEffect, useCallback } from 'react';
-import * as authApi from '@/api/auth';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  register as apiRegister,
+  login as apiLogin,
+  logout as apiLogout,
+  getCurrentUser,
+  updateProfile as apiUpdateProfile,
+} from '@/api/auth';
 import { seedDatabase } from '@/api/seed';
 import type { User, UserRole } from '@/types';
 
 type SafeUser = Omit<User, 'passwordHash'>;
 
-function getAuthFunction(nameOptions: string[]) {
-  for (const name of nameOptions) {
-    const fn = (authApi as any)[name];
-    if (typeof fn === 'function') return fn;
-  }
+function normalizeUser(value: any): SafeUser | null {
+  const raw = value?.user || value?.data?.user || value;
 
-  return null;
+  if (!raw) return null;
+
+  const now = new Date().toISOString();
+
+  return {
+    id: raw.id || raw.sub || crypto.randomUUID(),
+    email: raw.email || '',
+    fullName:
+      raw.fullName ||
+      raw.full_name ||
+      raw.name ||
+      raw.user_metadata?.fullName ||
+      raw.user_metadata?.full_name ||
+      raw.user_metadata?.name ||
+      'Parent',
+    role: (raw.role || raw.user_metadata?.role || 'parent') as UserRole,
+    schoolId: raw.schoolId ?? raw.school_id ?? null,
+    invitationStatus: raw.invitationStatus || raw.invitation_status,
+    createdAt: raw.createdAt || raw.created_at || now,
+    updatedAt: raw.updatedAt || raw.updated_at || now,
+    lastLoginAt: raw.lastLoginAt || raw.last_login_at || now,
+    isActive: raw.isActive ?? raw.is_active ?? true,
+  };
 }
 
 export function useAuth() {
-  const [user, setUser] = useState<SafeUser | null>(null);
+  const [user, setUser] = useState<SafeUser | null>(() => {
+    try {
+      return normalizeUser(getCurrentUser());
+    } catch {
+      return null;
+    }
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const refreshUser = useCallback(() => {
+    try {
+      const currentUser = normalizeUser(getCurrentUser());
+      setUser(currentUser);
+      return currentUser;
+    } catch {
+      setUser(null);
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
-    async function initAuth() {
+    let active = true;
+
+    async function load() {
       try {
-        if (typeof seedDatabase === 'function') {
-          await seedDatabase();
-        }
-
-        const getCurrentUser =
-          getAuthFunction(['getCurrentUser', 'currentUser', 'getUser']);
-
-        if (getCurrentUser) {
-          const currentUser = await getCurrentUser();
-          setUser(currentUser || null);
-        }
+        await seedDatabase();
       } catch {
-        setUser(null);
-      } finally {
+        // Do not block the app if seed data fails.
+      }
+
+      if (active) {
+        refreshUser();
         setLoading(false);
       }
     }
 
-    initAuth();
-  }, []);
+    load();
+
+    const handleStorageChange = () => {
+      refreshUser();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleStorageChange);
+
+    return () => {
+      active = false;
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
+  }, [refreshUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
     setLoading(true);
 
     try {
-      const loginFunction = getAuthFunction(['login', 'signIn', 'signin']);
+      const result = await apiLogin({ email, password });
+      const nextUser = normalizeUser(result);
 
-      if (!loginFunction) {
-        throw new Error('Login function is missing in src/api/auth.ts');
+      if (!nextUser) {
+        throw new Error('Login failed. User data was not returned.');
       }
 
-      const result = await loginFunction({ email, password });
-      const loggedInUser = result?.user || result;
-
-      setUser(loggedInUser);
-      return loggedInUser;
+      setUser(nextUser);
+      window.dispatchEvent(new Event('storage'));
+      return nextUser;
     } catch (err: any) {
       setError(err?.message || 'Login failed');
       throw err;
@@ -67,78 +117,70 @@ export function useAuth() {
     }
   }, []);
 
-  const register = useCallback(async (data: {
-    email: string;
-    password: string;
-    fullName: string;
-    role: UserRole;
-  }) => {
-    setError(null);
-    setLoading(true);
+  const register = useCallback(
+    async (data: {
+      email: string;
+      password: string;
+      fullName: string;
+      role: UserRole;
+    }) => {
+      setError(null);
+      setLoading(true);
 
-    try {
-      const registerFunction = getAuthFunction([
-        'register',
-        'signUp',
-        'signup',
-        'createAccount',
-      ]);
+      try {
+        const result = await apiRegister(data);
+        const nextUser = normalizeUser(result);
 
-      if (!registerFunction) {
-        throw new Error('Signup function is missing in src/api/auth.ts');
+        if (!nextUser) {
+          throw new Error('Registration failed. User data was not returned.');
+        }
+
+        setUser(nextUser);
+        window.dispatchEvent(new Event('storage'));
+        return nextUser;
+      } catch (err: any) {
+        setError(err?.message || 'Registration failed');
+        throw err;
+      } finally {
+        setLoading(false);
       }
-
-      const result = await registerFunction(data);
-      const createdUser = result?.user || result;
-
-      setUser(createdUser);
-      return createdUser;
-    } catch (err: any) {
-      setError(err?.message || 'Registration failed');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const logout = useCallback(() => {
-    const logoutFunction = getAuthFunction(['logout', 'signOut', 'signout']);
-
-    if (logoutFunction) {
-      logoutFunction();
-    }
-
+    apiLogout();
     setUser(null);
+    window.dispatchEvent(new Event('storage'));
     window.location.href = '/';
   }, []);
 
-  const updateUser = useCallback(async (data: {
-    fullName?: string;
-    email?: string;
-    currentPassword?: string;
-    newPassword?: string;
-  }) => {
-    setError(null);
+  const updateUser = useCallback(
+    async (data: {
+      fullName?: string;
+      email?: string;
+      currentPassword?: string;
+      newPassword?: string;
+    }) => {
+      setError(null);
 
-    try {
-      const updateProfileFunction = getAuthFunction([
-        'updateProfile',
-        'updateUser',
-        'updateAccount',
-      ]);
+      try {
+        const updated = normalizeUser(await apiUpdateProfile(data));
 
-      if (!updateProfileFunction) {
-        throw new Error('Update profile function is missing in src/api/auth.ts');
+        if (!updated) {
+          throw new Error('Update failed. User data was not returned.');
+        }
+
+        setUser(updated);
+        window.dispatchEvent(new Event('storage'));
+        return updated;
+      } catch (err: any) {
+        setError(err?.message || 'Update failed');
+        throw err;
       }
-
-      const updatedUser = await updateProfileFunction(data);
-      setUser(updatedUser);
-      return updatedUser;
-    } catch (err: any) {
-      setError(err?.message || 'Update failed');
-      throw err;
-    }
-  }, []);
+    },
+    []
+  );
 
   return {
     user,
@@ -146,9 +188,10 @@ export function useAuth() {
     error,
     login,
     register,
-    signUp: register,
     signup: register,
+    signUp: register,
     logout,
     updateUser,
+    refreshUser,
   };
 }
