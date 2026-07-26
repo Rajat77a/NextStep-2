@@ -1,122 +1,50 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Mail, Chrome, Home } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+
+const demoAccounts = [
+  { role: 'Parent', email: 'parent@demo.com', pass: 'demo123' },
+];
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { signInWithGoogle, sendOtp, verifyOtp, error: authError } = useAuth();
+  const { login, logout } = useAuth();
+
   const [email, setEmail] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleGoogleSignIn = async () => {
-    setError('');
-    await signInWithGoogle();
-  };
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
     setError('');
     setLoading(true);
+
     try {
-      await sendOtp(email, { shouldCreateUser: false });
-      setOtpSent(true);
-      setTimeout(() => inputRefs.current[0]?.focus(), 100);
-    } catch (e: any) {
-      const msg = e?.message || '';
-      if (/not found|does not exist|may not exist/i.test(msg)) {
-        setError('no_account');
-      } else {
-        setError(msg || 'Failed to send OTP. Please try again.');
+      const user = await login(email, password);
+
+      if (user.role !== 'parent') {
+        logout();
+        setError(
+          'Only the parent portal is available right now. Please sign in with a parent account.'
+        );
+        return;
       }
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const fillOtp = useCallback((code: string) => {
-    const digits = code.replace(/\D/g, '').split('');
-    if (digits.length !== 6) return;
-    setOtp(digits);
-    inputRefs.current[5]?.focus();
-    setLoading(true);
-    verifyOtp(email, digits.join(''))
-      .then(user => navigate(`/${user.role}`))
-      .catch((e: any) => setError(e?.message || 'Invalid or expired code. Please try again.'))
-      .finally(() => setLoading(false));
-  }, [email, navigate, verifyOtp]);
-
-  const handleOtpChange = (index: number, value: string) => {
-    if (!value) {
-      const newOtp = [...otp];
-      newOtp[index] = '';
-      setOtp(newOtp);
-      return;
-    }
-    if (value.length > 1) {
-      fillOtp(value);
-      return;
-    }
-    if (!/^\d$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-    if (index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    const code = otp.join('');
-    if (code.length !== 6) {
-      setError('Please enter the full 6-digit code');
-      return;
-    }
-    setError('');
-    setLoading(true);
-    try {
-      const user = await verifyOtp(email, code);
-      navigate(`/${user.role}`);
-    } catch (e: any) {
-      setError(e?.message || 'Invalid or expired code. Please try again.');
+      navigate('/parent');
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-5 relative">
-      <motion.div
-        initial={{ opacity: 0, y: -8, scale: 0.92 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute top-6 left-6 z-10"
-      >
-        <Link
-          to="/"
-          className="group flex items-center gap-2.5 py-2 pl-2.5 pr-4 rounded-full bg-white/95 border border-light-gray/70 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
-        >
-          <span className="w-7 h-7 rounded-full bg-coral/10 flex items-center justify-center group-hover:bg-coral/15 transition-colors duration-300">
-            <Home size={14} className="text-coral" />
-          </span>
-          <span className="font-body text-sm font-semibold text-charcoal/80 group-hover:text-charcoal transition-colors duration-300">Home</span>
-        </Link>
-      </motion.div>
+    <div className="min-h-screen bg-cream flex items-center justify-center px-5">
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -124,115 +52,134 @@ export default function LoginPage() {
         className="w-full max-w-[420px]"
       >
         <Link to="/" className="flex items-baseline gap-0.5 justify-center mb-8">
-          <span className="font-display text-3xl font-semibold text-charcoal tracking-tight">NextStep</span>
-          <span className="text-coral text-xs font-body font-bold">●</span>
-          <span className="font-body text-sm font-semibold text-charcoal tracking-wider">AI</span>
+          <span className="font-display text-3xl font-semibold text-charcoal tracking-tight">
+            NextStep
+          </span>
+          <span className="text-coral text-xs font-body font-bold">.</span>
+          <span className="font-body text-sm font-semibold text-charcoal tracking-wider">
+            AI
+          </span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-card p-8 md:p-10">
           <h2 className="font-display text-2xl md:text-3xl font-medium text-charcoal text-center mb-1">
-            {otpSent ? 'Check your email' : 'Welcome back'}
+            Welcome back
           </h2>
+
           <p className="font-body text-medium-gray text-center mb-8">
-            {otpSent ? `We sent a code to ${email}` : 'Sign in to your portal'}
+            Sign in to the parent portal
           </p>
 
-          {(error || authError) && (
+          {error && (
             <div className="mb-4 p-3 bg-coral/10 border border-coral/20 rounded-lg text-coral text-sm font-body">
-              {error || authError}
+              {error}
             </div>
           )}
 
-          {!otpSent ? (
-            <>
-              <button
-                onClick={handleGoogleSignIn}
-                className="w-full py-3.5 rounded-[10px] border-[1.5px] border-light-gray bg-white text-charcoal font-body font-semibold text-sm hover:border-charcoal/30 hover:shadow-card transition-all duration-200 flex items-center justify-center gap-3"
-              >
-                <Chrome size={18} />
-                Continue with Google
-              </button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
+                Email Address
+              </label>
 
-              <div className="flex items-center gap-4 my-6">
-                <div className="flex-1 h-px bg-light-gray" />
-                <span className="font-body text-xs text-medium-gray">or</span>
-                <div className="flex-1 h-px bg-light-gray" />
+              <div className="relative">
+                <Mail
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray"
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full pl-10 pr-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal placeholder:text-medium-gray focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
+                  required
+                />
               </div>
+            </div>
 
-              <form onSubmit={handleSendOtp} className="space-y-4">
-                <div>
-                  <label className="block font-body text-sm font-medium text-charcoal mb-1.5">Email Address</label>
-                  <div className="relative">
-                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="w-full pl-10 pr-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal placeholder:text-medium-gray focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
-                      required
-                    />
-                  </div>
-                </div>
+            <div>
+              <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
+                Password
+              </label>
 
+              <div className="relative">
+                <Lock
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray"
+                />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full pl-10 pr-10 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal placeholder:text-medium-gray focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
+                  required
+                />
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-medium-gray hover:text-charcoal"
                 >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>Send OTP <ArrowRight size={14} /></>
-                  )}
-                </button>
-              </form>
-            </>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex justify-center gap-2">
-                {otp.map((digit, i) => (
-                  <input
-                    key={i}
-                    ref={el => { inputRefs.current[i] = el; }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={i === 0 ? 6 : 1}
-                    value={digit}
-                    onChange={e => handleOtpChange(i, e.target.value)}
-                    onKeyDown={e => handleOtpKeyDown(i, e)}
-                    className="w-11 h-12 text-center rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-lg font-semibold text-charcoal focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={handleVerifyOtp}
-                disabled={loading || otp.join('').length !== 6}
-                className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>Verify & Sign In <ArrowRight size={14} /></>
-                )}
-              </button>
-
-              <div className="text-center">
-                <button
-                  onClick={() => { setOtpSent(false); setOtp(['', '', '', '', '', '']); }}
-                  className="font-body text-sm text-medium-gray hover:text-charcoal transition-colors"
-                >
-                  Use a different email
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
-          )}
+
+            <div className="text-right">
+              <span className="font-body text-sm text-coral cursor-default">
+                Forgot password?
+              </span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-[10px] bg-coral text-white font-body font-semibold text-sm hover:bg-coral-dark transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  Sign In <ArrowRight size={14} />
+                </>
+              )}
+            </button>
+          </form>
 
           <div className="mt-6 text-center">
             <p className="font-body text-sm text-medium-gray">
-              Don't have an account? <Link to="/signup" className="text-coral font-semibold hover:underline">Sign up</Link>
+              Don't have an account?{' '}
+              <Link to="/signup" className="text-coral font-semibold hover:underline">
+                Sign up
+              </Link>
             </p>
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <p className="label-text text-medium-gray text-center mb-4">
+            Demo Account - Click to Auto-fill
+          </p>
+
+          <div className="grid grid-cols-1 gap-3">
+            {demoAccounts.map((account) => (
+              <button
+                key={account.email}
+                onClick={() => {
+                  setEmail(account.email);
+                  setPassword(account.pass);
+                }}
+                className="p-3 rounded-xl bg-white border border-light-gray hover:border-coral hover:shadow-card transition-all text-center"
+              >
+                <p className="font-body text-xs font-semibold text-charcoal">
+                  {account.role}
+                </p>
+                <p className="font-body text-[10px] text-medium-gray mt-1">
+                  {account.email}
+                </p>
+              </button>
+            ))}
           </div>
         </div>
       </motion.div>
