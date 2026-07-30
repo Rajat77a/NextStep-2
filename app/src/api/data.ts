@@ -295,7 +295,7 @@ export async function addStudent(data: {
 
   if (user.role === 'admin' && data.parentEmail) {
     // Try to find existing parent profile by email
-    // We can't search by email easily — profiles don't have email column
+    // We can't search by email easily â€” profiles don't have email column
     // Fallback: use the admin's user ID as parent reference
     // Parents will link via signup flow
     parentUserId = user.id;
@@ -517,30 +517,38 @@ export async function bulkUploadStudents(
 
 // ===== Report Cards =====
 export async function uploadReportCard(data: {
-  studentId: string;
+  studentId?: string | null;
   term: string;
   boardType: string;
   file?: File;
   uploadMethod?: string;
-  /** Raw OCR text extracted from the uploaded file — saved to ReportCard.raw_text */
+  /** Raw OCR text extracted from the uploaded file - saved to ReportCard.raw_text */
   raw_text?: string;
 }): Promise<ReportCard> {
   const { data: sessionData } = await supabase.auth.getSession();
   const supaUserId = sessionData.session?.user?.id;
-  if (!supaUserId) throw createApiError(401, 'Please sign in to continue');
 
-  // Look up student's class_id so report cards are scoped correctly for teachers/admins
-  const { data: student } = await supabase
-    .from('students')
-    .select('class_id')
-    .eq('id', data.studentId)
-    .single();
+  if (!supaUserId) {
+    throw createApiError(401, 'Please sign in to continue');
+  }
+
+  let classId: string | null = null;
+
+  if (data.studentId) {
+    const { data: student } = await supabase
+      .from('students')
+      .select('class_id')
+      .eq('id', data.studentId)
+      .maybeSingle();
+
+    classId = student?.class_id || null;
+  }
 
   const { data: row, error } = await supabase
     .from('report_cards')
     .insert({
-      student_id: data.studentId,
-      class_id: student?.class_id || null,
+      student_id: data.studentId || null,
+      class_id: classId,
       uploaded_by: supaUserId,
       upload_source: data.uploadMethod || 'self_uploaded',
       board_type: data.boardType,
@@ -552,11 +560,13 @@ export async function uploadReportCard(data: {
     .select()
     .single();
 
-  if (error || !row) throw createApiError(500, error?.message || 'Could not save report card');
+  if (error || !row) {
+    throw createApiError(500, error?.message || 'Could not save report card');
+  }
 
   return {
     id: row.id,
-    studentId: row.student_id,
+    studentId: row.student_id ?? 'parent-self-upload',
     classId: row.class_id ?? 'parent-local-class',
     term: row.term,
     uploadedBy: row.uploaded_by,
@@ -568,7 +578,6 @@ export async function uploadReportCard(data: {
     ai_response: row.ai_response ?? undefined,
   };
 }
-
 export async function getReportCards(filters?: {
   studentId?: string;
   classId?: string;
@@ -578,7 +587,7 @@ export async function getReportCards(filters?: {
 
   let reportCards: ReportCard[] = [];
 
-  // Build query — fetch from Supabase for authenticated users
+  // Build query â€” fetch from Supabase for authenticated users
   if (supaUserId) {
     let query = supabase
       .from('report_cards')
@@ -600,7 +609,7 @@ export async function getReportCards(filters?: {
       if (studentIds.length > 0) {
         query = query.in('student_id', studentIds);
       }
-      // If no students found (teacher/admin), don't scope — RLS handles it
+      // If no students found (teacher/admin), don't scope â€” RLS handles it
     }
 
     const { data, error } = await query;
@@ -689,7 +698,7 @@ export async function addSubjectGrades(
 ): Promise<SubjectGrade[]> {
   await requireAuth();
 
-  // Data is primarily in report_cards.ai_response — this is a legacy cache
+  // Data is primarily in report_cards.ai_response â€” this is a legacy cache
   // Insert into Supabase subject_grades table if needed
   const rows = grades.map((grade) => ({
     report_card_id: reportCardId,
@@ -813,7 +822,7 @@ export async function getClarityCheck(reportCardId: string): Promise<ClarityChec
 export async function saveClarityCheck(data: Omit<ClarityCheck, 'id'>): Promise<ClarityCheck> {
   await requireRole(['parent']);
 
-  // Primary data is already in report_cards.ai_response — this is a cache
+  // Primary data is already in report_cards.ai_response â€” this is a cache
   const checks = storage.getClarityChecks();
   const existingIndex = checks.findIndex((check) => check.reportCardId === data.reportCardId);
 
@@ -1156,3 +1165,4 @@ export async function getUserById(id: string): Promise<{
     role: data.role,
   };
 }
+
