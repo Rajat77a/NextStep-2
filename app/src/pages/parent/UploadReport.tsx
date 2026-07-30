@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePageTransition } from '@/contexts/PageTransitionContext';
@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   Loader2,
   AlertCircle,
-  Users,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -18,7 +17,6 @@ import {
   saveClarityCheck,
   createPlanProgress,
   updateReportCardAiResponse,
-  getStudents,
 } from '@/api/data';
 import {
   analyzeReportText,
@@ -29,7 +27,6 @@ import { extractReportText } from '@/lib/reportOcr';
 import type {
   AIReportAnalysis,
   SubjectGrade,
-  Student,
 } from '@/types';
 
 function canReadTextDirectly(file: File) {
@@ -73,8 +70,6 @@ export default function UploadReport() {
   const { user } = useAuth();
 
   const [step, setStep] = useState(1);
-  const [children, setChildren] = useState<Student[]>([]);
-  const [selectedChildId, setSelectedChildId] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [rawText, setRawText] = useState('');
   const [grades, setGrades] = useState<SubjectGrade[]>([]);
@@ -82,22 +77,6 @@ export default function UploadReport() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [ocrStatus, setOcrStatus] = useState('');
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    getStudents({ parentId: user.id })
-      .then((kids) => {
-        setChildren(kids);
-
-        if (kids.length > 0) {
-          setSelectedChildId((current) => current || kids[0].id);
-        }
-      })
-      .catch((err) => {
-        setError(err?.message || 'Could not load children.');
-      });
-  }, [user?.id]);
 
   const handleFileSelect = async (selectedFile: File) => {
     const maxSize = 10 * 1024 * 1024;
@@ -156,9 +135,7 @@ export default function UploadReport() {
 
   const handleProcess = async () => {
     if (!rawText.trim() || rawText.trim().length < 20) {
-      setError(
-        'Please paste the report card text before analyzing. Image/PDF OCR can be added later, but the AI needs text to read right now.'
-      );
+      setError('Please paste the report card text before analyzing.');
       return;
     }
 
@@ -194,21 +171,11 @@ export default function UploadReport() {
   };
 
   const handleConfirm = async () => {
-    const effectiveChildId = selectedChildId || children[0]?.id;
-
-    if (!effectiveChildId) {
-      setError(
-        'Analysis is working, but saving needs a linked child. Ask the school admin to add a student with your parent email, then refresh this page.'
-      );
-      return;
-    }
-
     if (!analysis || !user) {
       setError('AI analysis is missing. Please analyze the report again.');
       return;
     }
 
-    setSelectedChildId(effectiveChildId);
     setLoading(true);
     setError('');
 
@@ -216,7 +183,6 @@ export default function UploadReport() {
       const clarityData = mapAIAnalysisToClarityCheck(analysis);
 
       const card = await uploadReportCard({
-        studentId: effectiveChildId,
         term: analysis.term || 'Current Term',
         boardType: 'Other',
         file: file || undefined,
@@ -225,7 +191,6 @@ export default function UploadReport() {
       });
 
       await updateReportCardAiResponse(card.id, analysis);
-
       await addSubjectGrades(card.id, grades);
 
       const clarityCheck = await saveClarityCheck({
@@ -295,41 +260,6 @@ export default function UploadReport() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <div className="mb-5">
-              <label className="block font-body text-sm font-medium text-charcoal mb-1.5">
-                Select Child
-              </label>
-
-              <div className="relative">
-                <Users
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-medium-gray pointer-events-none"
-                />
-
-                <select
-                  value={selectedChildId || children[0]?.id || ''}
-                  onChange={(event) => setSelectedChildId(event.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-[10px] border-[1.5px] border-light-gray bg-white font-body text-sm text-charcoal appearance-none cursor-pointer focus:border-coral focus:ring-[3px] focus:ring-coral/10 outline-none transition-all"
-                >
-                  {children.length === 0 && (
-                    <option value="">No children added yet</option>
-                  )}
-
-                  {children.map((child) => (
-                    <option key={child.id} value={child.id}>
-                      {child.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {children.length === 0 && (
-                <p className="font-body text-xs text-medium-gray mt-2">
-                  You can still test AI analysis. Saving the final clarity check needs a student linked to your parent email.
-                </p>
-              )}
-            </div>
-
             <input
               ref={fileInputRef}
               type="file"
