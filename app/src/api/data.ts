@@ -525,11 +525,30 @@ export async function uploadReportCard(data: {
   /** Raw OCR text extracted from the uploaded file - saved to ReportCard.raw_text */
   raw_text?: string;
 }): Promise<ReportCard> {
+  const localUser = await requireAuth();
   const { data: sessionData } = await supabase.auth.getSession();
   const supaUserId = sessionData.session?.user?.id;
 
   if (!supaUserId) {
-    throw createApiError(401, 'Please sign in to continue');
+    const card: ReportCard = {
+      id: crypto.randomUUID(),
+      studentId: data.studentId || 'parent-self-upload',
+      classId: 'parent-local-class',
+      term: data.term,
+      uploadedBy: localUser.id,
+      uploadMethod: (data.uploadMethod as any) || 'parent',
+      boardType: data.boardType as any,
+      createdAt: new Date().toISOString(),
+      status: 'processing',
+      raw_text: data.raw_text ?? undefined,
+      ai_response: undefined,
+    };
+
+    const cards = storage.getReportCards();
+    cards.push(card);
+    storage.setReportCards(cards);
+
+    return card;
   }
 
   let classId: string | null = null;
@@ -664,9 +683,30 @@ export async function deleteReportCard(id: string): Promise<void> {
  */
 export async function updateReportCardAiResponse(
   id: string,
-  ai_response: import('@/types').AIReportAnalysis
+  ai_response: AIReportAnalysis
 ): Promise<ReportCard> {
   await requireAuth();
+  const { data: sessionData } = await supabase.auth.getSession();
+
+  if (!sessionData.session?.user) {
+    const cards = storage.getReportCards();
+    const index = cards.findIndex((card) => card.id === id);
+
+    if (index === -1) {
+      throw createApiError(404, 'Report card not found');
+    }
+
+    cards[index] = {
+      ...cards[index],
+      ai_response,
+      status: 'ready',
+    };
+
+    storage.setReportCards(cards);
+
+    return cards[index];
+  }
+
   const { data, error } = await supabase
     .from('report_cards')
     .update({ ai_response, status: 'ready' })
@@ -942,6 +982,24 @@ export async function createPlanProgress(
   actionItems: PlanProgress['actionItems']
 ): Promise<PlanProgress> {
   const user = await requireRole(['parent']);
+  const { data: sessionData } = await supabase.auth.getSession();
+
+  if (!sessionData.session?.user) {
+    const progress: PlanProgress = {
+      id: crypto.randomUUID(),
+      clarityCheckId,
+      parentId: user.id,
+      actionItems,
+      completionRate: 0,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const allProgress = storage.getPlanProgress();
+    allProgress.push(progress);
+    storage.setPlanProgress(allProgress);
+
+    return progress;
+  }
 
   const { data, error } = await supabase
     .from('plan_progress')
