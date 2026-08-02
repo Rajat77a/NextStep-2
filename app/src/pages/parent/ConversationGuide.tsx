@@ -1,41 +1,86 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import TransitionLink from '@/components/shared/TransitionLink';
-import { ArrowLeft, Heart, Check, Copy, MessageCircle } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { getReportCards, getClarityCheck, getStudent } from '@/api/data';
-import type { ClarityCheck as IClarityCheck } from '@/types';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Heart,
+  MessageCircle,
+} from 'lucide-react';
+import type { ClarityCheck, ReportCard } from '@/types';
+
+type ScriptShape = {
+  openingLine?: string;
+  avoidSaying?: string[];
+  tryInstead?: string[];
+  opening?: string;
+  acknowledgeGood?: string[];
+  exploreChallenges?: string[];
+  closeWithSupport?: string;
+};
+
+function readStorage<T>(key: string, fallback: T): T {
+  try {
+    const value = window.localStorage.getItem(key);
+    return value ? JSON.parse(value) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function getLatestCheck() {
+  const lastReportCardId = window.localStorage.getItem('nsa_lastReportCardId');
+  const cards = readStorage<ReportCard[]>('nsa_reportCards', []);
+  const checks = readStorage<ClarityCheck[]>('nsa_clarityChecks', []);
+
+  const card = lastReportCardId
+    ? cards.find((item) => item.id === lastReportCardId) || cards[0]
+    : cards[0];
+
+  if (!card) return null;
+
+  return checks.find((item) => item.reportCardId === card.id) || null;
+}
 
 export default function ConversationGuide() {
-  const { user } = useAuth();
-  const [check, setCheck] = useState<IClarityCheck | null>(null);
+  const [check, setCheck] = useState<ClarityCheck | null>(null);
   const [copied, setCopied] = useState(false);
-  const [childName, setChildName] = useState('your child');
 
   useEffect(() => {
-    async function load() {
-      if (!user) return;
-      const cards = await getReportCards();
-      if (cards.length === 0) { return <div className="max-w-3xl mx-auto px-5 md:px-12 py-8"><TransitionLink to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"><ArrowLeft size={14} /> Back to Dashboard</TransitionLink><div className="text-center py-12"><MessageCircle size={40} className="mx-auto text-light-gray mb-4" /><h2 className="font-display text-2xl text-charcoal mb-2">No Conversation Guide Yet</h2><p className="font-body text-medium-gray">Upload a report card first to get a personalized conversation script.</p></div></div>; } if (cards.length > 0) {
-        const student = await getStudent(cards[0].studentId);
-        if (student) setChildName(student.fullName);
-        const c = await getClarityCheck(cards[0].id);
-        setCheck(c);
-      }
-    }
-    load();
-  }, [user]);
+    setCheck(getLatestCheck());
+  }, []);
 
-  const handleCopy = () => {
-    if (!check) return;
-    const script = check.conversationScript;
-    const openingLine = script.openingLine || script.opening || '';
-    const avoidSaying = script.avoidSaying || [];
-    const tryInstead = script.tryInstead || [
-      ...(script.acknowledgeGood || []),
-      ...(script.exploreChallenges || []),
-      script.closeWithSupport || '',
-    ].filter(Boolean);
+  const script = (check?.conversationScript || {}) as ScriptShape;
+  const openingLine =
+    script.openingLine ||
+    script.opening ||
+    'I looked at your report card, and I want us to talk about it calmly together.';
+
+  const avoidSaying = script.avoidSaying?.length
+    ? script.avoidSaying
+    : [
+        'Why did you get this grade?',
+        'You should have done better.',
+        'This is not good enough.',
+      ];
+
+  const tryInstead = script.tryInstead?.length
+    ? script.tryInstead
+    : [
+        ...(script.acknowledgeGood || []),
+        ...(script.exploreChallenges || []),
+        script.closeWithSupport || '',
+      ].filter(Boolean);
+
+  const finalTryInstead = tryInstead.length
+    ? tryInstead
+    : [
+        'Which subject felt easiest for you this term?',
+        'Which part felt difficult, and what kind of help would make it easier?',
+        'Let us choose one small habit to try for the next two weeks.',
+      ];
+
+  const handleCopy = async () => {
     const text = [
       "Tonight's Conversation Script",
       '',
@@ -43,100 +88,118 @@ export default function ConversationGuide() {
       openingLine,
       '',
       'AVOID SAYING:',
-      ...avoidSaying.map((s, i) => `${i + 1}. ${s}`),
+      ...avoidSaying.map((line, index) => `${index + 1}. ${line}`),
       '',
       'TRY INSTEAD:',
-      ...tryInstead.map((s, i) => `${i + 1}. ${s}`),
+      ...finalTryInstead.map((line, index) => `${index + 1}. ${line}`),
     ].join('\n');
-    navigator.clipboard.writeText(text);
+
+    await navigator.clipboard.writeText(text);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    window.setTimeout(() => setCopied(false), 2000);
   };
 
   if (!check) {
     return (
       <div className="max-w-3xl mx-auto px-5 md:px-12 py-8 text-center">
-        <h2 className="font-display text-2xl text-charcoal mb-4">No Conversation Available</h2>
-        <p className="font-body text-medium-gray mb-6">Upload a report card first to generate a conversation guide.</p>
-        <TransitionLink to="/parent/upload" className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all">Upload Report Card</TransitionLink>
+        <MessageCircle size={40} className="mx-auto text-light-gray mb-4" />
+        <h2 className="font-display text-2xl text-charcoal mb-4">
+          No Conversation Guide Yet
+        </h2>
+        <p className="font-body text-medium-gray mb-6">
+          Upload and analyze a report card first to generate a conversation guide.
+        </p>
+        <Link
+          to="/parent/upload"
+          className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all"
+        >
+          Upload Report Card
+        </Link>
       </div>
     );
   }
 
-  const script = check.conversationScript;
-  const openingLine = script.openingLine || script.opening || '';
-  const avoidSaying = script.avoidSaying || [];
-  const tryInstead = script.tryInstead || [
-    ...(script.acknowledgeGood || []),
-    ...(script.exploreChallenges || []),
-    script.closeWithSupport || '',
-  ].filter(Boolean);
-
   return (
     <div className="max-w-3xl mx-auto px-5 md:px-12 py-6 md:py-8">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <TransitionLink to="/parent/clarity" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
-          <ArrowLeft size={14} /> Back to Clarity Check
-        </TransitionLink>
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="font-display text-2xl md:text-4xl text-charcoal">Tonight's Conversation</h2>
-            <p className="font-body text-medium-gray mt-1">How to talk with {childName} about the report card</p>
-          </div>
-          <button onClick={handleCopy} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-light-gray hover:border-coral hover:text-coral transition-all font-body text-sm">
-            {copied ? <><Check size={14} className="text-sage" /> Copied!</> : <><Copy size={14} /> Copy script</>}
-          </button>
-        </div>
-      </motion.div>
+      <Link
+        to="/parent/clarity"
+        className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"
+      >
+        <ArrowLeft size={14} /> Back to Clarity Check
+      </Link>
 
-      {/* Tone Banner */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-sage/[0.08] rounded-xl p-4 mb-8 flex items-start gap-3">
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h2 className="font-display text-2xl md:text-4xl text-charcoal">
+            Tonight's Conversation
+          </h2>
+          <p className="font-body text-medium-gray mt-1">
+            A calmer way to talk about the report card
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-light-gray hover:border-coral hover:text-coral transition-all font-body text-sm"
+        >
+          {copied ? (
+            <>
+              <Check size={14} className="text-sage" /> Copied
+            </>
+          ) : (
+            <>
+              <Copy size={14} /> Copy
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="bg-sage/[0.08] rounded-xl p-4 mb-8 flex items-start gap-3">
         <Heart size={18} className="text-sage flex-shrink-0 mt-0.5" />
         <p className="font-body text-xs text-charcoal/70 leading-relaxed">
-          Remember: the goal is connection, not interrogation. These prompts are designed to open a conversation, not deliver a verdict.
+          The goal is connection, not interrogation. Use these prompts to understand what your child experienced and choose one small next step.
         </p>
-      </motion.div>
+      </div>
 
       <div className="space-y-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-card p-6 border-l-4 border-l-sage"
-        >
+        <div className="bg-white rounded-2xl shadow-card p-6 border-l-4 border-l-sage">
           <div className="flex items-center gap-2 mb-3">
             <Heart size={16} className="text-sage" />
-            <span className="label-text text-sage">OPENING LINE</span>
+            <span className="label-text text-sage">Opening Line</span>
           </div>
-          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed">"{openingLine}"</p>
-        </motion.div>
+          <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed">
+            "{openingLine}"
+          </p>
+        </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-2xl shadow-card p-6 border-l-4 border-l-coral">
+        <div className="bg-white rounded-2xl shadow-card p-6 border-l-4 border-l-coral">
           <div className="flex items-center gap-2 mb-3">
             <MessageCircle size={16} className="text-coral" />
-            <span className="label-text text-coral">AVOID SAYING</span>
+            <span className="label-text text-coral">Avoid Saying</span>
           </div>
           <ul className="space-y-3">
-            {avoidSaying.map((line, i) => <li key={i} className="font-body text-sm text-charcoal/75">"{line}"</li>)}
+            {avoidSaying.map((line, index) => (
+              <li key={index} className="font-body text-sm text-charcoal/75">
+                "{line}"
+              </li>
+            ))}
           </ul>
-        </motion.div>
+        </div>
 
-        {tryInstead.map((line, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 + i * 0.12, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        {finalTryInstead.map((line, index) => (
+          <div
+            key={index}
             className="bg-white rounded-2xl shadow-card p-6 border-l-4 border-l-sage"
           >
             <div className="flex items-center gap-2 mb-3">
               <Check size={16} className="text-sage" />
-              <span className="label-text text-sage">TRY INSTEAD</span>
+              <span className="label-text text-sage">Try Instead</span>
             </div>
-            <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed mb-3">
+            <p className="font-display text-lg md:text-xl text-charcoal italic leading-relaxed">
               "{line}"
             </p>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
