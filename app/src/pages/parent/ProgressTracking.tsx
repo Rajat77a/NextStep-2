@@ -18,25 +18,69 @@ type FlagStatus = keyof typeof flagRank;
 function readStorage<T>(key: string, fallback: T): T {
   try {
     const value = window.localStorage.getItem(key);
-    return value ? JSON.parse(value) as T : fallback;
+    return value ? (JSON.parse(value) as T) : fallback;
   } catch {
     return fallback;
   }
+}
+
+function inferFlagFromGrade(gradeValue: string, textValue: string): FlagStatus {
+  const grade = gradeValue.trim().toUpperCase();
+  const text = textValue.toLowerCase();
+
+  if (
+    grade === 'D' ||
+    grade === 'E' ||
+    grade === 'F' ||
+    grade === 'C2' ||
+    text.includes('significant') ||
+    text.includes('continues to struggle') ||
+    text.includes('incomplete') ||
+    text.includes('irregular') ||
+    text.includes('decline') ||
+    text.includes('needs close support')
+  ) {
+    return 'red';
+  }
+
+  if (
+    grade === 'C1' ||
+    grade === 'C' ||
+    grade === 'B2' ||
+    text.includes('needs more') ||
+    text.includes('needs improvement') ||
+    text.includes('weak') ||
+    text.includes('difficult') ||
+    text.includes('limited preparation')
+  ) {
+    return 'yellow';
+  }
+
+  return 'green';
+}
+
+function strongerConcernFlag(explicitFlag: FlagStatus, inferredFlag: FlagStatus): FlagStatus {
+  return flagRank[inferredFlag] < flagRank[explicitFlag] ? inferredFlag : explicitFlag;
 }
 
 function normalizeSubject(subject: any): AIReportSubject | null {
   const name = subject?.subject || subject?.subjectName;
   if (!name) return null;
 
-  const flag = ['green', 'yellow', 'red'].includes(subject?.flag)
+  const explicitFlag: FlagStatus = ['green', 'yellow', 'red'].includes(subject?.flag)
     ? subject.flag
     : 'green';
 
+  const grade = subject?.grade || '';
+  const reasoning = subject?.reasoning || subject?.aiNote || subject?.teacherComment || '';
+  const inferredFlag = inferFlagFromGrade(grade, reasoning);
+  const flag = strongerConcernFlag(explicitFlag, inferredFlag);
+
   return {
     subject: name,
-    grade: subject?.grade || '',
+    grade,
     flag,
-    reasoning: subject?.reasoning || subject?.aiNote || '',
+    reasoning,
   };
 }
 
