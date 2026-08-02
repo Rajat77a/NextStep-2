@@ -212,10 +212,10 @@ export default function UploadReport() {
 
       setStep(3);
 
+      window.localStorage.setItem('nsa_lastReportCardId', card.id);
+
       setTimeout(() => {
-        navigate('/parent/clarity', {
-          state: { reportCardId: card.id },
-        });
+        navigate(`/parent/clarity?reportCardId=${encodeURIComponent(card.id)}`);
       }, 1200);
     } catch (err: any) {
       setError(err?.message || 'Could not save the analysis.');
