@@ -1,134 +1,309 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import TransitionLink from '@/components/shared/TransitionLink';
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Check, Eye } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { getReportCards } from '@/api/data';
-import FlagBadge from '@/components/shared/FlagBadge';
-import type { ReportCard, AIReportSubject } from '@/types';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Eye,
+  Minus,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
+import type { AIReportSubject, ReportCard } from '@/types';
 
 const flagRank = { green: 3, yellow: 2, red: 1 } as const;
 
+type FlagStatus = keyof typeof flagRank;
+
+function readStorage<T>(key: string, fallback: T): T {
+  try {
+    const value = window.localStorage.getItem(key);
+    return value ? JSON.parse(value) as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeSubject(subject: any): AIReportSubject | null {
+  const name = subject?.subject || subject?.subjectName;
+  if (!name) return null;
+
+  const flag = ['green', 'yellow', 'red'].includes(subject?.flag)
+    ? subject.flag
+    : 'green';
+
+  return {
+    subject: name,
+    grade: subject?.grade || '',
+    flag,
+    reasoning: subject?.reasoning || subject?.aiNote || '',
+  };
+}
+
+function flagClasses(flag: FlagStatus) {
+  if (flag === 'red') return 'bg-coral/10 text-coral';
+  if (flag === 'yellow') return 'bg-amber/10 text-amber';
+  return 'bg-sage/10 text-sage';
+}
+
+function flagLabel(flag: FlagStatus) {
+  if (flag === 'red') return 'Needs support';
+  if (flag === 'yellow') return 'Watch';
+  return 'On track';
+}
+
 export default function ProgressTracking() {
-  const { user } = useAuth();
   const [reportCards, setReportCards] = useState<ReportCard[]>([]);
   const [gradesByCard, setGradesByCard] = useState<Record<string, AIReportSubject[]>>({});
-  const [subjects, setSubjects] = useState<string[]>([]);
 
   useEffect(() => {
-    async function load() {
-      if (!user) return;
-      const cards = await getReportCards();
-      setReportCards(cards.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
-      const allGrades: Record<string, AIReportSubject[]> = {};
-      const subjectSet = new Set<string>();
-      for (const card of cards) {
-        const g = card.ai_response?.subjects || [];
-        allGrades[card.id] = g;
-        g.forEach(sg => subjectSet.add(sg.subject));
-      }
-      setGradesByCard(allGrades);
-      setSubjects([...subjectSet]);
-    }
-    load();
-  }, [user]);
+    const cards = readStorage<ReportCard[]>('nsa_reportCards', [])
+      .slice()
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  if (reportCards.length < 2 || subjects.length === 0) {
+    const storedSubjectGrades = readStorage<any[]>('nsa_subjectGrades', []);
+    const grouped: Record<string, AIReportSubject[]> = {};
+
+    for (const card of cards) {
+      const fromAi = (card.ai_response?.subjects || [])
+        .map(normalizeSubject)
+        .filter(Boolean) as AIReportSubject[];
+
+      const fromLegacy = storedSubjectGrades
+        .filter((grade) => grade.reportCardId === card.id)
+        .map(normalizeSubject)
+        .filter(Boolean) as AIReportSubject[];
+
+      grouped[card.id] = fromAi.length > 0 ? fromAi : fromLegacy;
+    }
+
+    setReportCards(cards);
+    setGradesByCard(grouped);
+  }, []);
+
+  const subjects = useMemo(() => {
+    const subjectSet = new Set<string>();
+
+    Object.values(gradesByCard).forEach((grades) => {
+      grades.forEach((grade) => subjectSet.add(grade.subject));
+    });
+
+    return Array.from(subjectSet);
+  }, [gradesByCard]);
+
+  if (reportCards.length === 0 || subjects.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-5 md:px-12 py-8">
-        <TransitionLink to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
+        <Link
+          to="/parent"
+          className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"
+        >
           <ArrowLeft size={14} /> Back to Dashboard
-        </TransitionLink>
+        </Link>
+
         <div className="text-center py-12">
           <TrendingUp size={40} className="mx-auto text-light-gray mb-4" />
-          <h2 className="font-display text-2xl text-charcoal mb-2">Not Enough Data Yet</h2>
-          <p className="font-body text-medium-gray">Upload next term's report card to see what's changed.</p>
+          <h2 className="font-display text-2xl text-charcoal mb-2">
+            No Progress Data Yet
+          </h2>
+          <p className="font-body text-medium-gray mb-6">
+            Upload and analyze a report card first to start tracking progress.
+          </p>
+          <Link
+            to="/parent/upload"
+            className="btn-text px-6 py-3 rounded-[10px] bg-coral text-white inline-flex items-center gap-2 hover:bg-coral-dark transition-all"
+          >
+            Upload Report Card <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (reportCards.length < 2) {
+    const latestCard = reportCards[reportCards.length - 1];
+    const latestGrades = gradesByCard[latestCard.id] || [];
+
+    return (
+      <div className="max-w-4xl mx-auto px-5 md:px-12 py-6 md:py-8">
+        <Link
+          to="/parent"
+          className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"
+        >
+          <ArrowLeft size={14} /> Back to Dashboard
+        </Link>
+
+        <h2 className="font-display text-2xl md:text-4xl text-charcoal">
+          Progress Over Time
+        </h2>
+        <p className="font-body text-medium-gray mt-1 mb-6">
+          Upload another term later to compare changes.
+        </p>
+
+        <div className="bg-white rounded-2xl shadow-card p-6 mb-6 border-t-[3px] border-coral">
+          <h3 className="font-display text-xl text-charcoal mb-2">
+            Current Baseline
+          </h3>
+          <p className="font-body text-medium-gray">
+            This report is saved as your first progress point.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {latestGrades.map((grade, index) => (
+            <div key={`${grade.subject}-${index}`} className="bg-white rounded-2xl shadow-card p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h4 className="font-display text-lg text-charcoal">{grade.subject}</h4>
+                <span className={`px-3 py-1 rounded-full font-body text-xs font-semibold ${flagClasses(grade.flag as FlagStatus)}`}>
+                  {flagLabel(grade.flag as FlagStatus)}
+                </span>
+              </div>
+              <p className="font-body text-sm text-charcoal/60 mb-2">
+                Grade: <span className="font-medium text-charcoal">{grade.grade}</span>
+              </p>
+              {grade.reasoning && (
+                <p className="font-body text-xs text-charcoal/60">
+                  {grade.reasoning}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
   const latestCard = reportCards[reportCards.length - 1];
-  const prevCard = reportCards[reportCards.length - 2];
+  const previousCard = reportCards[reportCards.length - 2];
   const latestGrades = gradesByCard[latestCard.id] || [];
-  const prevGrades = gradesByCard[prevCard.id] || [];
+  const previousGrades = gradesByCard[previousCard.id] || [];
 
   const improvements: string[] = [];
   const watchAreas: string[] = [];
 
-  subjects.forEach(subject => {
-    const lg = latestGrades.find(g => g.subject === subject);
-    const pg = prevGrades.find(g => g.subject === subject);
-    if (lg && pg) {
-      if (flagRank[lg.flag] > flagRank[pg.flag]) improvements.push(`${subject} improved from ${pg.flag} to ${lg.flag}`);
-      else if (flagRank[lg.flag] < flagRank[pg.flag]) watchAreas.push(`${subject} moved from ${pg.flag} to ${lg.flag}`);
+  subjects.forEach((subject) => {
+    const latest = latestGrades.find((grade) => grade.subject === subject);
+    const previous = previousGrades.find((grade) => grade.subject === subject);
+
+    if (!latest || !previous) return;
+
+    const latestFlag = latest.flag as FlagStatus;
+    const previousFlag = previous.flag as FlagStatus;
+
+    if (flagRank[latestFlag] > flagRank[previousFlag]) {
+      improvements.push(`${subject} improved from ${flagLabel(previousFlag)} to ${flagLabel(latestFlag)}.`);
+    } else if (flagRank[latestFlag] < flagRank[previousFlag]) {
+      watchAreas.push(`${subject} moved from ${flagLabel(previousFlag)} to ${flagLabel(latestFlag)}.`);
     }
   });
 
   return (
     <div className="max-w-4xl mx-auto px-5 md:px-12 py-6 md:py-8">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <TransitionLink to="/parent" className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4">
-          <ArrowLeft size={14} /> Back to Dashboard
-        </TransitionLink>
-        <h2 className="font-display text-2xl md:text-4xl text-charcoal">Progress Over Time</h2>
-        <p className="font-body text-medium-gray mt-1 mb-6">See how your child is trending across terms</p>
-      </motion.div>
+      <Link
+        to="/parent"
+        className="flex items-center gap-1 text-medium-gray hover:text-charcoal font-body text-sm mb-4"
+      >
+        <ArrowLeft size={14} /> Back to Dashboard
+      </Link>
 
-      {/* Subject-by-Subject Grid */}
+      <h2 className="font-display text-2xl md:text-4xl text-charcoal">
+        Progress Over Time
+      </h2>
+      <p className="font-body text-medium-gray mt-1 mb-6">
+        Comparing {previousCard.term} with {latestCard.term}
+      </p>
+
       <div className="grid md:grid-cols-2 gap-4 mb-8">
-        {subjects.map((subject, i) => {
-          const lg = latestGrades.find(g => g.subject === subject);
-          const pg = prevGrades.find(g => g.subject === subject);
-          const trend = lg && pg ? (flagRank[lg.flag] > flagRank[pg.flag] ? 'up' : flagRank[lg.flag] < flagRank[pg.flag] ? 'down' : 'flat') : 'flat';
+        {subjects.map((subject, index) => {
+          const latest = latestGrades.find((grade) => grade.subject === subject);
+          const previous = previousGrades.find((grade) => grade.subject === subject);
+          const latestFlag = (latest?.flag || 'green') as FlagStatus;
+          const previousFlag = (previous?.flag || 'green') as FlagStatus;
+          const trend =
+            flagRank[latestFlag] > flagRank[previousFlag]
+              ? 'up'
+              : flagRank[latestFlag] < flagRank[previousFlag]
+                ? 'down'
+                : 'flat';
+
           return (
-            <motion.div
-              key={subject}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.08 }}
-              className="bg-white rounded-2xl shadow-card p-5"
-            >
-              <div className="flex items-center justify-between mb-3">
+            <div key={`${subject}-${index}`} className="bg-white rounded-2xl shadow-card p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
                 <h4 className="font-display text-lg text-charcoal">{subject}</h4>
-                {lg && <FlagBadge flag={lg.flag} size="sm" />}
+                <span className={`px-3 py-1 rounded-full font-body text-xs font-semibold ${flagClasses(latestFlag)}`}>
+                  {flagLabel(latestFlag)}
+                </span>
               </div>
+
               <div className="flex items-center gap-3 mb-3">
-                {pg && <span className="px-3 py-1 bg-light-gray rounded-full font-body text-sm font-medium text-charcoal">{pg.flag}</span>}
-                {trend === 'up' ? <TrendingUp size={18} className="text-sage" /> : trend === 'down' ? <TrendingDown size={18} className="text-coral" /> : <Minus size={18} className="text-medium-gray" />}
-                {lg && <span className={`px-3 py-1 rounded-full font-body text-sm font-medium ${lg.flag === 'green' ? 'bg-sage/10 text-sage' : lg.flag === 'yellow' ? 'bg-amber/10 text-amber' : 'bg-coral/10 text-coral'}`}>{lg.flag}</span>}
+                <span className={`px-3 py-1 rounded-full font-body text-sm font-medium ${flagClasses(previousFlag)}`}>
+                  {flagLabel(previousFlag)}
+                </span>
+                {trend === 'up' ? (
+                  <TrendingUp size={18} className="text-sage" />
+                ) : trend === 'down' ? (
+                  <TrendingDown size={18} className="text-coral" />
+                ) : (
+                  <Minus size={18} className="text-medium-gray" />
+                )}
+                <span className={`px-3 py-1 rounded-full font-body text-sm font-medium ${flagClasses(latestFlag)}`}>
+                  {flagLabel(latestFlag)}
+                </span>
               </div>
-              {lg?.reasoning && <p className="font-body text-xs text-charcoal/60">{lg.reasoning.slice(0, 100)}...</p>}
-            </motion.div>
+
+              {latest?.reasoning && (
+                <p className="font-body text-xs text-charcoal/60">
+                  {latest.reasoning}
+                </p>
+              )}
+            </div>
           );
         })}
       </div>
 
-      {/* Improvement Summary */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white rounded-2xl shadow-card p-6 border-t-[3px] border-coral">
+      <div className="bg-white rounded-2xl shadow-card p-6 border-t-[3px] border-coral">
         <h3 className="font-display text-xl text-charcoal mb-4">What's Changed</h3>
+
         <div className="space-y-4">
           {improvements.length > 0 && (
             <div>
-              <p className="label-text text-sage mb-2 flex items-center gap-2"><Check size={14} /> IMPROVED</p>
+              <p className="label-text text-sage mb-2 flex items-center gap-2">
+                <Check size={14} /> Improved
+              </p>
               <ul className="space-y-1.5">
-                {improvements.map((imp, i) => <li key={i} className="font-body text-sm text-charcoal/80 flex items-start gap-2"><Check size={14} className="text-sage mt-0.5 flex-shrink-0" />{imp}</li>)}
+                {improvements.map((item, index) => (
+                  <li key={index} className="font-body text-sm text-charcoal/80 flex items-start gap-2">
+                    <Check size={14} className="text-sage mt-0.5 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
               </ul>
             </div>
           )}
+
           {watchAreas.length > 0 && (
             <div>
-              <p className="label-text text-amber mb-2 flex items-center gap-2"><Eye size={14} /> KEEP AN EYE ON</p>
+              <p className="label-text text-amber mb-2 flex items-center gap-2">
+                <Eye size={14} /> Keep An Eye On
+              </p>
               <ul className="space-y-1.5">
-                {watchAreas.map((wa, i) => <li key={i} className="font-body text-sm text-charcoal/80 flex items-start gap-2"><Eye size={14} className="text-amber mt-0.5 flex-shrink-0" />{wa}</li>)}
+                {watchAreas.map((item, index) => (
+                  <li key={index} className="font-body text-sm text-charcoal/80 flex items-start gap-2">
+                    <Eye size={14} className="text-amber mt-0.5 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
               </ul>
             </div>
           )}
+
           {improvements.length === 0 && watchAreas.length === 0 && (
-            <p className="font-body text-charcoal/60">No significant changes between terms. Consistency is good!</p>
+            <p className="font-body text-charcoal/60">
+              No major flag changes between the latest two report cards.
+            </p>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
